@@ -59,22 +59,26 @@
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="id_aula" class="form-label">Aula</label>
-                        <select class="form-select" id="id_aula" name="id_aula">
-                            <option value="">Seleccionar aula...</option>
-                            @foreach($aulas as $aula)
-                                <option value="{{ $aula->id_aula }}" {{ old('id_aula') == $aula->id_aula ? 'selected' : '' }}>
-                                    {{ $aula->nombre }}
-                                </option>
+                <div class="col-md-3">
+                        <label for="nivel" class="form-label">Nivel</label>
+                        <select name="nivel" id="nivel" class="form-control" required>
+                            <option value="">Seleccione un nivel</option>
+                            @foreach($niveles as $nivel)
+                                <option value="{{ $nivel->id_nivel }}">{{ $nivel->nombre }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
+                        <label for="id_aula" class="form-label">Aula</label>
+                        <select name="id_aula" id="id_aula" class="form-control" required disabled>
+                            <option value="">Primero seleccione un nivel</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <label for="fecha_ingreso" class="form-label">Fecha de Ingreso</label>
                         <input type="date" class="form-control" id="fecha_ingreso" name="fecha_ingreso" value="{{ old('fecha_ingreso') }}">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="estado" class="form-label">Estado</label>
                         <select class="form-select" id="estado" name="estado" required>
                             <option value="Activo" {{ old('estado') == 'Activo' ? 'selected' : '' }}>Activo</option>
@@ -191,6 +195,66 @@
                     }
                 });
                 </script>
+
+<script>
+    // Genera la URL base desde Laravel
+    const urlAulas = "{{ url('/aulas/nivel') }}";
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const nivelSelect = document.getElementById('nivel');
+        const aulaSelect = document.getElementById('id_aula');
+        
+        nivelSelect.addEventListener('change', function() {
+            const nivelId = this.value;
+            
+            // Mostrar mensaje mientras se cargan las aulas
+            aulaSelect.innerHTML = '<option value="">Cargando aulas...</option>';
+            
+            if (nivelId) {
+                aulaSelect.disabled = false;
+                
+                fetch(`${urlAulas}/${nivelId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error en la red');
+                        }
+                        return response.json();
+                    })
+                    .then(aulas => {
+                        // Limpiar el select antes de agregar nuevas opciones
+                        aulaSelect.innerHTML = '';
+                        
+                        if(aulas.length > 0) {
+                            // Agregar opción por defecto
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = '';
+                            defaultOption.textContent = 'Seleccione un aula';
+                            aulaSelect.appendChild(defaultOption);
+                            
+                            // Agregar cada aula
+                            aulas.forEach(aula => {
+                                const option = document.createElement('option');
+                                option.value = aula.id;
+                                option.textContent = aula.nombre_completo;
+                                aulaSelect.appendChild(option);
+                            });
+                        } else {
+                            aulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        aulaSelect.innerHTML = '<option value="">Error al cargar aulas</option>';
+                    });
+            } else {
+                // Si no se ha seleccionado un nivel, se deshabilita el select de aulas
+                aulaSelect.disabled = true;
+                aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
+            }
+        });
+    });
+</script>
+
                 @endpush
 
                 <div class="d-flex justify-content-end mt-4">

@@ -80,4 +80,17 @@ class Estudiante extends Model
     {
         return $this->hasMany(Calificacion::class, 'id_estudiante', 'id_estudiante');
     }
+
+    /**
+     * Obtiene el nombre completo del aula del estudiante
+     *
+     * @return string
+     */
+    public function getNombreCompletoAulaAttribute()
+    {
+        if ($this->aula) {
+            return $this->aula->nombre_completo;
+        }
+        return 'Sin aula asignada';
+    }
 }

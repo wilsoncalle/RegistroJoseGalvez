@@ -3,7 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\SeccionController;
+use App\Http\Controllers\EstudianteController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AsignacionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,10 +24,12 @@ Route::middleware(['auth'])->group(function () {
     
     // Rutas de Estudiantes
     Route::resource('estudiantes', \App\Http\Controllers\EstudianteController::class);
+    Route::get('/get-aulas-por-nivel/{nivelId}', [EstudianteController::class, 'getAulasPorNivel']);
     
     // Rutas de Docentes
     Route::resource('docentes', \App\Http\Controllers\DocenteController::class);
-    
+    Route::get('aulas/nivel/{nivelId}', [EstudianteController::class, 'getAulasPorNivel'])->name('aulas.nivel');
+
     // Rutas de Apoderados
     Route::resource('apoderados', \App\Http\Controllers\ApoderadoController::class);
     
@@ -51,6 +55,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Rutas de Asignaciones
     Route::resource('asignaciones', \App\Http\Controllers\AsignacionController::class);
+    Route::get('/asignaciones/getAulasPorNivel/{nivelId}', [AsignacionController::class, 'getAulasPorNivel'])->name('asignaciones.aulas');
     
     // Rutas de Calificaciones
     Route::resource('calificaciones', \App\Http\Controllers\CalificacionController::class);

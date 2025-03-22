@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Estudiante;
 use App\Models\Aula;
+use App\Models\Nivel;
 use App\Models\Apoderado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,37 +13,73 @@ class EstudianteController extends Controller
 {
     public function index(Request $request)
     {
-        $busqueda = $request->input('busqueda');
-        $filtroAula = $request->input('aula');
-        $filtroEstado = $request->input('estado');
-
-        $estudiantes = Estudiante::with(['aula', 'apoderados'])
-            ->when($busqueda, function ($query, $busqueda) {
-                return $query->where(function ($q) use ($busqueda) {
-                    $q->where('nombre', 'LIKE', "%{$busqueda}%")
-                      ->orWhere('dni', 'LIKE', "%{$busqueda}%");
-                });
+        $busqueda = $request->get('busqueda');
+        $filtroAula = $request->get('aula');
+        $filtroEstado = $request->get('estado');
+        $filtroNivel = $request->get('nivel');
+    
+        // Obtener listas para los select
+        $niveles = Nivel::all();
+        $aulas = Aula::with(['nivel', 'grado', 'seccion'])
+            ->when($filtroNivel, function ($query) use ($filtroNivel) {
+                return $query->where('id_nivel', $filtroNivel);
             })
-            ->when($filtroAula, function ($query, $filtroAula) {
+            ->get();
+    
+        // Filtrar estudiantes según los parámetros
+        $estudiantes = Estudiante::with(['aula.nivel', 'aula.grado', 'aula.seccion', 'apoderados'])
+            ->when($busqueda, function ($query) use ($busqueda) {
+                return $query->where('nombre', 'like', "%$busqueda%")
+                         ->orWhere('dni', 'like', "%$busqueda%");
+            })
+            ->when($filtroAula, function ($query) use ($filtroAula) {
                 return $query->where('id_aula', $filtroAula);
             })
-            ->when($filtroEstado, function ($query, $filtroEstado) {
+            ->when($filtroEstado, function ($query) use ($filtroEstado) {
                 return $query->where('estado', $filtroEstado);
             })
-            ->orderBy('nombre')
-            ->paginate(15);
-
-        $aulas = Aula::all();
-
-        return view('estudiantes.index', compact('estudiantes', 'aulas', 'busqueda', 'filtroAula', 'filtroEstado'));
+            ->when($filtroNivel, function ($query) use ($filtroNivel) {
+                return $query->whereHas('aula', function ($query) use ($filtroNivel) {
+                    $query->where('id_nivel', $filtroNivel);
+                });
+            })
+            ->paginate(10);
+    
+        return view('estudiantes.index', compact('estudiantes', 'busqueda', 'filtroAula', 'filtroEstado', 'filtroNivel', 'aulas', 'niveles'));
     }
+    
 
     public function create()
-    {
-        $aulas = Aula::all();
-        $apoderados = Apoderado::orderBy('nombre')->get();
-        return view('estudiantes.create', compact('aulas', 'apoderados'));
-    }
+{
+    // Cargar solamente los niveles y apoderados inicialmente
+    $niveles = Nivel::all();
+    $apoderados = Apoderado::orderBy('nombre')->get();
+    
+    // No cargar aulas todavía - se cargarán vía AJAX
+    return view('estudiantes.create', compact('niveles', 'apoderados'));
+}
+
+public function getAulasPorNivel($nivelId)
+{
+    $aulas = Aula::with(['nivel', 'grado', 'seccion'])
+        ->where('id_nivel', $nivelId)
+        ->get()
+        ->sortBy(function($aula) {
+            // Ordena concatenando el nombre del grado y el nombre de la sección.
+            return $aula->grado->nombre . ' ' . $aula->seccion->nombre;
+        })
+        ->map(function ($aula) {
+            return [
+                'id' => $aula->id_aula,
+                'nombre_completo' => $aula->nivel->nombre . ' - ' . 
+                                    $aula->grado->nombre . ' - ' . 
+                                    $aula->seccion->nombre
+            ];
+        })
+        ->values();
+        
+    return response()->json($aulas);
+}
 
     public function store(Request $request)
     {
@@ -75,17 +112,24 @@ class EstudianteController extends Controller
 
     public function show(Estudiante $estudiante)
     {
-        $estudiante->load(['aula', 'apoderados']);
-        return view('estudiantes.show', compact('estudiante'));
+        $estudiante->load(['aula', 'aula.nivel', 'aula.grado', 'aula.seccion', 'apoderados']);
+        
+        // Accedemos al nombre completo del aula
+        $nombreCompletoAula = $estudiante->nombre_completo_aula;
+        
+        return view('estudiantes.show', compact('estudiante', 'nombreCompletoAula'));
     }
 
     public function edit(Estudiante $estudiante)
-    {
-        $estudiante->load('apoderados');
-        $aulas = Aula::all();
-        $apoderados = Apoderado::orderBy('nombre')->get();
-        return view('estudiantes.edit', compact('estudiante', 'aulas', 'apoderados'));
-    }
+{
+    $estudiante->load('apoderados', 'aula'); // Asegúrate de cargar la relación "aula"
+    $niveles = Nivel::all();
+    $aulas = Aula::all();
+    $apoderados = Apoderado::orderBy('nombre')->get();
+    return view('estudiantes.edit', compact('estudiante', 'niveles', 'aulas', 'apoderados'));
+}
+
+
 
     public function update(Request $request, Estudiante $estudiante)
     {
@@ -132,5 +176,22 @@ class EstudianteController extends Controller
             DB::rollBack();
             return back()->with('error', 'Error al eliminar estudiante: ' . $e->getMessage());
         }
+    }
+    
+    // Nuevo método para obtener estudiantes con información de aula
+    public function getEstudiantesConAula()
+    {
+        $estudiantes = Estudiante::with(['aula', 'aula.nivel', 'aula.grado', 'aula.seccion'])
+            ->where('estado', 'Activo')
+            ->get()
+            ->map(function ($estudiante) {
+                return [
+                    'id' => $estudiante->id_estudiante,
+                    'nombre' => $estudiante->nombre,
+                    'aula' => $estudiante->nombre_completo_aula,
+                ];
+            });
+            
+        return response()->json($estudiantes);
     }
 }
