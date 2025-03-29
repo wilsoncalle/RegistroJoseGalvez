@@ -29,6 +29,11 @@
                 </div>
             @endif
 
+            @php
+                // Si existe un error en la sesión, se ignora el valor anterior para id_nivel
+                $selectedNivel = session('error') ? '' : old('id_nivel');
+            @endphp
+
             <form action="{{ route('aulas.store') }}" method="POST">
                 @csrf
                 
@@ -40,42 +45,33 @@
                 </div>
 
                 <div class="row mb-3">
+                    <!-- Selección de Nivel -->
                     <div class="col-md-4">
                         <label for="id_nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
                         <select class="form-select" id="id_nivel" name="id_nivel" required>
                             <option value="">Seleccionar nivel...</option>
                             @foreach($niveles as $nivel)
                                 <option value="{{ $nivel->id_nivel }}" 
-                                    {{ old('id_nivel') == $nivel->id_nivel ? 'selected' : '' }}>
+                                    {{ $selectedNivel == $nivel->id_nivel ? 'selected' : '' }}>
                                     {{ $nivel->nombre }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                     
+                    <!-- Selección de Grado: inicialmente deshabilitado -->
                     <div class="col-md-4">
                         <label for="id_grado" class="form-label">Grado <span class="text-danger">*</span></label>
-                        <select class="form-select" id="id_grado" name="id_grado" required>
+                        <select class="form-select" id="id_grado" name="id_grado" required disabled>
                             <option value="">Seleccionar grado...</option>
-                            @foreach($grados as $grado)
-                                <option value="{{ $grado->id_grado }}" 
-                                    {{ old('id_grado') == $grado->id_grado ? 'selected' : '' }}>
-                                    {{ $grado->nombre }}
-                                </option>
-                            @endforeach
                         </select>
                     </div>
                     
+                    <!-- Selección de Sección: inicialmente deshabilitado -->
                     <div class="col-md-4">
                         <label for="id_seccion" class="form-label">Sección <span class="text-danger">*</span></label>
-                        <select class="form-select" id="id_seccion" name="id_seccion" required>
+                        <select class="form-select" id="id_seccion" name="id_seccion" required disabled>
                             <option value="">Seleccionar sección...</option>
-                            @foreach($secciones as $seccion)
-                                <option value="{{ $seccion->id_seccion }}" 
-                                    {{ old('id_seccion') == $seccion->id_seccion ? 'selected' : '' }}>
-                                    {{ $seccion->nombre }}
-                                </option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -92,4 +88,64 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const nivelSelect = document.getElementById('id_nivel');
+    const gradoSelect = document.getElementById('id_grado');
+    const seccionSelect = document.getElementById('id_seccion');
+
+    // Cuando se selecciona un nivel, obtener los grados correspondientes
+    nivelSelect.addEventListener('change', function() {
+        const id_nivel = this.value;
+        gradoSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+        seccionSelect.innerHTML = '<option value="">Seleccionar sección...</option>';
+        seccionSelect.disabled = true;
+
+        if(id_nivel) {
+            fetch(`{{ url('aulas/getGrados') }}/${id_nivel}`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.length > 0){
+                        data.forEach(grado => {
+                            gradoSelect.innerHTML += `<option value="${grado.id_grado}">${grado.nombre}</option>`;
+                        });
+                        gradoSelect.disabled = false;
+                    } else {
+                        gradoSelect.disabled = true;
+                    }
+                })
+                .catch(error => console.error('Error al obtener grados:', error));
+        } else {
+            gradoSelect.disabled = true;
+        }
+    });
+
+    // Cuando se selecciona un grado, obtener las secciones correspondientes
+    gradoSelect.addEventListener('change', function() {
+        const id_grado = this.value;
+        seccionSelect.innerHTML = '<option value="">Seleccionar sección...</option>';
+
+        if(id_grado) {
+            fetch(`{{ url('aulas/getSecciones') }}/${id_grado}`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.length > 0){
+                        data.forEach(seccion => {
+                            seccionSelect.innerHTML += `<option value="${seccion.id_seccion}">${seccion.nombre}</option>`;
+                        });
+                        seccionSelect.disabled = false;
+                    } else {
+                        seccionSelect.disabled = true;
+                    }
+                })
+                .catch(error => console.error('Error al obtener secciones:', error));
+        } else {
+            seccionSelect.disabled = true;
+        }
+    });
+});
+</script>
 @endsection

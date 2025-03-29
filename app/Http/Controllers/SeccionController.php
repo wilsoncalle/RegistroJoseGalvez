@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Seccion;
+use App\Models\Nivel;
 use App\Models\Grado;
 use Illuminate\Http\Request;
 
@@ -11,44 +12,76 @@ class SeccionController extends Controller
     public function index(Request $request)
     {
         $busqueda = $request->get('busqueda');
-        $filtroGrado = $request->get('grado_id');
+        $filtroNivel = $request->get('nivel_id');
+        $filtroGrado = $request->get('grado_id'); // Ahora usando "grado_id" para ser consistente con la vista
 
-        $secciones = Seccion::with('grado')
+        $secciones = Seccion::with(['grado.nivel'])
             ->when($busqueda, function ($query) use ($busqueda) {
-                return $query->where('nombre', 'LIKE', "%{$busqueda}%");
+                return $query->where('secciones.nombre', 'LIKE', "%{$busqueda}%");
+            })
+            ->when($filtroNivel, function ($query) use ($filtroNivel) {
+                return $query->where('niveles.id_nivel', $filtroNivel);
             })
             ->when($filtroGrado, function ($query) use ($filtroGrado) {
-                return $query->where('id_grado', $filtroGrado);
+                return $query->where('secciones.id_grado', $filtroGrado);
             })
-            ->orderBy('nombre')
-            ->paginate(10);
+            ->join('grados', 'secciones.id_grado', '=', 'grados.id_grado')
+            ->join('niveles', 'grados.id_nivel', '=', 'niveles.id_nivel')
+            ->orderByRaw("FIELD(niveles.nombre, 'Inicial', 'Primaria', 'Secundaria')")
+            ->orderBy('grados.nombre')
+            ->orderBy('secciones.nombre')
+            ->select('secciones.*')
+            ->paginate(10)
+            ->withQueryString();
 
         $grados = Grado::orderBy('nombre')->get();
+        $niveles = Nivel::orderBy('nombre')->get();
 
-        return view('secciones.index', compact('secciones', 'grados', 'busqueda', 'filtroGrado'));
+        return view('secciones.index', compact('secciones', 'grados', 'niveles', 'busqueda', 'filtroGrado', 'filtroNivel'));
     }
+
+
 
     public function create()
-    {
-        $grados = Grado::orderBy('nombre')->get();
-        return view('secciones.create', compact('grados'));
+{
+    $niveles = Nivel::orderBy('nombre')->get(); // Obtener los niveles
+    $grados = Grado::orderBy('nombre')->get(); // Obtener los grados
+    
+    return view('secciones.create', compact('niveles', 'grados')); 
+}
+
+public function store(Request $request)
+{
+    $request->validate([
+        'nombre' => 'required|string|max:255',
+        'grado_id' => 'required|exists:grados,id_grado',
+    ]);
+
+    // Verificar si la sección ya existe con el mismo nombre y grado
+    $seccionExistente = Seccion::where('nombre', $request->nombre)
+        ->where('id_grado', $request->grado_id)
+        ->first();
+
+    if ($seccionExistente) {
+        return back()->withInput()->with('error', 'Ya existe una sección con el mismo nombre en este grado.');
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'grado_id' => 'required|exists:grados,id_grado',
-        ]);
+    // Si no existe, se procede a crear la sección
+    $seccion = Seccion::create([
+        'nombre' => $request->nombre,
+        'id_grado' => $request->grado_id,
+    ]);
 
-        $seccion = Seccion::create([
-            'nombre' => $request->nombre,
-            'id_grado' => $request->grado_id,
-        ]);
+    return redirect()->route('secciones.index', $seccion)
+        ->with('success', 'Sección creada exitosamente.');
+}
 
-        return redirect()->route('secciones.show', $seccion)
-            ->with('success', 'Sección creada exitosamente.');
-    }
+    public function getGradosByNivel($nivelId)
+{
+    $grados = Grado::where('nivel_id', $nivelId)->orderBy('nombre')->get();
+    return response()->json($grados);
+}
+
 
     public function show(Seccion $seccion)
     {

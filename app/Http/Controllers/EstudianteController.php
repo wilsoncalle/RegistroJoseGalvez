@@ -8,10 +8,13 @@ use App\Models\Nivel;
 use App\Models\Apoderado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 
 class EstudianteController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $busqueda = $request->get('busqueda');
         $filtroAula = $request->get('aula');
@@ -49,42 +52,43 @@ class EstudianteController extends Controller
     }
     
 
-    public function create()
-{
-    // Cargar solamente los niveles y apoderados inicialmente
-    $niveles = Nivel::all();
-    $apoderados = Apoderado::orderBy('nombre')->get();
-    
-    // No cargar aulas todavía - se cargarán vía AJAX
-    return view('estudiantes.create', compact('niveles', 'apoderados'));
-}
+    public function create(): View
+    {
+        // Cargar solamente los niveles y apoderados inicialmente
+        $niveles = Nivel::all();
+        $apoderados = Apoderado::orderBy('nombre')->get();
+        
+        // No cargar aulas todavía - se cargarán vía AJAX
+        return view('estudiantes.create', compact('niveles', 'apoderados'));
+    }
 
-public function getAulasPorNivel($nivelId)
-{
-    $aulas = Aula::with(['nivel', 'grado', 'seccion'])
-        ->where('id_nivel', $nivelId)
-        ->get()
-        ->sortBy(function($aula) {
-            // Ordena concatenando el nombre del grado y el nombre de la sección.
-            return $aula->grado->nombre . ' ' . $aula->seccion->nombre;
-        })
-        ->map(function ($aula) {
-            return [
-                'id' => $aula->id_aula,
-                'nombre_completo' => $aula->nivel->nombre . ' - ' . 
+    public function getAulasPorNivel(int $nivelId): JsonResponse
+    {
+        $aulas = Aula::with(['nivel', 'grado', 'seccion'])
+            ->where('id_nivel', $nivelId)
+            ->get()
+            ->sortBy(function($aula) {
+                // Ordena concatenando el nombre del grado y el nombre de la sección.
+                return $aula->grado->nombre . ' ' . $aula->seccion->nombre;
+            })
+            ->map(function ($aula) {
+                return [
+                    'id' => $aula->id_aula,
+                    'nombre_completo' => $aula->nivel->nombre . ' - ' . 
                                     $aula->grado->nombre . ' - ' . 
                                     $aula->seccion->nombre
-            ];
-        })
-        ->values();
+                ];
+            })
+            ->values();
         
-    return response()->json($aulas);
-}
+        return response()->json($aulas);
+    }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'nombre' => 'required|string|max:50',
+            'apellido' => 'required|string|max:50',
             'dni' => 'nullable|string|max:20|unique:estudiantes',
             'fecha_nacimiento' => 'nullable|date',
             'telefono' => 'nullable|string|max:20',
@@ -97,12 +101,18 @@ public function getAulasPorNivel($nivelId)
 
         try {
             DB::beginTransaction();
+            
+            // Verificar DNI duplicado manualmente
+            if ($request->dni && Estudiante::where('dni', $request->dni)->exists()) {
+                return back()->withInput()->with('error', 'Ya existe un estudiante registrado con este DNI.');
+            }
+            
             $estudiante = Estudiante::create($request->all());
             if ($request->has('apoderados')) {
                 $estudiante->apoderados()->sync($request->apoderados);
             }
             DB::commit();
-            return redirect()->route('estudiantes.index', $estudiante)
+            return redirect()->route('estudiantes.index')
                 ->with('success', 'Estudiante registrado correctamente.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -110,7 +120,7 @@ public function getAulasPorNivel($nivelId)
         }
     }
 
-    public function show(Estudiante $estudiante)
+    public function show(Estudiante $estudiante): View
     {
         $estudiante->load(['aula', 'aula.nivel', 'aula.grado', 'aula.seccion', 'apoderados']);
         
@@ -120,21 +130,20 @@ public function getAulasPorNivel($nivelId)
         return view('estudiantes.show', compact('estudiante', 'nombreCompletoAula'));
     }
 
-    public function edit(Estudiante $estudiante)
-{
-    $estudiante->load('apoderados', 'aula'); // Asegúrate de cargar la relación "aula"
-    $niveles = Nivel::all();
-    $aulas = Aula::all();
-    $apoderados = Apoderado::orderBy('nombre')->get();
-    return view('estudiantes.edit', compact('estudiante', 'niveles', 'aulas', 'apoderados'));
-}
+    public function edit(Estudiante $estudiante): View
+    {
+        $estudiante->load('apoderados', 'aula'); // Asegúrate de cargar la relación "aula"
+        $niveles = Nivel::all();
+        $aulas = Aula::all();
+        $apoderados = Apoderado::orderBy('nombre')->get();
+        return view('estudiantes.edit', compact('estudiante', 'niveles', 'aulas', 'apoderados'));
+    }
 
-
-
-    public function update(Request $request, Estudiante $estudiante)
+    public function update(Request $request, Estudiante $estudiante): RedirectResponse
     {
         $request->validate([
             'nombre' => 'required|string|max:50',
+            'apellido' => 'required|string|max:50',
             'dni' => 'nullable|string|max:20|unique:estudiantes,dni,' . $estudiante->id_estudiante . ',id_estudiante',
             'fecha_nacimiento' => 'nullable|date',
             'telefono' => 'nullable|string|max:20',
@@ -150,7 +159,7 @@ public function getAulasPorNivel($nivelId)
             $estudiante->update($request->all());
             $estudiante->apoderados()->sync($request->apoderados ?? []);
             DB::commit();
-            return redirect()->route('estudiantes.index', $estudiante)
+            return redirect()->route('estudiantes.index')
                 ->with('success', 'Estudiante actualizado correctamente.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -158,7 +167,7 @@ public function getAulasPorNivel($nivelId)
         }
     }
 
-    public function destroy(Estudiante $estudiante)
+    public function destroy(Estudiante $estudiante): RedirectResponse
     {
         try {
             DB::beginTransaction();
@@ -179,7 +188,7 @@ public function getAulasPorNivel($nivelId)
     }
     
     // Nuevo método para obtener estudiantes con información de aula
-    public function getEstudiantesConAula()
+    public function getEstudiantesConAula(): JsonResponse
     {
         $estudiantes = Estudiante::with(['aula', 'aula.nivel', 'aula.grado', 'aula.seccion'])
             ->where('estado', 'Activo')

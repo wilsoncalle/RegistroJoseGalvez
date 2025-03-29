@@ -14,6 +14,7 @@ return new class extends Migration
             $table->date('fecha_inicio');
             $table->date('fecha_fin');
             $table->enum('estado', ['Planificado', 'En curso', 'Finalizado']);
+            $table->text('descripcion')->nullable();
             $table->timestamps();
         });
     }

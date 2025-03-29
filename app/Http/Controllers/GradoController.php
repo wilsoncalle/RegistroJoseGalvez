@@ -9,24 +9,30 @@ use Illuminate\Http\Request;
 class GradoController extends Controller
 {
     public function index(Request $request)
-    {
-        $busqueda = $request->get('busqueda');
-        $filtroNivel = $request->get('nivel');
+{
+    $busqueda = $request->get('busqueda');
+    $filtroNivel = $request->get('nivel');
 
-        $grados = Grado::with('nivel')
-            ->when($busqueda, function ($query) use ($busqueda) {
-                return $query->where('nombre', 'LIKE', "%{$busqueda}%");
-            })
-            ->when($filtroNivel, function ($query) use ($filtroNivel) {
-                return $query->where('id_nivel', $filtroNivel);
-            })
-            ->orderBy('nombre')
-            ->paginate(10);
+    $grados = Grado::with('nivel')
+        ->when($busqueda, function ($query) use ($busqueda) {
+            return $query->where('nombre', 'LIKE', "%{$busqueda}%");
+        })
+        ->when($filtroNivel, function ($query) use ($filtroNivel) {
+            return $query->where('id_nivel', $filtroNivel);
+        })
+        ->select('*', 
+            \DB::raw('CAST(SUBSTRING(nombre, 1, 1) AS UNSIGNED) as numero_grado')
+        )
+        ->orderBy('id_nivel')
+        ->orderBy('numero_grado')
+        ->orderBy('nombre')
+        ->paginate(10)
+        ->withQueryString();
 
-        $niveles = Nivel::orderBy('nombre')->get();
+    $niveles = Nivel::orderBy('nombre')->get();
 
-        return view('grados.index', compact('grados', 'niveles', 'busqueda', 'filtroNivel'));
-    }
+    return view('grados.index', compact('grados', 'niveles', 'busqueda', 'filtroNivel'));
+}
 
     public function create()
     {
@@ -35,20 +41,27 @@ class GradoController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'nivel_id' => 'required|exists:niveles,id_nivel',
-        ]);
+{
+    $request->validate([
+        'nombre' => [
+            'required',
+            'string',
+            'max:255',
+            'unique:grados,nombre,NULL,id_grado,id_nivel,' . $request->nivel_id
+        ],
+        'nivel_id' => 'required|exists:niveles,id_nivel',
+    ], [
+        'nombre.unique' => 'Ya existe un grado con este nombre en el nivel seleccionado.'
+    ]);
 
-        $grado = Grado::create([
-            'nombre' => $request->nombre,
-            'id_nivel' => $request->nivel_id,
-        ]);
+    $grado = Grado::create([
+        'nombre' => $request->nombre,
+        'id_nivel' => $request->nivel_id,
+    ]);
 
-        return redirect()->route('grados.show', $grado)
-            ->with('success', 'Grado creado exitosamente.');
-    }
+    return redirect()->route('grados.show', $grado)
+        ->with('success', 'Grado creado exitosamente.');
+}
 
     public function show(Grado $grado)
     {

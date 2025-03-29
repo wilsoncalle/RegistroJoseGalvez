@@ -86,6 +86,7 @@
                         <tr>
                             <th>ID</th>
                             <th>Nombre</th>
+                            <th>Apellido</th>
                             <th>DNI</th>
                             <th>Nivel</th>
                             <th>Aula</th>
@@ -99,6 +100,7 @@
                             <tr>
                                 <td>{{ $estudiante->id_estudiante }}</td>
                                 <td>{{ $estudiante->nombre }}</td>
+                                <td>{{ $estudiante->apellido }}</td>
                                 <td>{{ $estudiante->dni }}</td>
                                 <td>{{ $estudiante->aula && $estudiante->aula->nivel ? $estudiante->aula->nivel->nombre : 'No definido' }}</td>
                                 <td>
@@ -148,7 +150,7 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <p>¿Está seguro de que desea eliminar al estudiante <strong>{{ $estudiante->nombre }}</strong>?</p>
+                                                    <p>¿Está seguro de que desea eliminar al estudiante <strong>{{ $estudiante->nombre }} {{ $estudiante->apellido }}</strong>?</p>
                                                     <p class="text-danger"><small>Esta acción no se puede deshacer. Si el estudiante tiene registros académicos, será marcado como "Retirado" en lugar de ser eliminado.</small></p>
                                                 </div>
                                                 <div class="modal-footer">
@@ -166,7 +168,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4">
+                                <td colspan="9" class="text-center py-4">
                                     <p class="text-muted mb-0">No se encontraron estudiantes con los criterios especificados.</p>
                                     <a href="{{ route('estudiantes.index') }}" class="btn btn-sm btn-outline-secondary mt-3">
                                         <i class="bi bi-arrow-repeat me-1"></i> Mostrar todos los estudiantes

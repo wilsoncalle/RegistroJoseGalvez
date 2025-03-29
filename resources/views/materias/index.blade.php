@@ -133,10 +133,72 @@
                 </table>
             </div>
 
-            <div class="mt-4">
-                {{ $materias->appends(request()->query())->links() }}
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $materias->firstItem() }} - 
+                    {{ $materias->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $materias->total() }} {{ __('resultados') }}
+                </div>
+                <div>
+                    {{ $materias->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
             </div>
+            @push('styles')
+            <style>
+                .pagination {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin: 0;
+                }
+                .pagination .page-item {
+                    margin: 0 2px;
+                }
+                .pagination .page-item .page-link {
+                    color: #333;
+                    background-color: #fff;
+                    border: 1px solid #dee2e6;
+                    padding: 0.375rem 0.75rem;
+                    line-height: 1.5;
+                }
+                .pagination .page-item.active .page-link {
+                    background-color: #007bff;
+                    border-color: #007bff;
+                    color: white;
+                }
+            </style>
+            @endpush
         </div>
     </div>
 </div>
 @endsection
+@push('styles')
+<style>
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+}
+
+.pagination .page-item {
+    margin: 0 2px;
+}
+
+.pagination .page-item .page-link {
+    color: #333;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    padding: 0.375rem 0.75rem;
+    line-height: 1.5;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+</style>
+@endpush

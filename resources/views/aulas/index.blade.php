@@ -24,7 +24,7 @@
                     <select name="nivel" class="form-select">
                         <option value="">Todos los niveles</option>
                         @foreach($niveles as $nivel)
-                            <option value="{{ $nivel->id_nivel }}" {{ $filtroNivel == $nivel->id_nivel ? 'selected' : '' }}>
+                            <option value="{{ $nivel->id_nivel }}" {{ ($filtroNivel ?? '') == $nivel->id_nivel ? 'selected' : '' }}>
                                 {{ $nivel->nombre }}
                             </option>
                         @endforeach
@@ -89,8 +89,6 @@
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
-
-                                    <!-- Modal de confirmación de eliminación -->
                                     <div class="modal fade" id="deleteModal{{ $aula->id_aula }}" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
@@ -99,12 +97,7 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <p>¿Está seguro de que desea eliminar el aula correspondiente a:</p>
-                                                    <ul>
-                                                        <li><strong>Nivel:</strong> {{ $aula->nivel->nombre }}</li>
-                                                        <li><strong>Grado:</strong> {{ $aula->grado->nombre }}</li>
-                                                        <li><strong>Sección:</strong> {{ $aula->seccion->nombre }}</li>
-                                                    </ul>
+                                                    <p>¿Está seguro de que desea eliminar el aula <strong>{{ $aula->grado->nombre }} - {{ $aula->seccion->nombre }}</strong>?</p>
                                                     <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
                                                 </div>
                                                 <div class="modal-footer">
@@ -133,11 +126,47 @@
                     </tbody>
                 </table>
             </div>
-
-            <div class="mt-4">
-                {{ $aulas->appends(request()->query())->links() }}
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $aulas->firstItem() }} - 
+                    {{ $aulas->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $aulas->total() }} {{ __('resultados') }}
+                </div>
+                <div>
+                    {{ $aulas->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
             </div>
         </div>
     </div>
 </div>
 @endsection
+@push('styles')
+<style>
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+}
+
+.pagination .page-item {
+    margin: 0 2px;
+}
+
+.pagination .page-item .page-link {
+    color: #333;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    padding: 0.375rem 0.75rem;
+    line-height: 1.5;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+</style>
+@endpush

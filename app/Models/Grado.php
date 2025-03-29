@@ -35,4 +35,21 @@ class Grado extends Model
     {
         return $this->hasMany(Aula::class, 'id_grado');
     }
+    public function scopeOrdenadoPorNivelYNumero($query)
+{
+    return $query->with('nivel')
+        ->get()
+        ->sortBy(function ($grado) {
+            preg_match('/^(\d+)/', $grado->nombre, $matches);
+            $numero = isset($matches[1]) ? intval($matches[1]) : 0;
+            
+            $nombreNivel = $grado->nivel->nombre ?? '';
+            
+            return [
+                $nombreNivel,
+                $numero,
+                $grado->nombre
+            ];
+        });
+}
 }

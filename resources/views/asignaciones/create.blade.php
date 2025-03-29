@@ -51,15 +51,17 @@
     <!-- Campo Materia -->
     <div class="col-md-3">
         <label for="id_materia" class="form-label">Materia <span class="text-danger">*</span></label>
-        <select name="id_materia" id="id_materia" class="form-select" required>
-            <option value="">Seleccione una materia</option>
-            @foreach($materias as $materia)
-                <option value="{{ $materia->id_materia }}"
-                    {{ old('id_materia') == $materia->id_materia ? 'selected' : '' }}>
-                    {{ $materia->nombre }}
-                </option>
-            @endforeach
-        </select>
+        <!-- Campo Materia visible y deshabilitado para el usuario -->
+<select id="id_materia_disabled" class="form-select" disabled>
+    <option value="">Seleccione una materia</option>
+    @foreach($materias as $materia)
+        <option value="{{ $materia->id_materia }}">{{ $materia->nombre }}</option>
+    @endforeach
+</select>
+
+<!-- Campo Materia oculto que se enviará en el formulario -->
+<input type="hidden" name="id_materia" id="id_materia">
+
     </div>
     <!-- Campo Nivel -->
     <div class="col-md-3">
@@ -161,20 +163,19 @@
         const materiaSelect = document.getElementById('id_materia');
 
         docenteSelect.addEventListener('change', function() {
-            // Se obtiene el id de la materia desde el atributo data-materia del docente seleccionado
-            const selectedOption = this.options[this.selectedIndex];
-            const materiaId = selectedOption.getAttribute('data-materia');
+    const selectedOption = this.options[this.selectedIndex];
+    const materiaId = selectedOption.getAttribute('data-materia');
 
-            if (materiaId) {
-                // Si el docente ya tiene materia asignada, se selecciona esa opción y se deshabilita el select
-                materiaSelect.value = materiaId;
-                materiaSelect.disabled = true;
-            } else {
-                // Si no tiene materia asignada, se habilita el select y se restablece a su valor inicial
-                materiaSelect.value = "";
-                materiaSelect.disabled = false;
-            }
-        });
+    if (materiaId) {
+        document.getElementById('id_materia').value = materiaId;
+        // También se puede actualizar el select visible si es necesario
+        document.getElementById('id_materia_disabled').value = materiaId;
+    } else {
+        document.getElementById('id_materia').value = "";
+        document.getElementById('id_materia_disabled').value = "";
+    }
+});
+
 
         // Opcional: Si hay un docente seleccionado al cargar la página, se dispara el cambio
         if (docenteSelect.value) {

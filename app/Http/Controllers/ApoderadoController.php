@@ -58,6 +58,7 @@ class ApoderadoController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:50',
+            'apellido' => 'required|string|max:50',
             'dni' => 'nullable|string|max:20|unique:apoderados',
             'relacion' => 'required|string|max:30',
             'telefono' => 'nullable|string|max:20',
@@ -120,6 +121,7 @@ class ApoderadoController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:50',
+            'apellido' => 'required|string|max:50',
             'dni' => 'nullable|string|max:20|unique:apoderados,dni,'.$apoderado->id_apoderado.',id_apoderado',
             'relacion' => 'required|string|max:30',
             'telefono' => 'nullable|string|max:20',

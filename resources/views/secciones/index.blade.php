@@ -133,10 +133,58 @@
                 </table>
             </div>
 
-            <div class="mt-4">
-                {{ $secciones->appends(request()->query())->links() }}
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $secciones->firstItem() }} - 
+                    {{ $secciones->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $secciones->total() }} {{ __('resultados') }}
+                </div>
+                <div>
+                    {{ $secciones->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
             </div>
+
+        @push('styles')
+        <style>
+            /* Optional: Additional styling to remove any remaining unwanted text */
+            .pagination small,
+            .pagination .text-muted {
+                display: none !important;
+            }
+        </style>
+        @endpush
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+}
+
+.pagination .page-item {
+    margin: 0 2px;
+}
+
+.pagination .page-item .page-link {
+    color: #333;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    padding: 0.375rem 0.75rem;
+    line-height: 1.5;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+</style>
+@endpush
 @endsection

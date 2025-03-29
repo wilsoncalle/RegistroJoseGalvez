@@ -16,6 +16,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Nombre:</strong> {{ $estudiante->nombre }}</p>
+                    <p><strong>Apellido:</strong> {{ $estudiante->apellido}}</p>
                     <p><strong>DNI:</strong> {{ $estudiante->dni ?: 'No registrado' }}</p>
                     <p><strong>Fecha de Nacimiento:</strong> 
                         {{ $estudiante->fecha_nacimiento ? \Carbon\Carbon::parse($estudiante->fecha_nacimiento)->format('d/m/Y') : 'No registrada' }}
@@ -53,6 +54,7 @@
                         <thead>
                             <tr>
                                 <th>Nombre</th>
+                                <th>Apellido</th>
                                 <th>DNI</th>
                                 <th>Teléfono</th>
                                 <th>Email</th>

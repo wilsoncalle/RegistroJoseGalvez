@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id('id_aula');
             $table->foreignId('id_nivel')->constrained('niveles', 'id_nivel')->onDelete('cascade');
             $table->foreignId('id_grado')->constrained('grados', 'id_grado')->onDelete('cascade');
-            $table->foreignId('id_seccion')->constrained('secciones', 'id_seccion')->onDelete('cascade');
+            $table->foreignId('id_seccion')->nullable()->constrained('secciones', 'id_seccion')->onDelete('cascade');
             $table->unique(['id_nivel', 'id_grado', 'id_seccion']);
             $table->timestamps();
         });

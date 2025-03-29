@@ -16,6 +16,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Nombre:</strong> {{ $apoderado->nombre }}</p>
+                    <p><strong>Apellido:</strong> {{ $apoderado->apellido }}</p>
                     <p><strong>DNI:</strong> {{ $apoderado->dni ?: 'No registrado' }}</p>
                     <p><strong>Relación:</strong> {{ $apoderado->relacion ?: 'No registrado' }}</p>
                     <p><strong>Teléfono:</strong> {{ $apoderado->telefono ?: 'No registrado' }}</p>
@@ -31,6 +32,7 @@
                         <thead>
                             <tr>
                                 <th>Nombre</th>
+                                <th>Apellido</th>
                                 <th>DNI</th>
                                 <th>Teléfono</th>
                                 <th>Aula</th>

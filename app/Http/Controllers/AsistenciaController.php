@@ -1,0 +1,342 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Asistencia;
+use App\Models\Aula;
+use App\Models\Nivel;
+use App\Models\Estudiante;
+use App\Models\Materia;
+use App\Models\Docente;
+use App\Models\Asignacion;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
+
+class AsistenciaController extends Controller
+{
+    public function index(): View
+    {
+        $niveles = Nivel::all();
+        return view('asistencias.index', compact('niveles'));
+    }
+
+    public function indexNivel(string $nivel): View
+    {
+        $nivelModel = Nivel::where('nombre', $nivel)->firstOrFail();
+        $aulas = Aula::with(['nivel', 'grado', 'seccion'])
+            ->where('id_nivel', $nivelModel->id_nivel)
+            ->get()
+            ->sortBy(function($aula) {
+                return $aula->grado->nombre . ' ' . $aula->seccion->nombre;
+            });
+
+        return view('asistencias.index-nivel', compact('aulas', 'nivel'));
+    }
+
+    public function create(Request $request): View
+    {
+        $aula = Aula::with(['nivel', 'grado', 'seccion'])->findOrFail($request->id_aula);
+        $materias = Materia::whereHas('asignaciones', function($query) use ($aula) {
+            $query->where('id_aula', $aula->id_aula);
+        })->get();
+
+        $estudiantes = Estudiante::where('id_aula', $aula->id_aula)
+            ->where('estado', 'Activo')
+            ->orderBy('nombre')
+            ->get();
+
+        return view('asistencias.create', compact('aula', 'materias', 'estudiantes'));
+    }
+
+    public function getDocentesPorMateria($materiaId, $aulaId) {
+        try {
+       
+    
+            // Find docentes (teachers) associated with the specific subject and classroom
+            $docentes = Docente::whereHas('asignaciones', function ($query) use ($materiaId, $aulaId) {
+                $query->where('id_materia', $materiaId)
+                      ->where('id_aula', $aulaId);
+            })->select('id_docente', 'nombre', 'apellido')->get();
+    
+            // Throw an exception if no teachers are found
+            if ($docentes->isEmpty()) {
+                throw new \Exception('No se encontraron docentes para esta materia y aula');
+            }
+    
+            // Return the found teachers as a JSON response
+            return response()->json($docentes);
+    
+        } catch (\Exception $e) {
+
+            // Return an error response
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    public function store(Request $request): RedirectResponse
+{
+    $request->validate([
+        'id_aula' => 'required|exists:aulas,id_aula',
+        'id_materia' => 'required|exists:materias,id_materia',
+        'id_docente' => 'required|exists:docentes,id_docente',
+        'fecha' => 'required|date',
+        'asistencias' => 'required|array',
+        'asistencias.*' => 'required|in:P,T,F,J',
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        // Find the specific asignacion
+        $asignacion = Asignacion::where('id_aula', $request->id_aula)
+            ->where('id_materia', $request->id_materia)
+            ->where('id_docente', $request->id_docente)
+            ->first();
+
+        if (!$asignacion) {
+            throw new \Exception('No se encontró la asignación correspondiente');
+        }
+
+        // Check for existing attendance records using id_asignacion
+        $existingAttendance = Asistencia::where('fecha', $request->fecha)
+            ->where('id_asignacion', $asignacion->id_asignacion)
+            ->first();
+
+        if ($existingAttendance) {
+            DB::rollBack();
+            return back()->withInput()
+                ->with('error', 'Ya existe un registro de asistencia para esta asignación y fecha.');
+        }
+
+        // Prepare bulk insert data
+        $attendanceData = [];
+        foreach ($request->asistencias as $estudianteId => $estado) {
+            $attendanceData[] = [
+                'id_estudiante' => $estudianteId,
+                'id_asignacion' => $asignacion->id_asignacion,
+                'fecha' => $request->fecha,
+                'estado' => $this->mapEstadoToFullName($estado),
+                'created_at' => now(),
+                'updated_at' => now()
+            ];
+        }
+
+        // Bulk insert for better performance
+        Asistencia::insert($attendanceData);
+
+        DB::commit();
+        return redirect()->route('asistencias.index')
+            ->with('success', 'Asistencias registradas correctamente.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error al registrar asistencias: ' . $e->getMessage());
+        return back()->withInput()
+            ->with('error', 'Error al registrar asistencias: ' . $e->getMessage());
+    }
+}
+
+// Helper method to map short states to full names
+private function mapEstadoToFullName($estado)
+{
+    $estadoMap = [
+        'P' => 'Presente',
+        'T' => 'Tardanza',
+        'F' => 'Ausente',
+        'J' => 'Justificado'
+    ];
+
+    return $estadoMap[$estado] ?? 'Ausente';
+}
+public function show(Request $request, string $nivel, int $aulaId): View
+{
+    $aula = Aula::with(['nivel', 'grado', 'seccion'])
+        ->findOrFail($aulaId);
+
+    $materias = Materia::whereHas('asignaciones', function($query) use ($aulaId) {
+        $query->where('id_aula', $aulaId);
+    })->get();
+
+    $estudiantes = Estudiante::where('id_aula', $aulaId)
+        ->where('estado', 'Activo')
+        ->orderBy('nombre')
+        ->get();
+
+    return view('asistencias.show', compact('aula', 'nivel', 'materias', 'estudiantes'));
+}
+
+public function getAttendanceDetails(Request $request): JsonResponse
+{
+    $request->validate([
+        'id_aula' => 'required|exists:aulas,id_aula',
+        'id_materia' => 'required|exists:materias,id_materia',
+        'id_docente' => 'required|exists:docentes,id_docente',
+        'mes' => 'required|integer|between:1,12',
+        'año' => 'required|integer|min:2000'
+    ]);
+
+    try {
+        // Get the date range for the selected month and year
+        $primerDia = \Carbon\Carbon::create($request->año, $request->mes, 1);
+        $ultimoDia = $primerDia->copy()->endOfMonth();
+
+        // Find the specific asignacion
+        $asignacion = Asignacion::where('id_aula', $request->id_aula)
+            ->where('id_materia', $request->id_materia)
+            ->where('id_docente', $request->id_docente)
+            ->first();
+
+        if (!$asignacion) {
+            throw new \Exception('No se encontró la asignación correspondiente');
+        }
+
+        // Get all attendance records for this assignment in the specified month
+        $attendances = Asistencia::where('id_asignacion', $asignacion->id_asignacion)
+            ->whereBetween('fecha', [$primerDia, $ultimoDia])
+            ->get()
+            ->groupBy('id_estudiante');
+
+        // Prepare the data to return
+        $attendanceDetails = [];
+        $studentStats = [];
+
+        $estudiantes = Estudiante::where('id_aula', $request->id_aula)
+            ->where('estado', 'Activo')
+            ->get();
+
+        foreach ($estudiantes as $estudiante) {
+            $studentAttendance = $attendances->get($estudiante->id_estudiante, collect());
+            
+            $monthlyStats = [
+                'P' => 0, // Presente
+                'T' => 0, // Tardanza
+                'F' => 0, // Ausente
+                'J' => 0  // Justificado
+            ];
+
+            $dailyAttendance = [];
+            for ($day = 1; $day <= $ultimoDia->day; $day++) {
+                $currentDate = \Carbon\Carbon::create($request->año, $request->mes, $day);
+                $attendanceRecord = $studentAttendance->first(function($record) use ($currentDate) {
+                    return \Carbon\Carbon::parse($record->fecha)->format('Y-m-d') === $currentDate->format('Y-m-d');
+                });
+                
+                
+                $status = $attendanceRecord ? $this->mapFullNameToEstado($attendanceRecord->estado) : null;
+                $dailyAttendance[$day] = $status;
+
+                if ($status) {
+                    $monthlyStats[$status]++;
+                }
+            }
+
+            $studentStats[$estudiante->id_estudiante] = [
+                'nombre' => $estudiante->nombre . ' ' . $estudiante->apellido,
+                'daily_attendance' => $dailyAttendance,
+                'monthly_stats' => $monthlyStats
+            ];
+        }
+
+        return response()->json([
+            'attendance_details' => $studentStats,
+            'total_days' => $ultimoDia->day
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => true,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
+// Helper method to map full names to short states (reverse of previous method)
+private function mapFullNameToEstado($estado)
+{
+    $estadoMap = [
+        'Presente' => 'P',
+        'Tardanza' => 'T',
+        'Ausente' => 'F',
+        'Justificado' => 'J'
+    ];
+
+    return $estadoMap[$estado] ?? 'F';
+}
+
+    public function updateAttendance(Request $request): JsonResponse
+    {
+        $request->validate([
+            'id_aula' => 'required|exists:aulas,id_aula',
+            'id_materia' => 'required|exists:materias,id_materia',
+            'id_docente' => 'required|exists:docentes,id_docente',
+            'mes' => 'required|integer|between:1,12',
+            'año' => 'required|integer|min:2000',
+            'modificaciones' => 'required|array'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Encontrar la asignación correspondiente
+            $asignacion = Asignacion::where('id_aula', $request->id_aula)
+                ->where('id_materia', $request->id_materia)
+                ->where('id_docente', $request->id_docente)
+                ->first();
+
+            if (!$asignacion) {
+                throw new \Exception('No se encontró la asignación correspondiente');
+            }
+
+            // Obtener el rango de fechas para el mes y año seleccionados
+            $primerDia = \Carbon\Carbon::create($request->año, $request->mes, 1);
+            $ultimoDia = $primerDia->copy()->endOfMonth();
+
+            // Procesar cada modificación
+            foreach ($request->modificaciones as $estudianteId => $fechas) {
+                foreach ($fechas as $dia => $estado) {
+                    // Crear la fecha completa
+                    $fecha = \Carbon\Carbon::create($request->año, $request->mes, $dia)->format('Y-m-d');
+
+                    // Buscar si ya existe un registro para esta fecha, estudiante y asignación
+                    $asistencia = Asistencia::where('id_estudiante', $estudianteId)
+                        ->where('id_asignacion', $asignacion->id_asignacion)
+                        ->where('fecha', $fecha)
+                        ->first();
+
+                    // Mapear el estado corto al nombre completo
+                    $estadoCompleto = $this->mapEstadoToFullName($estado);
+
+                    if ($asistencia) {
+                        // Actualizar el registro existente
+                        $asistencia->estado = $estadoCompleto;
+                        $asistencia->save();
+                    } else {
+                        // Crear un nuevo registro
+                        Asistencia::create([
+                            'id_estudiante' => $estudianteId,
+                            'id_asignacion' => $asignacion->id_asignacion,
+                            'fecha' => $fecha,
+                            'estado' => $estadoCompleto
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al actualizar asistencias: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+}

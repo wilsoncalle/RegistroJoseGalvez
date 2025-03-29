@@ -57,4 +57,9 @@ class Docente extends Model
     {
         return $this->belongsTo(Materia::class, 'id_materia', 'id_materia');
     }
+    public function asignaciones()
+{
+    return $this->hasMany(Asignacion::class, 'id_docente', 'id_docente');
+}
+
 }

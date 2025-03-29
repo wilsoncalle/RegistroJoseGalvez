@@ -46,5 +46,13 @@ class Asignacion extends Model
     {
         return $this->hasOneThrough(Nivel::class, Aula::class, 'id_aula', 'id_nivel', 'id_aula', 'id_nivel');
     }
+    public function seccion()
+    {
+        return $this->hasOneThrough(Seccion::class, Aula::class, 'id_aula', 'id_seccion', 'id_aula', 'id_seccion');
+    }
+    public function grado()
+    {
+        return $this->hasOneThrough(Grado::class, Aula::class, 'id_aula', 'id_grado', 'id_aula', 'id_grado');
+    }
     
 }

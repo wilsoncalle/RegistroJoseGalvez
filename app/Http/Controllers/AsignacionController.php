@@ -10,6 +10,7 @@ use App\Models\Materia;
 use App\Models\AnioAcademico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\RedirectResponse;
 
 class AsignacionController extends Controller
 {
@@ -62,7 +63,7 @@ class AsignacionController extends Controller
         return view('asignaciones.create', compact('niveles', 'docentes', 'materias', 'anios'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'id_docente' => 'required|exists:docentes,id_docente',
@@ -73,12 +74,41 @@ class AsignacionController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Verificar si ya existe una asignación con los mismos datos
+            $asignacionExistente = Asignacion::where('id_docente', $request->id_docente)
+                ->where('id_materia', $request->id_materia)
+                ->where('id_aula', $request->id_aula)
+                ->where('id_anio', $request->id_anio)
+                ->first();
+
+            if ($asignacionExistente) {
+                DB::rollBack();
+                return back()->withInput()
+                    ->with('error', 'Ya existe una asignación con estos datos. Por favor, verifique los datos ingresados.');
+            }
+
             Asignacion::create($request->all());
             DB::commit();
-            return redirect()->route('asignaciones.index')->with('success', 'Asignación creada correctamente.');
+            return redirect()->route('asignaciones.index')
+                ->with('success', 'Asignación creada correctamente.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Error al crear asignación: ' . $e->getMessage());
+            return back()->withInput()
+                ->with('error', 'Error al crear asignación: ' . $e->getMessage());
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $asignacion = Asignacion::with(['aula.nivel', 'docente', 'materia', 'anioAcademico'])
+                ->findOrFail($id);
+            
+            return view('asignaciones.show', compact('asignacion'));
+        } catch (\Exception $e) {
+            return redirect()->route('asignaciones.index')
+                ->with('error', 'Error al cargar la asignación: ' . $e->getMessage());
         }
     }
 
@@ -118,6 +148,21 @@ class AsignacionController extends Controller
             DB::beginTransaction();
             
             $asignacion = Asignacion::findOrFail($id);
+
+            // Verificar si ya existe una asignación con los mismos datos (excluyendo la actual)
+            $asignacionExistente = Asignacion::where('id_docente', $request->id_docente)
+                ->where('id_materia', $request->id_materia)
+                ->where('id_aula', $request->id_aula)
+                ->where('id_anio', $request->id_anio)
+                ->where('id_asignacion', '!=', $id)
+                ->first();
+
+            if ($asignacionExistente) {
+                DB::rollBack();
+                return back()->withInput()
+                    ->with('error', 'Ya existe una asignación con estos datos. Por favor, verifique los datos ingresados.');
+            }
+            
             $asignacion->update($request->all());
             
             DB::commit();

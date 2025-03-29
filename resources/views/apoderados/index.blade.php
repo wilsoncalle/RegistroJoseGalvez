@@ -67,6 +67,7 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre</th>
+                                <th>Apellido</th>
                                 <th>DNI</th>
                                 <th>Relación</th>
                                 <th>Teléfono</th>
@@ -79,6 +80,7 @@
                                 <tr>
                                     <td>{{ $apoderado->id_apoderado }}</td>
                                     <td>{{ $apoderado->nombre }}</td>
+                                    <td>{{ $apoderado->apellido }}</td>
                                     <td>{{ $apoderado->dni ?? 'No registrado' }}</td>
                                     <td>{{ $apoderado->relacion }}</td>
                                     <td>{{ $apoderado->telefono }}</td>
@@ -112,7 +114,7 @@
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body">
-                                                        <p>¿Está seguro que desea eliminar al apoderado <strong>{{ $apoderado->nombre }}</strong>?</p>
+                                                        <p>¿Está seguro que desea eliminar al apoderado <strong>{{ $apoderado->nombre }} {{ $apoderado->apellido }}</strong>?</p>
                                                         @if($apoderado->estudiantes->count() > 0)
                                                             <div class="alert alert-warning">
                                                                 <i class="bi bi-exclamation-triangle me-1"></i>
@@ -139,7 +141,7 @@
                                 </tr>
                            @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4">
+                                    <td colspan="8" class="text-center py-4">
                                         <p class="text-muted mb-0">No se encontraron apoderados con los criterios especificados.</p>
                                         <a href="{{ route('apoderados.index') }}" class="btn btn-sm btn-outline-secondary mt-3">
                                             <i class="bi bi-arrow-repeat me-1"></i> Mostrar todos los apoderados

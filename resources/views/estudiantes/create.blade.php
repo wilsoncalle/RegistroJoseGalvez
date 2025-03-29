@@ -35,8 +35,12 @@
 
                 <div class="row mb-3">
                     <div class="col-md-3">
-                        <label for="nombre" class="form-label">Nombre Completo <span class="text-danger">*</span></label>
+                        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre') }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="apellido" class="form-label">Apellido <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="apellido" name="apellido" value="{{ old('apellido') }}" required>
                     </div>
                     <div class="col-md-3">
                         <label for="dni" class="form-label">DNI</label>
