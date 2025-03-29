@@ -27,6 +27,13 @@
                     <p><strong>Fecha de Contratación:</strong> 
                         {{ $docente->fecha_contratacion ? \Carbon\Carbon::parse($docente->fecha_contratacion)->format('d/m/Y') : 'No registrada' }}
                     </p>
+                    <p><strong>Nivel:</strong>
+                        @if($docente->materia && $docente->materia->nivel)
+                            {{ $docente->materia->nivel->nombre }}
+                        @else
+                            No asignado
+                        @endif
+                    </p>
                     <p><strong>Materia Asignada:</strong> 
                         @if($docente->materia)
                             {{ $docente->materia->nombre }}
@@ -34,6 +41,7 @@
                             No asignada
                         @endif
                     </p>
+                    
                     <p><strong>Dirección:</strong> {{ $docente->direccion ?: 'No registrada' }}</p>
                 </div>
             </div>

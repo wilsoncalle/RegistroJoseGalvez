@@ -52,13 +52,12 @@
     <div class="col-md-3">
         <label for="id_materia" class="form-label">Materia <span class="text-danger">*</span></label>
         <!-- Campo Materia visible y deshabilitado para el usuario -->
-<select id="id_materia_disabled" class="form-select" disabled>
-    <option value="">Seleccione una materia</option>
-    @foreach($materias as $materia)
-        <option value="{{ $materia->id_materia }}">{{ $materia->nombre }}</option>
-    @endforeach
-</select>
-
+        <select id="id_materia_disabled" class="form-select" disabled>
+            <option value="">Seleccione una materia</option>
+            @foreach($materias as $materia)
+                <option value="{{ $materia->id_materia }}">{{ $materia->nombre }}</option>
+            @endforeach
+        </select>
 <!-- Campo Materia oculto que se enviará en el formulario -->
 <input type="hidden" name="id_materia" id="id_materia">
 

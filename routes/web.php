@@ -11,6 +11,7 @@ use App\Http\Controllers\CalificacionController;
 use App\Http\Controllers\IncidenteController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AulaController;
+use App\Http\Controllers\DocenteController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -33,6 +34,8 @@ Route::middleware(['auth'])->group(function () {
     // Rutas de Docentes
     Route::resource('docentes', \App\Http\Controllers\DocenteController::class);
     Route::get('aulas/nivel/{nivelId}', [EstudianteController::class, 'getAulasPorNivel'])->name('aulas.nivel');
+    Route::get('materias-por-nivel', [DocenteController::class, 'getMateriasPorNivel'])->name('materias.pornivel');
+
 
     // Rutas de Apoderados
     Route::resource('apoderados', \App\Http\Controllers\ApoderadoController::class);

@@ -18,7 +18,7 @@
                     <label for="busqueda" class="form-label">Buscar</label>
                     <input type="text" class="form-control" id="busqueda" name="busqueda" placeholder="Nombre o DNI" value="{{ $busqueda }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label for="nivel" class="form-label">Nivel</label>
                     <select class="form-select" id="nivel" name="nivel">
                         <option value="">Todos los niveles</option>
@@ -30,7 +30,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="aula" class="form-label">Aula</label>
                     <select class="form-select" id="aula" name="aula" disabled>
                         <option value="">Todas las aulas</option>
@@ -101,7 +101,7 @@
                                 <td>{{ $estudiante->id_estudiante }}</td>
                                 <td>{{ $estudiante->nombre }}</td>
                                 <td>{{ $estudiante->apellido }}</td>
-                                <td>{{ $estudiante->dni }}</td>
+                                <td>{{ $estudiante->dni ?: 'No registrado'}}</td>
                                 <td>{{ $estudiante->aula && $estudiante->aula->nivel ? $estudiante->aula->nivel->nombre : 'No definido' }}</td>
                                 <td>
                                     @if($estudiante->aula)

@@ -13,7 +13,7 @@ class SeccionController extends Controller
     {
         $busqueda = $request->get('busqueda');
         $filtroNivel = $request->get('nivel_id');
-        $filtroGrado = $request->get('grado_id'); // Ahora usando "grado_id" para ser consistente con la vista
+        $filtroGrado = $request->get('grado_id'); // Consistente con la vista
 
         $secciones = Seccion::with(['grado.nivel'])
             ->when($busqueda, function ($query) use ($busqueda) {

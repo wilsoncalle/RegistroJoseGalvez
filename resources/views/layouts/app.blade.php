@@ -59,6 +59,10 @@
         .dropdown-item i {
             margin-right: 5px;
         }
+        .table th {
+            white-space: nowrap;
+        }
+
     </style>
 </head>
 <body>

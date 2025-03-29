@@ -10,23 +10,29 @@ use Illuminate\Support\Facades\DB;
 class MateriaController extends Controller
 {
     public function index(Request $request)
-    {
-        $busqueda = $request->input('busqueda');
-        $filtroNivel = $request->input('nivel');
-        
-        $materias = Materia::with('nivel')
-            ->when($busqueda, function ($query, $busqueda) {
-                return $query->where('nombre', 'LIKE', "%{$busqueda}%");
-            })
-            ->when($filtroNivel, function ($query, $nivel) {
-                return $query->where('id_nivel', $nivel);
-            })
-            ->paginate(10);
-        
-        $niveles = Nivel::all();
-        
-        return view('materias.index', compact('materias', 'busqueda', 'filtroNivel', 'niveles'));
-    }
+{
+    $busqueda = $request->input('busqueda');
+    $filtroNivel = $request->input('nivel');
+    
+    $materias = Materia::with('nivel')
+        ->when($busqueda, function ($query, $busqueda) {
+            return $query->where('nombre', 'LIKE', "%{$busqueda}%");
+        })
+        ->when($filtroNivel, function ($query, $nivel) {
+            return $query->where('id_nivel', $nivel);
+        })
+        ->join('niveles', 'materias.id_nivel', '=', 'niveles.id_nivel')
+        ->orderByRaw("FIELD(niveles.nombre, 'Inicial', 'Primaria', 'Secundaria')")
+        ->orderBy('materias.nombre')  // Ordena las materias dentro del nivel
+        ->select('materias.*')
+  
+        ->paginate(10);
+
+    $niveles = Nivel::all();
+
+    return view('materias.index', compact('materias', 'busqueda', 'filtroNivel', 'niveles'));
+}
+
 
     public function create()
     {

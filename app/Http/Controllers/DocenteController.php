@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Docente;
 use App\Models\Materia;
+use App\Models\Nivel; // Asegúrate de tener este modelo
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,8 +18,9 @@ class DocenteController extends Controller
         // Filtros
         $busqueda = $request->input('busqueda');
         $filtroMateria = $request->input('materia');
+        $filtroNivel = $request->input('nivel');
 
-        $docentes = Docente::with('materia')
+        $docentes = Docente::with('materia.nivel')
             ->when($busqueda, function ($query, $busqueda) {
                 return $query->where(function ($q) use ($busqueda) {
                     $q->where('nombre', 'LIKE', "%{$busqueda}%")
@@ -30,14 +32,23 @@ class DocenteController extends Controller
             ->when($filtroMateria, function ($query, $filtroMateria) {
                 return $query->where('id_materia', $filtroMateria);
             })
+            ->when($filtroNivel, function ($query, $filtroNivel) {
+                // Filtrar docentes que tengan materia con el nivel seleccionado
+                return $query->whereHas('materia', function ($q) use ($filtroNivel) {
+                    $q->where('id_nivel', $filtroNivel);
+                });
+            })
             ->orderBy('apellido')
             ->orderBy('nombre')
-            ->paginate(15);
+            ->paginate(10);
 
         // Obtener materias para el filtro
         $materias = Materia::orderBy('nombre')->get();
 
-        return view('docentes.index', compact('docentes', 'materias', 'busqueda', 'filtroMateria'));
+        // Obtener niveles para el filtro
+        $niveles = Nivel::orderBy('nombre')->get();
+
+        return view('docentes.index', compact('docentes', 'materias', 'niveles', 'busqueda', 'filtroMateria', 'filtroNivel'));
     }
 
     /**
@@ -45,9 +56,23 @@ class DocenteController extends Controller
      */
     public function create()
     {
-        $materias = Materia::orderBy('nombre')->get();
+        $niveles = Nivel::orderBy('nombre')->get();
+        // No se cargan materias de forma predeterminada hasta seleccionar un nivel
+        $materias = [];
         
-        return view('docentes.create', compact('materias'));
+        return view('docentes.create', compact('materias', 'niveles'));
+    }
+
+    /**
+     * Método para obtener las materias según el nivel seleccionado.
+     */
+    public function getMateriasPorNivel(Request $request)
+    {
+        $nivelId = $request->input('id_nivel');
+        // Se asume que en la tabla de materias existe la columna 'id_nivel'
+        $materias = Materia::where('id_nivel', $nivelId)->orderBy('nombre')->get();
+
+        return response()->json($materias);
     }
 
     /**
@@ -64,7 +89,8 @@ class DocenteController extends Controller
             'telefono'          => 'nullable|string|max:20',
             'email'             => 'nullable|email|max:100|unique:docentes',
             'fecha_contratacion'=> 'nullable|date',
-            'id_materia'        => 'nullable|exists:materias,id_materia',
+            'nivel'             => 'required', // Se valida que se haya seleccionado un nivel
+            'id_materia'        => 'required|exists:materias,id_materia',
         ]);
 
         try {
@@ -91,21 +117,29 @@ class DocenteController extends Controller
      */
     public function show(Docente $docente)
     {
-        $docente->load('materia');
-        
+        $docente->load('materia.nivel');
         return view('docentes.show', compact('docente'));
     }
-
+    
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(Docente $docente)
     {
-        $docente->load('materia');
-        $materias = Materia::orderBy('nombre')->get();
+        $docente->load('materia.nivel');
+        $niveles = Nivel::orderBy('nombre')->get();
         
-        return view('docentes.edit', compact('docente', 'materias'));
+        // Filtrar materias según el nivel asignado al docente, si tiene una materia asignada.
+        $materias = [];
+        if ($docente->materia) {
+            $materias = Materia::where('id_nivel', $docente->materia->nivel->id_nivel)
+                ->orderBy('nombre')
+                ->get();
+        }
+        
+        return view('docentes.edit', compact('docente', 'materias', 'niveles'));
     }
+    
 
     /**
      * Update the specified resource in storage.

@@ -89,13 +89,13 @@
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <button type="button" class="btn btn-sm btn-danger" 
-                                                data-bs-toggle="modal" data-bs-target="#deleteModal{{ $materia->id }}">
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal{{ $materia->id_materia }}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
 
                                     <!-- Modal de confirmación de eliminación -->
-                                    <div class="modal fade" id="deleteModal{{ $materia->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal fade" id="deleteModal{{ $materia->id_materia }}" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <div class="modal-header">

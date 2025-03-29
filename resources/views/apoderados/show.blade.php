@@ -44,6 +44,7 @@
                             @foreach($apoderado->estudiantes as $estudiante)
                                 <tr>
                                     <td>{{ $estudiante->nombre }}</td>
+                                    <td>{{ $estudiante->apellido?: 'No registrado' }}</td>
                                     <td>{{ $estudiante->dni ?: 'No registrado' }}</td>
                                     <td>{{ $estudiante->telefono ?: 'No registrado' }}</td>
                                     <td>

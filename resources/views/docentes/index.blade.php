@@ -20,19 +20,27 @@
                            placeholder="Nombre, Apellido o DNI" value="{{ $busqueda }}">
                 </div>
                 
-                <div class="col-md-4">
-                    <label for="materia" class="form-label">Materia</label>
-                    <select class="form-select" id="materia" name="materia">
-                        <option value="">Todas las materias</option>
-                        @foreach($materias as $materia)
-                            <option value="{{ $materia->id_materia }}" {{ $filtroMateria == $materia->id_materia ? 'selected' : '' }}>
-                                {{ $materia->nombre }}
+                <div class="col-md-3">
+                    <label for="nivel" class="form-label">Nivel</label>
+                    <select class="form-select" id="nivel" name="nivel">
+                        <option value="">Todos los niveles</option>
+                        @foreach($niveles as $nivel)
+                            <option value="{{ $nivel->id_nivel }}" {{ ($filtroNivel == $nivel->id_nivel) ? 'selected' : '' }}>
+                                {{ $nivel->nombre }}
                             </option>
                         @endforeach
                     </select>
                 </div>
                 
-                <div class="col-md-4 d-flex align-items-end">
+                <div class="col-md-3">
+                    <label for="materia" class="form-label">Materia</label>
+                    <select class="form-select" id="materia" name="materia" disabled>
+                        <option value="">Seleccione un nivel primero</option>
+                        <!-- Las materias se cargarán dinámicamente -->
+                    </select>
+                </div>
+                
+                <div class="col-md-12 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary me-2">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
@@ -68,6 +76,7 @@
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>DNI</th>
+                            <th>Nivel</th>
                             <th>Materia</th>
                             <th>Teléfono</th>
                             <th>Acciones</th>
@@ -79,7 +88,14 @@
                                 <td>{{ $docente->id_docente }}</td>
                                 <td>{{ $docente->nombre }}</td>
                                 <td>{{ $docente->apellido }}</td>
-                                <td>{{ $docente->dni }}</td>
+                                <td>{{ $docente->dni ?: 'No registrado'}}</td>
+                                <td>
+                                    @if($docente->materia && $docente->materia->nivel)
+                                        {{ $docente->materia->nivel->nombre }}
+                                    @else
+                                        <span class="text-muted">No especificado</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($docente->materia)
                                         {{ $docente->materia->nombre }}
@@ -147,4 +163,50 @@
         </div>
     </div>
 </div>
+
+<!-- Script para cargar dinámicamente las materias según el nivel seleccionado -->
+<script>
+    // Función para cargar materias basadas en el nivel
+    function cargarMaterias(nivelId, materiaSeleccionada = '') {
+        const materiaSelect = document.getElementById('materia');
+        // Reiniciar opciones
+        materiaSelect.innerHTML = '<option value="">Todas las materias</option>';
+
+        if(nivelId === '') {
+            materiaSelect.disabled = true;
+            return;
+        }
+
+        materiaSelect.disabled = false;
+
+        fetch("{{ route('materias.pornivel') }}?id_nivel=" + nivelId)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(materia => {
+                    let option = document.createElement('option');
+                    option.value = materia.id_materia; // Ajusta según tu campo identificador
+                    option.text = materia.nombre;
+                    if(materiaSeleccionada == materia.id_materia) {
+                        option.selected = true;
+                    }
+                    materiaSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Escuchar el cambio del select de nivel
+    document.getElementById('nivel').addEventListener('change', function() {
+        cargarMaterias(this.value);
+    });
+
+    // Al cargar la página, si ya hay un nivel seleccionado, cargar las materias correspondientes
+    document.addEventListener('DOMContentLoaded', function() {
+        const nivelSelect = document.getElementById('nivel');
+        const nivelValor = nivelSelect.value;
+        @if(!empty($filtroNivel))
+            cargarMaterias(nivelValor, '{{ $filtroMateria }}');
+        @endif
+    });
+</script>
 @endsection

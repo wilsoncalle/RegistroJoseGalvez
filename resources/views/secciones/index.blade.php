@@ -14,15 +14,29 @@
     <div class="card mb-4">
         <div class="card-body">
             <form action="{{ route('secciones.index') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-4">
+                <!-- Buscar por nombre -->
+                <div class="col-md-3">
                     <label for="busqueda" class="form-label">Buscar por nombre</label>
                     <input type="text" class="form-control" id="busqueda" name="busqueda" 
                            placeholder="Nombre de la sección" value="{{ $busqueda ?? '' }}">
                 </div>
-                <div class="col-md-4">
+                <!-- Filtrar por nivel -->
+                <div class="col-md-3">
+                    <label for="nivel_id" class="form-label">Filtrar por nivel</label>
+                    <select class="form-select" id="nivel_id" name="nivel_id">
+                        <option value="">Todos los niveles</option>
+                        @foreach($niveles as $nivel)
+                            <option value="{{ $nivel->id_nivel }}" {{ ($filtroNivel ?? '') == $nivel->id_nivel ? 'selected' : '' }}>
+                                {{ $nivel->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <!-- Filtrar por grado -->
+                <div class="col-md-3">
                     <label for="grado_id" class="form-label">Filtrar por grado</label>
-                    <select class="form-select" id="grado_id" name="grado_id">
-                        <option value="">Todos los grados</option>
+                    <select class="form-select" id="grado_id" name="grado_id" disabled>
+                        <option value="">Seleccione un grado...</option>
                         @foreach($grados as $grado)
                             <option value="{{ $grado->id_grado }}" {{ ($filtroGrado ?? '') == $grado->id_grado ? 'selected' : '' }}>
                                 {{ $grado->nombre }}
@@ -30,7 +44,8 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
+                <!-- Botones -->
+                <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary me-2">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
@@ -148,7 +163,7 @@
 
         @push('styles')
         <style>
-            /* Optional: Additional styling to remove any remaining unwanted text */
+            /* Opcional: eliminar textos no deseados en la paginación */
             .pagination small,
             .pagination .text-muted {
                 display: none !important;
@@ -187,4 +202,55 @@
 }
 </style>
 @endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const nivelSelect = document.getElementById('nivel_id');
+    const gradoSelect = document.getElementById('grado_id');
+
+    // Lista completa de grados pasada desde PHP
+    const grados = @json($grados);
+
+    // Si ya hay un nivel seleccionado (por ejemplo al refrescar la página), se filtra y activa el select de grado
+    if(nivelSelect.value) {
+         gradoSelect.disabled = false;
+         filterGrados(nivelSelect.value);
+    }
+
+    nivelSelect.addEventListener('change', function () {
+         const nivelSeleccionado = parseInt(this.value);
+         gradoSelect.innerHTML = '<option value="">Seleccione un grado...</option>';
+         if(!isNaN(nivelSeleccionado)) {
+             gradoSelect.disabled = false;
+             // Recorre los grados y agrega solo aquellos que coincidan con el nivel seleccionado
+             grados.forEach(function(grado) {
+                 if(parseInt(grado.id_nivel) === nivelSeleccionado) {
+                     const option = document.createElement('option');
+                     option.value = grado.id_grado;
+                     option.textContent = grado.nombre;
+                     gradoSelect.appendChild(option);
+                 }
+             });
+         } else {
+             gradoSelect.disabled = true;
+         }
+    });
+
+    function filterGrados(nivelId) {
+         const nivelSeleccionado = parseInt(nivelId);
+         gradoSelect.innerHTML = '<option value="">Seleccione un grado...</option>';
+         grados.forEach(function(grado) {
+             if(parseInt(grado.nivel_id) === nivelSeleccionado) {
+                 const option = document.createElement('option');
+                 option.value = grado.id_grado;
+                 option.textContent = grado.nombre;
+                 gradoSelect.appendChild(option);
+             }
+         });
+    }
+});
+</script>
+@endpush
+
 @endsection

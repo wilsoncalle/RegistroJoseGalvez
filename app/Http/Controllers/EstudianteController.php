@@ -33,7 +33,8 @@ class EstudianteController extends Controller
         $estudiantes = Estudiante::with(['aula.nivel', 'aula.grado', 'aula.seccion', 'apoderados'])
             ->when($busqueda, function ($query) use ($busqueda) {
                 return $query->where('nombre', 'like', "%$busqueda%")
-                         ->orWhere('dni', 'like', "%$busqueda%");
+                ->orWhere('apellido', 'like', "%$busqueda%")
+                ->orWhere('dni', 'like', "%$busqueda%");
             })
             ->when($filtroAula, function ($query) use ($filtroAula) {
                 return $query->where('id_aula', $filtroAula);

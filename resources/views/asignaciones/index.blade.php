@@ -129,12 +129,12 @@
                                         <a href="{{ route('asignaciones.edit', $asignacion) }}" class="btn btn-sm btn-warning text-white">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $asignacion->id }}">
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $asignacion->id_asignacion }}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
                                     <!-- Modal de confirmación de eliminación -->
-                                    <div class="modal fade" id="deleteModal{{ $asignacion->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal fade" id="deleteModal{{ $asignacion->id_asignacion }}" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <div class="modal-header">
