@@ -19,54 +19,54 @@ use Illuminate\Http\RedirectResponse;
 class AsignacionController extends Controller
 {
     public function index(Request $request)
-{
-    $filtroNivel = $request->get('nivel');
-    $filtroAula = $request->get('aula');
-    $filtroAnio = $request->get('anio');
-    $busqueda = trim($request->get('busqueda'));
+    {
+        $filtroNivel = $request->get('nivel');
+        $filtroAula = $request->get('aula');
+        $filtroAnio = $request->get('anio');
+        $busqueda = trim($request->get('busqueda'));
 
-    $anios = AnioAcademico::all();
-    $niveles = Nivel::all();
-    $aulas = Aula::with('nivel')
-        ->when($filtroNivel, function ($query) use ($filtroNivel) {
-            return $query->where('id_nivel', $filtroNivel);
-        })
-        ->get();
+        $anios = AnioAcademico::all();
+        $niveles = Nivel::all();
+        $aulas = Aula::with('nivel')
+            ->when($filtroNivel, function ($query) use ($filtroNivel) {
+                return $query->where('id_nivel', $filtroNivel);
+            })
+            ->get();
 
-    $asignaciones = Asignacion::with(['docente', 'materia', 'aula.nivel', 'anioAcademico'])
-        ->when($filtroNivel, function ($query) use ($filtroNivel) {
-            return $query->whereHas('aula', function ($query) use ($filtroNivel) {
-                $query->where('id_nivel', $filtroNivel);
-            });
-        })
-        ->when($filtroAula, function ($query) use ($filtroAula) {
-            return $query->where('id_aula', $filtroAula);
-        })
-        ->when($filtroAnio, function ($query) use ($filtroAnio) {
-            return $query->where('id_anio', $filtroAnio);
-        })
-        ->when($busqueda, function ($query) use ($busqueda) {
-            return $query->whereHas('docente', function ($query) use ($busqueda) {
-                $query->whereRaw("LOWER(nombre) LIKE ?", ["%" . strtolower($busqueda) . "%"])
-                      ->orWhereRaw("LOWER(apellido) LIKE ?", ["%" . strtolower($busqueda) . "%"])
-                      ->orWhere('dni', 'LIKE', "%$busqueda%");
-            });
-        })
-        // Agregar JOIN para poder ordenar por nivel, grado, sección y apellido del docente
-        ->join('aulas', 'asignaciones.id_aula', '=', 'aulas.id_aula')
-        ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
-        ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
-        ->join('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
-        ->join('docentes', 'asignaciones.id_docente', '=', 'docentes.id_docente')
-        // Ordenar por nivel, grado, sección y apellido del docente
-        ->orderBy('niveles.nombre')  // Ordenar por nombre del nivel
-        ->orderBy('grados.nombre')   // Ordenar por grado
-        ->orderBy('secciones.nombre') // Ordenar por sección
-        ->orderBy('docentes.apellido') // Ordenar por apellido del docente
-        ->paginate(10);
+        $asignaciones = Asignacion::with(['docente', 'materia', 'aula.nivel', 'anioAcademico'])
+            ->when($filtroNivel, function ($query) use ($filtroNivel) {
+                return $query->whereHas('aula', function ($query) use ($filtroNivel) {
+                    $query->where('id_nivel', $filtroNivel);
+                });
+            })
+            ->when($filtroAula, function ($query) use ($filtroAula) {
+                return $query->where('asignaciones.id_aula', $filtroAula);
+            })
+            ->when($filtroAnio, function ($query) use ($filtroAnio) {
+                return $query->where('id_anio', $filtroAnio);
+            })
+            ->when($busqueda, function ($query) use ($busqueda) {
+                return $query->whereHas('docente', function ($query) use ($busqueda) {
+                    $query->whereRaw("LOWER(nombre) LIKE ?", ["%" . strtolower($busqueda) . "%"])
+                        ->orWhereRaw("LOWER(apellido) LIKE ?", ["%" . strtolower($busqueda) . "%"])
+                        ->orWhere('dni', 'LIKE', "%$busqueda%");
+                });
+            })
+            // Agregar JOIN para poder ordenar por nivel, grado, sección y apellido del docente
+            ->join('aulas', 'asignaciones.id_aula', '=', 'aulas.id_aula')
+            ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
+            ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
+            ->join('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
+            ->join('docentes', 'asignaciones.id_docente', '=', 'docentes.id_docente')
+            // Ordenar por nivel, grado, sección y apellido del docente
+            ->orderBy('niveles.nombre')  // Ordenar por nombre del nivel
+            ->orderBy('grados.nombre')   // Ordenar por grado
+            ->orderBy('secciones.nombre') // Ordenar por sección
+            ->orderBy('docentes.apellido') // Ordenar por apellido del docente
+            ->paginate(10);
 
-    return view('asignaciones.index', compact('asignaciones', 'filtroNivel', 'filtroAula', 'filtroAnio', 'niveles', 'aulas', 'anios', 'busqueda'));
-}
+        return view('asignaciones.index', compact('asignaciones', 'filtroNivel', 'filtroAula', 'filtroAnio', 'niveles', 'aulas', 'anios', 'busqueda'));
+    }
 
 
     public function create()

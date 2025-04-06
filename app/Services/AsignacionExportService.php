@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exports\AsignacionExport;
 use App\Models\Asignacion;
 use App\Models\Nivel;
+use App\Models\AnioAcademico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -28,7 +29,7 @@ class AsignacionExportService
         $busqueda = trim($request->get('busqueda'));
 
         // Determinar el nombre del nivel para el título del reporte
-        $nombreNivel = 'Todos';
+        $nombreNivel = 'General';
         if ($filtroNivel) {
             $nivel = Nivel::find($filtroNivel);
             if ($nivel) {
@@ -89,10 +90,18 @@ class AsignacionExportService
         $export = new AsignacionExport($asignaciones, $filtroNivel, $nombreNivel);
         
         // Generar el nombre del archivo
-        $fileName = 'asignaciones_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $nombreArchivo = 'asignaciones_' . strtolower(str_replace(' ', '_', $nombreNivel));
+        
+        if ($filtroAnio) {
+            $anio = AnioAcademico::find($filtroAnio);
+            if ($anio) {
+                $nombreArchivo .= '_' . $anio->anio;
+            }
+        }
+        $nombreArchivo .= '_' . date('Y-m-d_H-i-s') . '.xlsx';
         
         // Descargar el archivo
-        return Excel::download($export, $fileName);
+        return Excel::download($export, $nombreArchivo);
     }
 
     /**
@@ -110,7 +119,7 @@ class AsignacionExportService
         $busqueda = trim($request->get('busqueda'));
 
         // Determinar el nombre del nivel para el título del reporte
-        $nombreNivel = 'Todos';
+        $nombreNivel = 'General';
         if ($filtroNivel) {
             $nivel = Nivel::find($filtroNivel);
             if ($nivel) {
@@ -181,9 +190,17 @@ class AsignacionExportService
         $pdf->setPaper('a4', 'landscape');
         
         // Generar el nombre del archivo
-        $fileName = 'asignaciones_' . date('Y-m-d_H-i-s') . '.pdf';
+        $nombreArchivo = 'asignaciones_' . strtolower(str_replace(' ', '_', $nombreNivel));
+        
+        if ($filtroAnio) {
+            $anio = AnioAcademico::find($filtroAnio);
+            if ($anio) {
+                $nombreArchivo .= '_' . $anio->anio;
+            }
+        }
+        $nombreArchivo .= '_' . date('Y-m-d_H-i-s') . '.pdf';
         
         // Descargar el archivo
-        return $pdf->download($fileName);
+        return $pdf->download($nombreArchivo);
     }
 }
