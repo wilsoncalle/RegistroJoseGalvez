@@ -91,9 +91,11 @@ public function store(Request $request)
 
     public function edit(Seccion $seccion)
     {
-        $grados = Grado::orderBy('nombre')->get();
-        return view('secciones.edit', compact('seccion', 'grados'));
+        $niveles = Nivel::all();
+        $grados = Grado::all();
+        return view('secciones.edit', compact('seccion', 'niveles', 'grados'));
     }
+
 
     public function update(Request $request, Seccion $seccion)
     {

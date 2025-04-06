@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Apoderado;
 use App\Models\Estudiante;
+use App\Exports\ApoderadoExport;
+use App\Services\ApoderadoExportService;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +25,8 @@ class ApoderadoController extends Controller
         $apoderados = Apoderado::with('estudiantes.aula')
             ->when($busqueda, function ($query, $busqueda) {
                 return $query->where(function ($q) use ($busqueda) {
-                    $q->where('nombre', 'LIKE', "%{$busqueda}%")
+                    $q->where('apoderados.nombre', 'like', "%$busqueda%")
+                    ->orWhere('apoderados.apellido', 'like', "%$busqueda%")
                       ->orWhere('dni', 'LIKE', "%{$busqueda}%")
                       ->orWhere('telefono', 'LIKE', "%{$busqueda}%");
                 });
@@ -29,7 +34,7 @@ class ApoderadoController extends Controller
             ->when($filtroRelacion, function ($query, $filtroRelacion) {
                 return $query->where('relacion', $filtroRelacion);
             })
-            ->orderBy('nombre')
+            ->orderBy('apellido')
             ->paginate(15);
 
         // Obtener relaciones únicas para el filtro
@@ -44,11 +49,46 @@ class ApoderadoController extends Controller
     public function create()
     {
         $estudiantes = Estudiante::where('estado', 'Activo')
-            ->with('aula')
-            ->orderBy('nombre')
+            ->join('aulas', 'estudiantes.id_aula', '=', 'aulas.id_aula')
+            ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
+            ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
+            ->leftJoin('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
+            ->select(
+                'estudiantes.*',
+                \DB::raw("CONCAT(grados.nombre, ' - ', secciones.nombre) as aula_nombre")
+            )
+            ->orderBy('niveles.nombre', 'asc')
+            ->orderBy('aula_nombre', 'asc')
+            ->orderBy('estudiantes.apellido', 'asc')
             ->get();
-        
+
         return view('apoderados.create', compact('estudiantes'));
+    }
+
+    public function buscarEstudiantes(Request $request)
+    {
+        $termino = $request->q;
+
+        $estudiantes = Estudiante::with(['aula.nivel'])
+            ->where(function($query) use ($termino) {
+                $query->where('nombre', 'LIKE', "%$termino%")
+                    ->orWhere('apellido', 'LIKE', "%$termino%")
+                    ->orWhere('dni', 'LIKE', "%$termino%");
+            })
+            ->active() // Si tienes un scope para estudiantes activos
+            ->get()
+            ->map(function($estudiante) {
+                return [
+                    'id' => $estudiante->id_estudiante,
+                    'nombre' => $estudiante->nombre,
+                    'apellido' => $estudiante->apellido,
+                    'dni' => $estudiante->dni,
+                    'nivel' => optional($estudiante->aula->nivel)->nombre ?? 'No definido',
+                    'aula' => optional($estudiante->aula)->nombre_completo ?? 'No asignado'
+                ];
+            });
+
+        return response()->json($estudiantes);
     }
 
     /**
@@ -204,5 +244,29 @@ class ApoderadoController extends Controller
             });
             
         return response()->json(['results' => $apoderados]);
+    }
+
+    /**
+     * Exportar listado de apoderados a Excel
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportarExcel(Request $request)
+    {
+        $exportService = new ApoderadoExportService();
+        return $exportService->exportarExcel($request);
+    }
+
+    /**
+     * Exportar listado de apoderados a PDF
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportarPDF(Request $request)
+    {
+        $exportService = new ApoderadoExportService();
+        return $exportService->exportarPDF($request);
     }
 }

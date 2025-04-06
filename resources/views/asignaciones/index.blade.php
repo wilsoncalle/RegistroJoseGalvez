@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app') 
 
 @section('title', 'Asignaciones - Sistema de Gestión Escolar')
 
@@ -6,9 +6,17 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Asignaciones</h1>
-        <a href="{{ route('asignaciones.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Nueva Asignación
-        </a>
+        <div>
+            <a href="{{ route('asignaciones.export', request()->query()) }}" class="btn btn-success me-2">
+                <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+            </a>
+            <a href="{{ route('asignaciones.pdf', request()->query()) }}" class="btn btn-danger me-2">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
+            </a>
+            <a href="{{ route('asignaciones.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Nueva Asignación
+            </a>
+        </div>
     </div>
 
     <!-- Filtros de búsqueda -->
@@ -16,7 +24,7 @@
         <div class="card-body">
             <form action="{{ route('asignaciones.index') }}" method="GET" class="row g-3 align-items-end">
                 <!-- Búsqueda (por docente o materia) -->
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label for="busqueda" class="form-label">Buscar</label>
                     <input type="text" class="form-control" id="busqueda" name="busqueda" placeholder="Docente o materia" value="{{ request('busqueda') }}">
                 </div>
@@ -33,7 +41,7 @@
                     </select>
                 </div>
                 <!-- Filtro por Aula -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="aula" class="form-label">Aula</label>
                     <select class="form-select" id="aula" name="aula" {{ empty(request('nivel')) ? 'disabled' : '' }}>
                         <option value="">Todas las aulas</option>
@@ -91,7 +99,7 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Docente</th>
                             <th>Materia</th>
                             <th>Nivel</th>
@@ -101,14 +109,14 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $counter = ($asignaciones->currentPage() - 1) * $asignaciones->perPage() + 1; @endphp
                         @forelse($asignaciones as $asignacion)
                             <tr>
-                                <td>{{ $asignacion->id_asignacion }}</td>
+                                <td>{{ $counter++ }}</td>
                                 <td>
                                     {{ $asignacion->docente->nombre ?? 'No definido' }} 
                                     {{ $asignacion->docente->apellido ?? '' }}
                                 </td>
-
                                 <td>{{ $asignacion->materia->nombre ?? 'No definido' }}</td>
                                 <td>
                                     {{ $asignacion->aula && $asignacion->aula->nivel ? $asignacion->aula->nivel->nombre : 'No definido' }}
@@ -142,18 +150,17 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <p>¿Está seguro de que desea eliminar la asignación del docente <strong>{{ $asignacion->docente->nombre ?? '' }}</strong>?</p>
-                                                    <p class="text-danger">
-                                                        <small>Esta acción no se puede deshacer.</small>
-                                                    </p>
+                                                    <p>¿Está seguro de que desea eliminar la asignación del docente <strong>{{ $asignacion->docente->nombre ?? '' }} {{ $asignacion->docente->apellido ?? '' }}</strong>?</p>
+                                                    <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                    <form action="{{ route('asignaciones.destroy', $asignacion) }}" method="POST">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger">Eliminar</button>
-                                                    </form>
+                                                    <form action="{{ route('asignaciones.destroy', $asignacion->id_asignacion) }}" method="POST">
+    @csrf
+    @method('DELETE')
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+</form>
+
                                                 </div>
                                             </div>
                                         </div>
@@ -173,8 +180,18 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-4">
-                {{ $asignaciones->appends(request()->query())->links() }}
+            <!-- Bloque de paginación personalizado -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $asignaciones->firstItem() }} - 
+                    {{ $asignaciones->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $asignaciones->total() }} {{ __('resultados') }}
+                </div>
+                <div>
+                    {{ $asignaciones->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
             </div>
         </div>
     </div>
@@ -199,7 +216,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         option.textContent = aula.nombre_completo;
                         aulaSelect.appendChild(option);
                     });
-                    aulaSelect.disabled = false; // Habilita el select de aulas
+                    aulaSelect.disabled = false;
                 })
                 .catch(error => {
                     console.error('Error al cargar aulas:', error);
@@ -213,7 +230,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         {{ $aula->nombre_completo }}
                     </option>
                 @endforeach`;
-            aulaSelect.disabled = true; // Deshabilita el select si no se selecciona un nivel
+            aulaSelect.disabled = true;
         }
     }
 

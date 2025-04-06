@@ -35,23 +35,24 @@
 
                 <div class="row mb-3">
                     <div class="col-md-6">
+                            <label for="id_nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
+                            <select class="form-select" id="id_nivel" name="id_nivel" required>
+                                <option value="">Seleccionar nivel...</option>
+                                @foreach($niveles as $nivel)
+                                    <option value="{{ $nivel->id_nivel }}" 
+                                        {{ old('id_nivel') == $nivel->id_nivel ? 'selected' : '' }}>
+                                        {{ $nivel->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                    </div>
+                    <div class="col-md-6">
                         <label for="nombre" class="form-label">Nombre de la Materia <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="nombre" name="nombre" 
                             value="{{ old('nombre') }}" required placeholder="Ej: Matemáticas Básicas">
                     </div>
                     
-                    <div class="col-md-6">
-                        <label for="id_nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
-                        <select class="form-select" id="id_nivel" name="id_nivel" required>
-                            <option value="">Seleccionar nivel...</option>
-                            @foreach($niveles as $nivel)
-                                <option value="{{ $nivel->id_nivel }}" 
-                                    {{ old('id_nivel') == $nivel->id_nivel ? 'selected' : '' }}>
-                                    {{ $nivel->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    
                 </div>
 
                 <div class="d-flex justify-content-end mt-4">

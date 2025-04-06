@@ -26,13 +26,13 @@
             <form action="{{ route('estudiantes.store') }}" method="POST">
                 @csrf
                 
+                <!-- Datos Personales -->
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <h5>Datos Personales</h5>
                         <hr>
                     </div>
                 </div>
-
                 <div class="row mb-3">
                     <div class="col-md-3">
                         <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
@@ -56,6 +56,7 @@
                     </div>
                 </div>
 
+                <!-- Datos Académicos -->
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <h5>Datos Académicos</h5>
@@ -63,7 +64,7 @@
                     </div>
                 </div>
                 <div class="row mb-3">
-                <div class="col-md-3">
+                    <div class="col-md-3">
                         <label for="nivel" class="form-label">Nivel</label>
                         <select name="nivel" id="nivel" class="form-control" required>
                             <option value="">Seleccione un nivel</option>
@@ -92,8 +93,9 @@
                     </div>
                 </div>
 
+                <!-- Información del Apoderado Principal -->
                 <div class="row mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <h5>Información del Apoderado Principal</h5>
                         <hr>
                         <p class="text-muted small">Seleccione los apoderados que estarán asociados a este estudiante</p>
@@ -118,14 +120,20 @@
                                             <thead class="table-light">
                                                 <tr>
                                                     <th width="5%"></th>
-                                                    <th>Apoderado</th>
+                                                    <th>Nombre</th>
+                                                    <th>Apellido</th>
                                                     <th>DNI</th>
                                                     <th>Teléfono</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="tabla_apoderados">
+                                                <!-- Mensaje inicial -->
+                                                <tr id="mensaje_no_busqueda" style="display: table-row;">
+                                                    <td colspan="4" class="text-center">Por favor, busque un apoderado para seleccionar.</td>
+                                                </tr>
+                                                <!-- Filas de apoderados ocultas inicialmente -->
                                                 @foreach($apoderados as $apoderado)
-                                                <tr class="fila-apoderado">
+                                                <tr class="fila-apoderado" style="display: none;">
                                                     <td>
                                                         <div class="form-check">
                                                             <input class="form-check-input apoderado-checkbox" type="checkbox" 
@@ -135,6 +143,7 @@
                                                         </div>
                                                     </td>
                                                     <td>{{ $apoderado->nombre }}</td>
+                                                    <td>{{ $apoderado->apellido }}</td>
                                                     <td>{{ $apoderado->dni ?? 'No registrado' }}</td>
                                                     <td>{{ $apoderado->telefono ?? 'No registrado' }}</td>
                                                 </tr>
@@ -155,112 +164,7 @@
                     </div>
                 </div>
 
-                <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const buscadorInput = document.getElementById('buscador_apoderado');
-                    const btnBuscar = document.getElementById('btn_buscar');
-                    const filasApoderados = document.querySelectorAll('.fila-apoderado');
-                    
-                    function buscarApoderado() {
-                        const textoBusqueda = buscadorInput.value.toLowerCase().trim();
-                        
-                        if (textoBusqueda === '') {
-                            filasApoderados.forEach(fila => fila.style.display = '');
-                            return;
-                        }
-                        
-                        filasApoderados.forEach(fila => {
-                            const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                            const dni = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                            
-                            fila.style.display = (nombre.includes(textoBusqueda) || dni.includes(textoBusqueda)) ? '' : 'none';
-                        });
-                    }
-                    
-                    btnBuscar.addEventListener('click', buscarApoderado);
-                    buscadorInput.addEventListener('keyup', function(e) {
-                        if (e.key === 'Enter') {
-                            buscarApoderado();
-                        }
-                    });
-                });
-                </script>
-
-                @push('scripts')
-                <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const seleccionarTodos = document.getElementById('seleccionar_todos');
-                    const checkboxes = document.querySelectorAll('.apoderado-checkbox');
-                    
-                    if(seleccionarTodos) {
-                        seleccionarTodos.addEventListener('change', function() {
-                            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-                        });
-                    }
-                });
-                </script>
-
-<script>
-    // Genera la URL base desde Laravel
-    const urlAulas = "{{ url('/aulas/nivel') }}";
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        const nivelSelect = document.getElementById('nivel');
-        const aulaSelect = document.getElementById('id_aula');
-        
-        nivelSelect.addEventListener('change', function() {
-            const nivelId = this.value;
-            
-            // Mostrar mensaje mientras se cargan las aulas
-            aulaSelect.innerHTML = '<option value="">Cargando aulas...</option>';
-            
-            if (nivelId) {
-                aulaSelect.disabled = false;
-                
-                fetch(`${urlAulas}/${nivelId}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Error en la red');
-                        }
-                        return response.json();
-                    })
-                    .then(aulas => {
-                        // Limpiar el select antes de agregar nuevas opciones
-                        aulaSelect.innerHTML = '';
-                        
-                        if(aulas.length > 0) {
-                            // Agregar opción por defecto
-                            const defaultOption = document.createElement('option');
-                            defaultOption.value = '';
-                            defaultOption.textContent = 'Seleccione un aula';
-                            aulaSelect.appendChild(defaultOption);
-                            
-                            // Agregar cada aula
-                            aulas.forEach(aula => {
-                                const option = document.createElement('option');
-                                option.value = aula.id;
-                                option.textContent = aula.nombre_completo;
-                                aulaSelect.appendChild(option);
-                            });
-                        } else {
-                            aulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        aulaSelect.innerHTML = '<option value="">Error al cargar aulas</option>';
-                    });
-            } else {
-                // Si no se ha seleccionado un nivel, se deshabilita el select de aulas
-                aulaSelect.disabled = true;
-                aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
-            }
-        });
-    });
-</script>
-
-                @endpush
-
+                <!-- Botones de acción -->
                 <div class="d-flex justify-content-end mt-4">
                     <button type="reset" class="btn btn-secondary me-2">
                         <i class="bi bi-x-circle me-1"></i> Limpiar
@@ -273,4 +177,107 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+// Lógica de búsqueda de apoderados
+document.addEventListener('DOMContentLoaded', function() {
+    const buscadorInput = document.getElementById('buscador_apoderado');
+    const btnBuscar = document.getElementById('btn_buscar');
+    const filasApoderados = document.querySelectorAll('.fila-apoderado');
+    const mensajeNoBusqueda = document.getElementById('mensaje_no_busqueda');
+
+    function buscarApoderado() {
+        const textoBusqueda = buscadorInput.value.toLowerCase().trim();
+
+        if (textoBusqueda === '') {
+            // Mostrar mensaje inicial y ocultar filas
+            mensajeNoBusqueda.style.display = 'table-row';
+            mensajeNoBusqueda.querySelector('td').textContent = 'Por favor, busque un apoderado para seleccionar.';
+            filasApoderados.forEach(fila => fila.style.display = 'none');
+        } else {
+            // Ocultar mensaje por defecto
+            mensajeNoBusqueda.style.display = 'none';
+            let hayResultados = false;
+
+            // Filtrar apoderados
+            filasApoderados.forEach(fila => {
+                const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const apellido = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                const dni = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                
+                if (nombre.includes(textoBusqueda) || apellido.includes(textoBusqueda) || dni.includes(textoBusqueda)) {
+                    fila.style.display = '';
+                    hayResultados = true;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+
+            // Mostrar mensaje si no hay resultados
+            if (!hayResultados) {
+                mensajeNoBusqueda.style.display = 'table-row';
+                mensajeNoBusqueda.querySelector('td').textContent = 'No se encontraron apoderados que coincidan con la búsqueda.';
+            }
+        }
+    }
+
+    // Eventos
+    btnBuscar.addEventListener('click', buscarApoderado);
+    buscadorInput.addEventListener('input', buscarApoderado); // Búsqueda en tiempo real
+    buscadorInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') buscarApoderado();
+    });
+
+    // Ejecutar al cargar la página
+    buscarApoderado();
+});
+
+// Lógica para cargar aulas según nivel
+const urlAulas = "{{ url('/aulas/nivel') }}";
+document.addEventListener('DOMContentLoaded', function() {
+    const nivelSelect = document.getElementById('nivel');
+    const aulaSelect = document.getElementById('id_aula');
+    
+    nivelSelect.addEventListener('change', function() {
+        const nivelId = this.value;
+        
+        aulaSelect.innerHTML = '<option value="">Cargando aulas...</option>';
+        
+        if (nivelId) {
+            aulaSelect.disabled = false;
+            fetch(`${urlAulas}/${nivelId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Error en la red');
+                    return response.json();
+                })
+                .then(aulas => {
+                    aulaSelect.innerHTML = '';
+                    if (aulas.length > 0) {
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = 'Seleccione un aula';
+                        aulaSelect.appendChild(defaultOption);
+                        aulas.forEach(aula => {
+                            const option = document.createElement('option');
+                            option.value = aula.id;
+                            option.textContent = aula.nombre_completo;
+                            aulaSelect.appendChild(option);
+                        });
+                    } else {
+                        aulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    aulaSelect.innerHTML = '<option value="">Error al cargar aulas</option>';
+                });
+        } else {
+            aulaSelect.disabled = true;
+            aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
+        }
+    });
+});
+</script>
+@endpush
 @endsection

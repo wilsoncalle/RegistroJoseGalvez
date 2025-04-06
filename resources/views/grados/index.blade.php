@@ -62,16 +62,17 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Nombre</th>
                             <th>Nivel</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
+                        @php $counter = ($grados->currentPage() - 1) * $grados->perPage() + 1; @endphp
                         @forelse($grados as $grado)
                             <tr>
-                                <td>{{ $grado->id_grado }}</td>
+                                <td>{{ $counter++ }}</td>
                                 <td>{{ $grado->nombre }}</td>
                                 <td>
                                     @if($grado->nivel)

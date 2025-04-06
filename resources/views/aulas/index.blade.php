@@ -6,9 +6,17 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Aulas</h1>
-        <a href="{{ route('aulas.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Nueva Aula
-        </a>
+        <div>
+            <a href="{{ route('aulas.export', request()->query()) }}" class="btn btn-success me-2">
+                <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+            </a>
+            <a href="{{ route('aulas.pdf', request()->query()) }}" class="btn btn-danger me-2">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
+            </a>
+            <a href="{{ route('aulas.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Nueva Aula
+            </a>
+        </div>
     </div>
 
     <div class="card mb-4">
@@ -62,7 +70,7 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Nivel</th>
                             <th>Grado</th>
                             <th>Sección</th>
@@ -70,9 +78,10 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $counter = ($aulas->currentPage() - 1) * $aulas->perPage() + 1; @endphp
                         @forelse($aulas as $aula)
                             <tr>
-                                <td>{{ $aula->id_aula }}</td>
+                                <td>{{ $counter++ }}</td>
                                 <td>{{ $aula->nivel->nombre }}</td>
                                 <td>{{ $aula->grado->nombre }}</td>
                                 <td>{{ $aula->seccion->nombre }}</td>

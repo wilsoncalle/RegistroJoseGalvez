@@ -18,8 +18,7 @@ return new class extends Migration
             $table->string('telefono', 20)->nullable();
             $table->string('email', 100)->nullable();
             $table->date('fecha_contratacion')->nullable();
-            $table->unsignedBigInteger('id_materia')->nullable(); 
-            $table->foreign('id_materia')->references('id_materia')->on('materias')->onDelete('cascade');
+            $table->foreignId('id_nivel')->nullable()->constrained('niveles', 'id_nivel')->onDelete('cascade');
             $table->timestamps();
         });
     }

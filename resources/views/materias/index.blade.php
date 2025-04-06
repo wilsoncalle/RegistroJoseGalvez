@@ -62,16 +62,17 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Nombre</th>
                             <th>Nivel</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
+                         @php $counter = ($materias->currentPage() - 1) * $materias->perPage() + 1; @endphp
                         @forelse($materias as $materia)
                             <tr>
-                                <td>{{ $materia->id_materia }}</td>
+                                <td>{{ $counter++ }}</td>
                                 <td>{{ $materia->nombre }}</td>
                                 <td>
                                     @if($materia->nivel)

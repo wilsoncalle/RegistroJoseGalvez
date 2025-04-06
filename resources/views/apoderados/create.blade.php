@@ -78,6 +78,7 @@
                         @enderror
                     </div>
                 </div>
+
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <h5>Estudiantes Asociados</h5>
@@ -91,7 +92,6 @@
                         <div class="card">
                             <div class="card-body">
                                 <div class="row">
-                                    
                                     <div class="col-md-6 mb-3">
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="buscador_estudiante" placeholder="Buscar estudiante por nombre o DNI...">
@@ -107,14 +107,21 @@
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th width="5%"></th>
-                                                        <th>Estudiante</th>
+                                                        <th>Nombre</th>
+                                                        <th>Apellido</th>
                                                         <th>DNI</th>
+                                                        <th>Nivel</th>
                                                         <th>Aula</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="tabla_estudiantes">
+                                                    <!-- Mensaje inicial -->
+                                                    <tr id="mensaje_no_busqueda" style="display: table-row;">
+                                                        <td colspan="6" class="text-center">Por favor, busque un estudiante para seleccionar.</td>
+                                                    </tr>
+                                                    <!-- Filas de estudiantes ocultas inicialmente -->
                                                     @foreach($estudiantes as $estudiante)
-                                                    <tr class="fila-estudiante">
+                                                    <tr class="fila-estudiante" style="display: none;">
                                                         <td>
                                                             <div class="form-check">
                                                                 <input class="form-check-input estudiante-checkbox" type="checkbox" 
@@ -126,11 +133,12 @@
                                                         <td>{{ $estudiante->nombre }}</td>
                                                         <td>{{ $estudiante->apellido }}</td>
                                                         <td>{{ $estudiante->dni ?? 'No registrado' }}</td>
+                                                        <td>{{ $estudiante->aula && $estudiante->aula->nivel ? $estudiante->aula->nivel->nombre : 'No definido' }}</td>
                                                         <td>
                                                             @if($estudiante->aula)
-                                                                {{ $estudiante->aula->nombre }}
+                                                                {{ $estudiante->aula->nombre_completo }}
                                                             @else
-                                                                No asignada
+                                                                <span class="text-muted">No asignado</span>
                                                             @endif
                                                         </td>
                                                     </tr>
@@ -152,45 +160,6 @@
                     </div>
                 </div>
 
-                <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const buscadorInput = document.getElementById('buscador_estudiante');
-                    const btnBuscar = document.getElementById('btn_buscar');
-                    const filasEstudiantes = document.querySelectorAll('.fila-estudiante');
-                    
-                    function buscarEstudiante() {
-                        const textoBusqueda = buscadorInput.value.toLowerCase().trim();
-                        
-                        if (textoBusqueda === '') {
-                            // Si no hay texto de búsqueda, mostrar todos los estudiantes
-                            filasEstudiantes.forEach(fila => {
-                                fila.style.display = '';
-                            });
-                            return;
-                        }
-                        
-                        filasEstudiantes.forEach(fila => {
-                            const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                            const dni = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                            
-                            if (nombre.includes(textoBusqueda) || dni.includes(textoBusqueda)) {
-                                fila.style.display = ''; // Mostrar fila
-                            } else {
-                                fila.style.display = 'none'; // Ocultar fila
-                            }
-                        });
-                    }
-                    
-                    // Eventos para activar la búsqueda
-                    btnBuscar.addEventListener('click', buscarEstudiante);
-                    buscadorInput.addEventListener('keyup', function(e) {
-                        if (e.key === 'Enter') {
-                            buscarEstudiante();
-                        }
-                    });
-                });
-                </script>
-
                 <div class="d-flex justify-content-end mt-4">
                     <button type="reset" class="btn btn-secondary me-2">
                         <i class="bi bi-x-circle me-1"></i> Limpiar
@@ -206,21 +175,56 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Seleccionar/deseleccionar todos los estudiantes
-        const seleccionarTodos = document.getElementById('seleccionar_todos');
-        const checkboxes = document.querySelectorAll('.estudiante-checkbox');
-        
-        if(seleccionarTodos){
-            seleccionarTodos.addEventListener('change', function() {
-                const isChecked = this.checked;
-                
-                checkboxes.forEach(function(checkbox) {
-                    checkbox.checked = isChecked;
-                });
+document.addEventListener('DOMContentLoaded', function() {
+    const buscadorInput = document.getElementById('buscador_estudiante');
+    const btnBuscar = document.getElementById('btn_buscar');
+    const filasEstudiantes = document.querySelectorAll('.fila-estudiante');
+    const mensajeNoBusqueda = document.getElementById('mensaje_no_busqueda');
+
+    function buscarEstudiante() {
+        const textoBusqueda = buscadorInput.value.toLowerCase().trim();
+
+        if (textoBusqueda === '') {
+            // Mostrar mensaje inicial y ocultar filas
+            mensajeNoBusqueda.style.display = 'table-row';
+            mensajeNoBusqueda.querySelector('td').textContent = 'Por favor, busque un estudiante para seleccionar.';
+            filasEstudiantes.forEach(fila => {
+                fila.style.display = 'none';
             });
+        } else {
+            // Ocultar mensaje por defecto
+            mensajeNoBusqueda.style.display = 'none';
+            let hayResultados = false;
+
+            // Filtrar estudiantes
+            filasEstudiantes.forEach(fila => {
+                const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const apellido = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                const dni = fila.querySelector('td:nth-child(4)').textContent.toLowerCase(); // Ajustado a la columna correcta (DNI es la 4ª)
+                
+                if (nombre.includes(textoBusqueda) || dni.includes(textoBusqueda) || apellido.includes(textoBusqueda)) {
+                    fila.style.display = '';
+                    hayResultados = true;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+
+            // Mostrar mensaje si no hay resultados
+            if (!hayResultados) {
+                mensajeNoBusqueda.style.display = 'table-row';
+                mensajeNoBusqueda.querySelector('td').textContent = 'No se encontraron estudiantes que coincidan con la búsqueda.';
+            }
         }
-    });
+    }
+
+    // Eventos
+    btnBuscar.addEventListener('click', buscarEstudiante);
+    buscadorInput.addEventListener('input', buscarEstudiante); // Búsqueda en tiempo real
+
+    // Ejecutar al cargar la página
+    buscarEstudiante();
+});
 </script>
 @endpush
 @endsection

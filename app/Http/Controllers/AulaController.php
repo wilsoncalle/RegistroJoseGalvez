@@ -5,6 +5,10 @@ use App\Models\Nivel;
 use App\Models\Grado;
 use App\Models\Seccion;
 use App\Models\Aula;
+use App\Exports\AulaExport;
+use App\Services\AulaExportService;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 use Illuminate\Http\Request;
 
 class AulaController extends Controller
@@ -20,11 +24,15 @@ class AulaController extends Controller
         ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
         ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
         ->join('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
+        ->join('asignaciones', 'aulas.id_aula', '=', 'asignaciones.id_aula') // Relación con asignaciones
+        ->join('docentes', 'asignaciones.id_docente', '=', 'docentes.id_docente') // Relación con docentes
         ->select([
             'aulas.*',
             'niveles.nombre as nivel_nombre',
             'grados.nombre as grado_nombre',
-            'secciones.nombre as seccion_nombre'
+            'secciones.nombre as seccion_nombre',
+            'docentes.apellido as docente_apellido',
+            'docentes.nombre as docente_nombre'
         ]);
 
     // Aplicar filtro por nivel
@@ -34,24 +42,28 @@ class AulaController extends Controller
 
     // Aplicar búsqueda si se proporciona
     if ($busqueda) {
-        $query->where(function($q) use ($busqueda) {
+        $query->where(function ($q) use ($busqueda) {
             $q->where('niveles.nombre', 'like', "%$busqueda%")
               ->orWhere('grados.nombre', 'like', "%$busqueda%")
-              ->orWhere('secciones.nombre', 'like', "%$busqueda%");
+              ->orWhere('secciones.nombre', 'like', "%$busqueda%")
+              ->orWhere('docentes.apellido', 'like', "%$busqueda%")
+              ->orWhere('docentes.nombre', 'like', "%$busqueda%");
         });
     }
 
     // Aplicar ordenamiento
-    $query->orderBy('niveles.nombre')
-          ->orderBy('grados.nombre')
-          ->orderByRaw("CAST(secciones.nombre AS CHAR) ASC") 
-          ->orderBy('aulas.id_nivel');
+    $query->orderBy('niveles.nombre')  // Primero por nivel
+          ->orderBy('grados.nombre')   // Luego por grado
+          ->orderByRaw("CAST(secciones.nombre AS CHAR) ASC") // Después por sección
+          ->orderBy('docentes.apellido') // Finalmente, ordenar docentes por apellido
+          ->orderBy('docentes.nombre'); // En caso de apellidos iguales, ordenar por nombre
 
     // Ejecutar la consulta con paginación
     $aulas = $query->paginate(10);
 
     return view('aulas.index', compact('aulas', 'busqueda', 'niveles', 'filtroNivel'));
 }
+
 
 
 
@@ -170,5 +182,29 @@ public function store(Request $request)
         } catch (\Exception $e) {
             return back()->with('error', 'No se puede eliminar el aula "' . $nombreAula . '" porque tiene registros asociados.');
         }
+    }
+
+    /**
+     * Exportar listado de aulas a Excel
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportarExcel(Request $request)
+    {
+        $exportService = new AulaExportService();
+        return $exportService->exportarExcel($request);
+    }
+
+    /**
+     * Exportar listado de aulas a PDF
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportarPDF(Request $request)
+    {
+        $exportService = new AulaExportService();
+        return $exportService->exportarPDF($request);
     }
 }

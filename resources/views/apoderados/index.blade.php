@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app') 
 
 @section('title', 'Gestión de Apoderados - Sistema de Gestión Escolar')
 
@@ -6,12 +6,18 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Gestión de Apoderados</h1>
-        <a href="{{ route('apoderados.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Nuevo Apoderado
-        </a>
+        <div>
+            <a href="{{ route('apoderados.export', request()->query()) }}" class="btn btn-success me-2">
+                <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+            </a>
+            <a href="{{ route('apoderados.pdf', request()->query()) }}" class="btn btn-danger me-2">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
+            </a>
+            <a href="{{ route('apoderados.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Nuevo Apoderado
+            </a>
+        </div>
     </div>
-    
-    
     
     <!-- Filtros -->
     <div class="card mb-4">
@@ -61,101 +67,110 @@
     <!-- Listado de apoderados -->
     <div class="card">
         <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>DNI</th>
+                            <th>Relación</th>
+                            <th>Teléfono</th>
+                            <th>Estudiantes</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $counter = ($apoderados->currentPage() - 1) * $apoderados->perPage() + 1; @endphp
+                        @forelse($apoderados as $apoderado)
                             <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Apellido</th>
-                                <th>DNI</th>
-                                <th>Relación</th>
-                                <th>Teléfono</th>
-                                <th>Estudiantes</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($apoderados as $apoderado)
-                                <tr>
-                                    <td>{{ $apoderado->id_apoderado }}</td>
-                                    <td>{{ $apoderado->nombre }}</td>
-                                    <td>{{ $apoderado->apellido }}</td>
-                                    <td>{{ $apoderado->dni ?? 'No registrado' }}</td>
-                                    <td>{{ $apoderado->relacion }}</td>
-                                    <td>{{ $apoderado->telefono }}</td>
-                                    <td>
-                                        <span class="badge bg-info">
-                                            {{ $apoderado->estudiantes->count() }} estudiante(s)
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ route('apoderados.show', $apoderado) }}" class="btn btn-info" title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a href="{{ route('apoderados.edit', $apoderado) }}" class="btn btn-warning" title="Editar">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-danger" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#deleteModal{{ $apoderado->id_apoderado }}" 
-                                                    title="Eliminar">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                        
-                                        <!-- Modal de confirmación de eliminación -->
-                                        <div class="modal fade" id="deleteModal{{ $apoderado->id_apoderado }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ $apoderado->id_apoderado }}" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title" id="deleteModalLabel{{ $apoderado->id_apoderado }}">Confirmar eliminación</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>¿Está seguro que desea eliminar al apoderado <strong>{{ $apoderado->nombre }} {{ $apoderado->apellido }}</strong>?</p>
-                                                        @if($apoderado->estudiantes->count() > 0)
-                                                            <div class="alert alert-warning">
-                                                                <i class="bi bi-exclamation-triangle me-1"></i>
-                                                                Este apoderado tiene {{ $apoderado->estudiantes->count() }} estudiante(s) asociado(s).
-                                                                No podrá ser eliminado hasta que se eliminen estas asociaciones.
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                        <form action="{{ route('apoderados.destroy', $apoderado) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger" 
-                                                                {{ $apoderado->estudiantes->count() > 0 ? 'disabled' : '' }}>
-                                                                Eliminar
-                                                            </button>
-                                                        </form>
-                                                    </div>
+                                <td>{{ $counter++ }}</td>
+                                <td>{{ $apoderado->nombre }}</td>
+                                <td>{{ $apoderado->apellido }}</td>
+                                <td>{{ $apoderado->dni ?? 'No registrado' }}</td>
+                                <td>{{ $apoderado->relacion }}</td>
+                                <td>{{ $apoderado->telefono }}</td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ $apoderado->estudiantes->count() }} estudiante(s)
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ route('apoderados.show', $apoderado) }}" class="btn btn-info" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ route('apoderados.edit', $apoderado) }}" class="btn btn-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteModal{{ $apoderado->id_apoderado }}" 
+                                                title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Modal de confirmación de eliminación -->
+                                    <div class="modal fade" id="deleteModal{{ $apoderado->id_apoderado }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ $apoderado->id_apoderado }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteModalLabel{{ $apoderado->id_apoderado }}">Confirmar eliminación</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>¿Está seguro que desea eliminar al apoderado <strong>{{ $apoderado->nombre }} {{ $apoderado->apellido }}</strong>?</p>
+                                                    @if($apoderado->estudiantes->count() > 0)
+                                                        <div class="alert alert-warning">
+                                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                                            Este apoderado tiene {{ $apoderado->estudiantes->count() }} estudiante(s) asociado(s).
+                                                            No podrá ser eliminado hasta que se eliminen estas asociaciones.
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <form action="{{ route('apoderados.destroy', $apoderado) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger" 
+                                                            {{ $apoderado->estudiantes->count() > 0 ? 'disabled' : '' }}>
+                                                            Eliminar
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </div>
                                         </div>
-                                    </td>
-                                </tr>
-                           @empty
-                                <tr>
-                                    <td colspan="8" class="text-center py-4">
-                                        <p class="text-muted mb-0">No se encontraron apoderados con los criterios especificados.</p>
-                                        <a href="{{ route('apoderados.index') }}" class="btn btn-sm btn-outline-secondary mt-3">
-                                            <i class="bi bi-arrow-repeat me-1"></i> Mostrar todos los apoderados
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div> 
-                <div class="mt-4">
-                    {{ $apoderados->appends(request()->query())->links() }}
+                                    </div>
+                                </td>
+                            </tr>
+                       @empty
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <p class="text-muted mb-0">No se encontraron apoderados con los criterios especificados.</p>
+                                    <a href="{{ route('apoderados.index') }}" class="btn btn-sm btn-outline-secondary mt-3">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Mostrar todos los apoderados
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div> 
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $apoderados->firstItem() }} - 
+                    {{ $apoderados->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $apoderados->total() }} {{ __('resultados') }}
                 </div>
-            
+                <div>
+                    {{ $apoderados->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
+            </div>
         </div>
     </div>
 </div>

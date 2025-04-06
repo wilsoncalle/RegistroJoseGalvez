@@ -10,6 +10,7 @@
             <i class="bi bi-plus-circle me-1"></i> Nuevo Estudiante
         </a>
     </div>
+    
 
     <div class="card mb-4">
         <div class="card-body">
@@ -42,7 +43,6 @@
                     </select>
                 </div>
 
-
                 <div class="col-md-2">
                     <label for="estado" class="form-label">Estado</label>
                     <select class="form-select" id="estado" name="estado">
@@ -52,13 +52,35 @@
                         <option value="Egresado" {{ $filtroEstado == 'Egresado' ? 'selected' : '' }}>Egresado</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
+                <div class="col-md-6 d-flex align-items-end gap-2">
+                    <!-- Botón Buscar -->
+                    <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
+
+                    <!-- Botón Limpiar -->
                     <a href="{{ route('estudiantes.index') }}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-counterclockwise me-6"></i> Limpiar
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
                     </a>
+
+                    <!-- Dropdown Exportar -->
+                    <div class="dropdown">
+                        <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ route('estudiantes.exportPdf', request()->query()) }}">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-success" href="{{ route('estudiantes.exportExcel', request()->query()) }}">
+                                    <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </form>
         </div>
@@ -84,7 +106,7 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>DNI</th>
@@ -96,9 +118,10 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $counter = ($estudiantes->currentPage() - 1) * $estudiantes->perPage() + 1; @endphp
                         @forelse($estudiantes as $estudiante)
                             <tr>
-                                <td>{{ $estudiante->id_estudiante }}</td>
+                                <td>{{ $counter++ }}</td>
                                 <td>{{ $estudiante->nombre }}</td>
                                 <td>{{ $estudiante->apellido }}</td>
                                 <td>{{ $estudiante->dni ?: 'No registrado'}}</td>
@@ -180,8 +203,17 @@
                 </table>
             </div>
 
-            <div class="mt-4">
-                {{ $estudiantes->appends(request()->query())->links() }}
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $estudiantes->firstItem() }} - 
+                    {{ $estudiantes->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $estudiantes->total() }} {{ __('resultados') }}
+                </div>
+                <div>
+                    {{ $estudiantes->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
             </div>
         </div>
     </div>

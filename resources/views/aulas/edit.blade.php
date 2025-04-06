@@ -56,27 +56,15 @@
                     
                     <div class="col-md-4">
                         <label for="id_grado" class="form-label">Grado <span class="text-danger">*</span></label>
-                        <select class="form-select" id="id_grado" name="id_grado" required>
+                        <select class="form-select" id="id_grado" name="id_grado" required disabled>
                             <option value="">Seleccionar grado...</option>
-                            @foreach($grados as $grado)
-                                <option value="{{ $grado->id_grado }}" 
-                                    {{ old('id_grado', $aula->id_grado) == $grado->id_grado ? 'selected' : '' }}>
-                                    {{ $grado->nombre }}
-                                </option>
-                            @endforeach
                         </select>
                     </div>
                     
                     <div class="col-md-4">
                         <label for="id_seccion" class="form-label">Sección <span class="text-danger">*</span></label>
-                        <select class="form-select" id="id_seccion" name="id_seccion" required>
+                        <select class="form-select" id="id_seccion" name="id_seccion" required disabled>
                             <option value="">Seleccionar sección...</option>
-                            @foreach($secciones as $seccion)
-                                <option value="{{ $seccion->id_seccion }}" 
-                                    {{ old('id_seccion', $aula->id_seccion) == $seccion->id_seccion ? 'selected' : '' }}>
-                                    {{ $seccion->nombre }}
-                                </option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -93,4 +81,79 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const nivelSelect = document.getElementById('id_nivel');
+    const gradoSelect = document.getElementById('id_grado');
+    const seccionSelect = document.getElementById('id_seccion');
+
+    function cargarGrados(id_nivel, selectedGrado) {
+        gradoSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+        seccionSelect.innerHTML = '<option value="">Seleccionar sección...</option>';
+        seccionSelect.disabled = true;
+
+        if (id_nivel) {
+            fetch(`{{ url('aulas/getGrados') }}/${id_nivel}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        data.forEach(grado => {
+                            gradoSelect.innerHTML += `<option value="${grado.id_grado}" ${selectedGrado == grado.id_grado ? 'selected' : ''}>${grado.nombre}</option>`;
+                        });
+                        gradoSelect.disabled = false;
+                    } else {
+                        gradoSelect.disabled = true;
+                    }
+                })
+                .catch(error => console.error('Error al obtener grados:', error));
+        } else {
+            gradoSelect.disabled = true;
+        }
+    }
+
+    function cargarSecciones(id_grado, selectedSeccion) {
+        seccionSelect.innerHTML = '<option value="">Seleccionar sección...</option>';
+        if (id_grado) {
+            fetch(`{{ url('aulas/getSecciones') }}/${id_grado}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        data.forEach(seccion => {
+                            seccionSelect.innerHTML += `<option value="${seccion.id_seccion}" ${selectedSeccion == seccion.id_seccion ? 'selected' : ''}>${seccion.nombre}</option>`;
+                        });
+                        seccionSelect.disabled = false;
+                    } else {
+                        seccionSelect.disabled = true;
+                    }
+                })
+                .catch(error => console.error('Error al obtener secciones:', error));
+        } else {
+            seccionSelect.disabled = true;
+        }
+    }
+
+    nivelSelect.addEventListener('change', function() {
+        cargarGrados(this.value, null);
+    });
+
+    gradoSelect.addEventListener('change', function() {
+        cargarSecciones(this.value, null);
+    });
+
+    // Cargar grados y secciones en la edición
+    const idNivelActual = nivelSelect.value;
+    const idGradoActual = '{{ old('id_grado', $aula->id_grado) }}';
+    const idSeccionActual = '{{ old('id_seccion', $aula->id_seccion) }}';
+    
+    if (idNivelActual) {
+        cargarGrados(idNivelActual, idGradoActual);
+        if (idGradoActual) {
+            cargarSecciones(idGradoActual, idSeccionActual);
+        }
+    }
+});
+</script>
 @endsection

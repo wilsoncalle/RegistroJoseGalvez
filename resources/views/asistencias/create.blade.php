@@ -3,21 +3,19 @@
 @section('content')
 <div class="container py-4">
     <div class="row mb-4">
-    <div class="col">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="d-flex align-items-center">
-            <a href="{{ route('asistencias.nivel', $aula->nivel->nombre) }}" class="text-decoration-none">
-                <i class="fas fa-arrow-left mr-2"></i>
-            </a>
-            <h2 class="mb-0">Tomar Asistencia - {{ $aula->nivel->nombre }} {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"</h2>
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('asistencias.nivel', $aula->nivel->nombre) }}" class="text-decoration-none">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                    </a>
+                    <h2 class="mb-0">Tomar Asistencia - {{ $aula->nivel->nombre }} {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"</h2>
+                </div>
+                <a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Volver a Secciones
+                </a>
+            </div>
         </div>
-        <a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}" class="btn btn-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver a Secciones
-</a>
-
-    </div>
-</div>
-
     </div>
 
     @if(session('error'))
@@ -77,14 +75,19 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Estudiante</th>
+                                <!-- Columna para el número de orden con título en vertical -->
+                                <th style="width: 80px;">N° Orden</th>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
                                 <th class="text-center">Estado</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($estudiantes as $estudiante)
                                 <tr>
+                                    <td>{{ $loop->iteration }}</td>
                                     <td>{{ $estudiante->nombre }}</td>
+                                    <td>{{ $estudiante->apellido }}</td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
                                             <input type="radio" class="btn-check" name="asistencias[{{ $estudiante->id_estudiante }}]" 
@@ -182,12 +185,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-
-
 @endpush
 
 <style>
+.vertical-header {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    /* Opcional: centrar el texto verticalmente y ajustar márgenes */
+    vertical-align: middle;
+    padding: 5px;
+}
+
 .btn-check {
     position: absolute;
     clip: rect(0,0,0,0);

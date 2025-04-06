@@ -35,15 +35,15 @@
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-2">
-                        <label for="nombre" class="form-label">Nombre<span class="text-danger">*</span></label>
+                    <div class="col-md-3">
+                        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="nombre" name="nombre" 
                                value="{{ old('nombre', $estudiante->nombre) }}" required>
                     </div>
-                    <div class="col-md-2">
-                        <label for="apellido" class="form-label">Apellido<span class="text-danger">*</span></label>
+                    <div class="col-md-3">
+                        <label for="apellido" class="form-label">Apellido <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="apellido" name="apellido" 
-                            value="{{ old('apellido', $estudiante->apellido) }}" required>
+                               value="{{ old('apellido', $estudiante->apellido) }}" required>
                     </div>
                     <div class="col-md-3">
                         <label for="dni" class="form-label">DNI</label>
@@ -105,9 +105,9 @@
                     </div>
                 </div>
                 
-                <!-- Apoderados -->
+                <!-- Información del Apoderado Principal -->
                 <div class="row mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <h5>Información del Apoderado Principal</h5>
                         <hr>
                         <p class="text-muted small">Seleccione los apoderados que estarán asociados a este estudiante</p>
@@ -132,14 +132,20 @@
                                             <thead class="table-light">
                                                 <tr>
                                                     <th width="5%"></th>
-                                                    <th>Apoderado</th>
+                                                    <th>Nombre</th>
+                                                    <th>Apellido</th>
                                                     <th>DNI</th>
                                                     <th>Teléfono</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="tabla_apoderados">
+                                                <!-- Mensaje inicial -->
+                                                <tr id="mensaje_no_busqueda" style="display: table-row;">
+                                                    <td colspan="5" class="text-center">Por favor, busque un apoderado para seleccionar.</td>
+                                                </tr>
+                                                <!-- Filas de apoderados ocultas inicialmente -->
                                                 @foreach($apoderados as $apoderado)
-                                                <tr class="fila-apoderado">
+                                                <tr class="fila-apoderado" style="display: none;">
                                                     <td>
                                                         <div class="form-check">
                                                             <input class="form-check-input apoderado-checkbox" type="checkbox" 
@@ -149,6 +155,7 @@
                                                         </div>
                                                     </td>
                                                     <td>{{ $apoderado->nombre }}</td>
+                                                    <td>{{ $apoderado->apellido }}</td>
                                                     <td>{{ $apoderado->dni ?? 'No registrado' }}</td>
                                                     <td>{{ $apoderado->telefono ?? 'No registrado' }}</td>
                                                 </tr>
@@ -169,121 +176,132 @@
                     </div>
                 </div>
                 
-                <!-- Script para búsqueda de apoderados -->
+                <!-- Scripts de búsqueda y carga de aulas -->
                 <script>
+                // Lógica de búsqueda de apoderados
                 document.addEventListener('DOMContentLoaded', function() {
-                    const buscadorInput = document.getElementById('buscador_apoderado');
-                    const btnBuscar = document.getElementById('btn_buscar');
-                    const filasApoderados = document.querySelectorAll('.fila-apoderado');
-                    
-                    function buscarApoderado() {
-                        const textoBusqueda = buscadorInput.value.toLowerCase().trim();
-                        
-                        if (textoBusqueda === '') {
-                            filasApoderados.forEach(fila => fila.style.display = '');
-                            return;
-                        }
-                        
-                        filasApoderados.forEach(fila => {
-                            const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                            const dni = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                            
-                            fila.style.display = (nombre.includes(textoBusqueda) || dni.includes(textoBusqueda)) ? '' : 'none';
-                        });
-                    }
-                    
-                    btnBuscar.addEventListener('click', buscarApoderado);
-                    buscadorInput.addEventListener('keyup', function(e) {
-                        if (e.key === 'Enter') {
-                            buscarApoderado();
-                        }
-                    });
-                });
-                </script>
+    const buscadorInput = document.getElementById('buscador_apoderado');
+    const btnBuscar = document.getElementById('btn_buscar');
+    const filasApoderados = document.querySelectorAll('.fila-apoderado');
+    const mensajeNoBusqueda = document.getElementById('mensaje_no_busqueda');
 
-                @push('scripts')
-                <script>
+    function buscarApoderado() {
+        const textoBusqueda = buscadorInput.value.toLowerCase().trim();
+
+        if (textoBusqueda === '') {
+            let algunaVisible = false;
+            // Mostrar solo los apoderados ya asignados (checkbox marcado)
+            filasApoderados.forEach(fila => {
+                const checkbox = fila.querySelector('.apoderado-checkbox');
+                if (checkbox.checked) {
+                    fila.style.display = '';
+                    algunaVisible = true;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+            // Si ninguno asignado se muestra, se muestra el mensaje inicial
+            if (!algunaVisible) {
+                mensajeNoBusqueda.style.display = 'table-row';
+                mensajeNoBusqueda.querySelector('td').textContent = 'Por favor, busque un apoderado para seleccionar.';
+            } else {
+                mensajeNoBusqueda.style.display = 'none';
+            }
+        } else {
+            mensajeNoBusqueda.style.display = 'none';
+            let hayResultados = false;
+
+            // Filtrar apoderados por nombre, apellido o DNI
+            filasApoderados.forEach(fila => {
+                const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const apellido = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                const dni = fila.querySelector('td:nth-child(4)').textContent.toLowerCase();
+
+                if (nombre.includes(textoBusqueda) || apellido.includes(textoBusqueda) || dni.includes(textoBusqueda)) {
+                    fila.style.display = '';
+                    hayResultados = true;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+
+            if (!hayResultados) {
+                mensajeNoBusqueda.style.display = 'table-row';
+                mensajeNoBusqueda.querySelector('td').textContent = 'No se encontraron apoderados que coincidan con la búsqueda.';
+            }
+        }
+    }
+
+    btnBuscar.addEventListener('click', buscarApoderado);
+    buscadorInput.addEventListener('input', buscarApoderado);
+    buscadorInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') buscarApoderado();
+    });
+
+    // Ejecutar al cargar la página para mostrar los apoderados asignados
+    buscarApoderado();
+});
+
+
+                // Lógica para cargar las aulas según el nivel seleccionado
+                const urlAulas = "{{ url('/aulas/nivel') }}";
                 document.addEventListener('DOMContentLoaded', function() {
-                    const seleccionarTodos = document.getElementById('seleccionar_todos');
-                    const checkboxes = document.querySelectorAll('.apoderado-checkbox');
+                    const nivelSelect = document.getElementById('nivel');
+                    const aulaSelect = document.getElementById('id_aula');
                     
-                    if(seleccionarTodos) {
-                        seleccionarTodos.addEventListener('change', function() {
-                            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-                        });
+                    function cargarAulas(nivelId, aulaActual) {
+                        aulaSelect.innerHTML = '<option value="">Cargando aulas...</option>';
+                        fetch(`${urlAulas}/${nivelId}`)
+                            .then(response => {
+                                if (!response.ok) throw new Error('Error en la red');
+                                return response.json();
+                            })
+                            .then(aulas => {
+                                aulaSelect.innerHTML = '';
+                                if(aulas.length > 0) {
+                                    const defaultOption = document.createElement('option');
+                                    defaultOption.value = '';
+                                    defaultOption.textContent = 'Seleccione un aula';
+                                    aulaSelect.appendChild(defaultOption);
+                                    aulas.forEach(aula => {
+                                        const option = document.createElement('option');
+                                        option.value = aula.id;
+                                        option.textContent = aula.nombre_completo;
+                                        if(aula.id == aulaActual){
+                                            option.selected = true;
+                                        }
+                                        aulaSelect.appendChild(option);
+                                    });
+                                } else {
+                                    aulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                aulaSelect.innerHTML = '<option value="">Error al cargar aulas</option>';
+                            });
                     }
-                });
-                </script>
-                
-                <!-- Script para cargar las aulas según el nivel seleccionado -->
-                <script>
-                    // URL base definida en Laravel
-                    const urlAulas = "{{ url('/aulas/nivel') }}";
                     
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const nivelSelect = document.getElementById('nivel');
-                        const aulaSelect = document.getElementById('id_aula');
-                        
-                        // Función para cargar aulas y seleccionar la que corresponde
-                        function cargarAulas(nivelId, aulaActual) {
-                            aulaSelect.innerHTML = '<option value="">Cargando aulas...</option>';
-                            fetch(`${urlAulas}/${nivelId}`)
-                                .then(response => {
-                                    if (!response.ok) {
-                                        throw new Error('Error en la red');
-                                    }
-                                    return response.json();
-                                })
-                                .then(aulas => {
-                                    aulaSelect.innerHTML = '';
-                                    if(aulas.length > 0) {
-                                        const defaultOption = document.createElement('option');
-                                        defaultOption.value = '';
-                                        defaultOption.textContent = 'Seleccione un aula';
-                                        aulaSelect.appendChild(defaultOption);
-                                        
-                                        aulas.forEach(aula => {
-                                            const option = document.createElement('option');
-                                            option.value = aula.id;
-                                            option.textContent = aula.nombre_completo;
-                                            if(aula.id == aulaActual){
-                                                option.selected = true;
-                                            }
-                                            aulaSelect.appendChild(option);
-                                        });
-                                    } else {
-                                        aulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    aulaSelect.innerHTML = '<option value="">Error al cargar aulas</option>';
-                                });
-                        }
-                        
-                        // Al cargar la página, si ya hay un nivel seleccionado, se cargan las aulas correspondientes
-                        if(nivelSelect.value) {
-                            cargarAulas(nivelSelect.value, "{{ old('id_aula', $estudiante->id_aula) }}");
+                    if(nivelSelect.value) {
+                        cargarAulas(nivelSelect.value, "{{ old('id_aula', $estudiante->id_aula) }}");
+                    } else {
+                        aulaSelect.disabled = true;
+                        aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
+                    }
+                    
+                    nivelSelect.addEventListener('change', function() {
+                        const nivelId = this.value;
+                        if(nivelId) {
+                            aulaSelect.disabled = false;
+                            cargarAulas(nivelId, null);
                         } else {
                             aulaSelect.disabled = true;
                             aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
                         }
-                        
-                        // Cuando se cambia el nivel, se actualizan las aulas
-                        nivelSelect.addEventListener('change', function() {
-                            const nivelId = this.value;
-                            if(nivelId) {
-                                aulaSelect.disabled = false;
-                                cargarAulas(nivelId, null);
-                            } else {
-                                aulaSelect.disabled = true;
-                                aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
-                            }
-                        });
                     });
+                });
                 </script>
-                @endpush
-
+                
                 <!-- Botones del formulario -->
                 <div class="d-flex justify-content-end mt-4">
                     <button type="reset" class="btn btn-secondary me-2">

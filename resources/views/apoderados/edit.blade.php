@@ -34,38 +34,49 @@
                         <hr>
                     </div>
                 </div>
-
+                
                 <div class="row mb-3">
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label for="nombre" class="form-label">Nombre<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre" value="{{ old('nombre', $apoderado->nombre) }}" required>
+                        <input type="text" class="form-control @error('nombre') is-invalid @enderror" 
+                               id="nombre" name="nombre" 
+                               value="{{ old('nombre', $apoderado->nombre) }}" required>
                         @error('nombre')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-2">
+                    
+                    <div class="col-md-3">
                         <label for="apellido" class="form-label">Apellido<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('apellido') is-invalid @enderror" id="apellido" name="apellido" value="{{ old('apellido', $apoderado->apellido) }}" required>
+                        <input type="text" class="form-control @error('apellido') is-invalid @enderror" 
+                               id="apellido" name="apellido" 
+                               value="{{ old('apellido', $apoderado->apellido) }}" required>
                         @error('apellido')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-
+                    
                     <div class="col-md-3">
                         <label for="dni" class="form-label">DNI</label>
-                        <input type="text" class="form-control @error('dni') is-invalid @enderror" id="dni" name="dni" value="{{ old('dni', $apoderado->dni) }}">
+                        <input type="text" class="form-control @error('dni') is-invalid @enderror" 
+                               id="dni" name="dni" 
+                               value="{{ old('dni', $apoderado->dni) }}">
                         @error('dni')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+                    
                     <div class="col-md-3">
                         <label for="telefono" class="form-label">Teléfono</label>
-                        <input type="text" class="form-control @error('telefono') is-invalid @enderror" id="telefono" name="telefono" value="{{ old('telefono', $apoderado->telefono) }}" required>
+                        <input type="text" class="form-control @error('telefono') is-invalid @enderror" 
+                               id="telefono" name="telefono" 
+                               value="{{ old('telefono', $apoderado->telefono) }}">
                         @error('telefono')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-3">
+                    
+                    <div class="col-md-3 mt-3">
                         <label for="relacion" class="form-label">Relación con el Estudiante <span class="text-danger">*</span></label>
                         <select class="form-select @error('relacion') is-invalid @enderror" id="relacion" name="relacion" required>
                             <option value="">Seleccionar...</option>
@@ -81,7 +92,7 @@
                         @enderror
                     </div>
                 </div>
-
+                
                 <!-- Estudiantes Asociados -->
                 <div class="row mb-3">
                     <div class="col-md-12">
@@ -90,7 +101,7 @@
                         <p class="text-muted small">Seleccione los estudiantes que estarán asociados a este apoderado</p>
                     </div>
                 </div>
-
+                
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <div class="card">
@@ -98,7 +109,8 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <div class="input-group">
-                                            <input type="text" class="form-control" id="buscador_estudiante" placeholder="Buscar estudiante por nombre o DNI...">
+                                            <input type="text" class="form-control" id="buscador_estudiante" 
+                                                   placeholder="Buscar estudiante por nombre o DNI...">
                                             <button class="btn btn-primary me-2" type="button" id="btn_buscar">
                                                 <i class="bi bi-search me-1"></i> Buscar
                                             </button>
@@ -111,30 +123,45 @@
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th width="5%"></th>
-                                                        <th>Estudiante</th>
+                                                        <th>Nombre</th>
+                                                        <th>Apellido</th>
                                                         <th>DNI</th>
+                                                        <th>Nivel</th>
                                                         <th>Aula</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="tabla_estudiantes">
+                                                    <!-- Mensaje inicial -->
+                                                    <tr id="mensaje_no_busqueda" style="display: table-row;">
+                                                        <td colspan="6" class="text-center">Por favor, busque un estudiante para seleccionar.</td>
+                                                    </tr>
+                                                    <!-- Filas de estudiantes ocultas inicialmente -->
                                                     @foreach($estudiantes as $estudiante)
-                                                    <tr class="fila-estudiante">
+                                                    <tr class="fila-estudiante" style="{{ in_array($estudiante->id_estudiante, old('estudiantes', $apoderado->estudiantes->pluck('id_estudiante')->toArray())) ? '' : 'display: none;' }}">
+
                                                         <td>
                                                             <div class="form-check">
                                                                 <input class="form-check-input estudiante-checkbox" type="checkbox" 
-                                                                    name="estudiantes[]" value="{{ $estudiante->id_estudiante }}" 
-                                                                    id="estudiante{{ $estudiante->id_estudiante }}"
-                                                                    {{ in_array($estudiante->id_estudiante, old('estudiantes', $apoderado->estudiantes->pluck('id_estudiante')->toArray())) ? 'checked' : '' }}>
+                                                                       name="estudiantes[]" value="{{ $estudiante->id_estudiante }}" 
+                                                                       id="estudiante{{ $estudiante->id_estudiante }}"
+                                                                       {{ in_array($estudiante->id_estudiante, old('estudiantes', $apoderado->estudiantes->pluck('id_estudiante')->toArray())) ? 'checked' : '' }}>
                                                             </div>
                                                         </td>
                                                         <td>{{ $estudiante->nombre }}</td>
-                                                        <td>{{ $estudiante->apellido}}</td>
+                                                        <td>{{ $estudiante->apellido }}</td>
                                                         <td>{{ $estudiante->dni ?? 'No registrado' }}</td>
                                                         <td>
-                                                            @if($estudiante->aula)
-                                                                {{ $estudiante->aula->nombre }}
+                                                            @if($estudiante->aula && $estudiante->aula->nivel)
+                                                                {{ $estudiante->aula->nivel->nombre }}
                                                             @else
-                                                                No asignado
+                                                                <span class="text-muted">No definido</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            @if($estudiante->aula)
+                                                                {{ $estudiante->aula->nombre_completo }}
+                                                            @else
+                                                                <span class="text-muted">No asignado</span>
                                                             @endif
                                                         </td>
                                                     </tr>
@@ -155,7 +182,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Botones -->
                 <div class="d-flex justify-content-end mt-4">
                     <button type="reset" class="btn btn-secondary me-2">
@@ -173,38 +200,61 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Función para el buscador de estudiantes
     const buscadorInput = document.getElementById('buscador_estudiante');
     const btnBuscar = document.getElementById('btn_buscar');
     const filasEstudiantes = document.querySelectorAll('.fila-estudiante');
-    
+    const mensajeNoBusqueda = document.getElementById('mensaje_no_busqueda');
+
     function buscarEstudiante() {
         const textoBusqueda = buscadorInput.value.toLowerCase().trim();
-        
+
         if (textoBusqueda === '') {
-            // Si no hay texto de búsqueda, mostrar todos los estudiantes
+            let algunaVisible = false;
             filasEstudiantes.forEach(fila => {
-                fila.style.display = '';
+                const checkbox = fila.querySelector('.estudiante-checkbox');
+                if (checkbox.checked) {
+                    fila.style.display = '';
+                    algunaVisible = true;
+                } else {
+                    fila.style.display = 'none';
+                }
             });
-            return;
+            // Si ninguna fila asignada se muestra, mostramos el mensaje inicial.
+            mensajeNoBusqueda.style.display = algunaVisible ? 'none' : 'table-row';
+            if (!algunaVisible) {
+                mensajeNoBusqueda.querySelector('td').textContent = 'Por favor, busque un estudiante para seleccionar.';
+            }
+        } else {
+            mensajeNoBusqueda.style.display = 'none';
+            let hayResultados = false;
+            filasEstudiantes.forEach(fila => {
+                const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const apellido = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                const dni = fila.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                if (nombre.includes(textoBusqueda) || apellido.includes(textoBusqueda) || dni.includes(textoBusqueda)) {
+                    fila.style.display = '';
+                    hayResultados = true;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+            if (!hayResultados) {
+                mensajeNoBusqueda.style.display = 'table-row';
+                mensajeNoBusqueda.querySelector('td').textContent = 'No se encontraron estudiantes que coincidieron con la búsqueda.';
+            }
         }
-        
-        filasEstudiantes.forEach(fila => {
-            const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
-            const dni = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
-            
-            fila.style.display = (nombre.includes(textoBusqueda) || dni.includes(textoBusqueda)) ? '' : 'none';
-        });
     }
-    
-    // Eventos para activar la búsqueda
+
     btnBuscar.addEventListener('click', buscarEstudiante);
+    buscadorInput.addEventListener('input', buscarEstudiante);
     buscadorInput.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-            buscarEstudiante();
-        }
+        if (e.key === 'Enter') buscarEstudiante();
     });
+
+    // Ejecutar al cargar la página para mostrar los estudiantes asignados
+    buscarEstudiante();
 });
+
 </script>
 @endpush
 @endsection

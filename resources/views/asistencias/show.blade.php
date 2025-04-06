@@ -26,6 +26,18 @@
         </div>
     </div>
 
+    <!-- Botones de exportación -->
+    <div class="row mb-3">
+        <div class="col">
+            <button id="export-excel-btn" class="btn btn-success" disabled>
+                <i class="bi bi-file-excel me-1"></i> Exportar a Excel
+            </button>
+            <button id="export-pdf-btn" class="btn btn-danger" disabled>
+                <i class="bi bi-file-pdf me-1"></i> Exportar a PDF
+            </button>
+        </div>
+    </div>
+
     <div class="row mb-4">
         <div class="col-md-3">
             <label for="materia" class="form-label">Materia</label>
@@ -65,7 +77,7 @@
     </div>
 
     <!-- Mensaje de carga -->
-    <div id="loading-message" class="alert alert-info">
+    <div id="loading-message" class="alert alert-info" style="width: 425px; text-align: center">
         Seleccione los filtros de asistencia para cargar los datos
     </div>
 
@@ -73,9 +85,6 @@
     <div id="attendance-container" class="d-none">
         <div id="edit-mode-controls" class="mb-3 d-none">
             <button id="save-attendance-btn" class="btn btn-primary">Guardar Cambios</button>
-            <div class="mt-2 alert alert-warning">
-                <i class="bi bi-info-circle"></i> Haga clic en los estados de asistencia para modificarlos
-            </div>
         </div>
         <table class="table table-bordered m-0" id="attendance-table">
             <thead>
@@ -111,18 +120,44 @@
 </div>
 
 <!-- Opciones rápidas de asistencia (visible solo en modo edición) -->
-<div id="quick-attendance-options" class="position-fixed d-none" style="background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 5px;">
-    <div class="d-flex">
-        <button class="btn btn-sm btn-success quick-option mx-1" data-value="P">P</button>
-        <button class="btn btn-sm btn-warning quick-option mx-1" data-value="T">T</button>
-        <button class="btn btn-sm btn-danger quick-option mx-1" data-value="F">F</button>
-        <button class="btn btn-sm btn-info quick-option mx-1" data-value="J">J</button>
-    </div>
+<div id="quick-attendance-options" class="position-fixed d-none" style="border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 0;">
+  <div class="d-flex">
+    <button class="btn rounded-0 rounded-start quick-option" data-value="P" 
+      style="background-color: white; color: #28a745; border: 1.5px solid #28a745;">P</button>
+    <button class="btn rounded-0 quick-option" data-value="T" 
+      style="background-color: white; color: #ffc107; border: 1.5px solid #ffc107;">T</button>
+    <button class="btn rounded-0 quick-option" data-value="F" 
+      style="background-color: white; color: #dc3545; border: 1.5px solid #dc3545;">F</button>
+    <button class="btn rounded-0 rounded-end quick-option" data-value="J" 
+      style="background-color: white; color: #17a2b8; border: 1.5px solid #17a2b8;">J</button>
+  </div>
 </div>
+<!-- Formulario para exportar a EXCEL -->
+<form id="export-form" action="{{ route('asistencias.export.excel') }}" method="POST" style="display: none;">
+    @csrf
+    <input type="hidden" name="id_aula" value="{{ $aula->id_aula }}">
+    <input type="hidden" name="id_materia" id="export-materia">
+    <input type="hidden" name="id_docente" id="export-docente">
+    <input type="hidden" name="mes" id="export-mes">
+    <input type="hidden" name="año" id="export-año">
+</form>
+<!-- Formulario para exportar a PDF -->
+<form id="export-pdf-form" action="{{ route('asistencias.pdf') }}" method="POST" style="display: none;">
+    @csrf
+    <input type="hidden" name="id_aula" value="{{ $aula->id_aula }}">
+    <input type="hidden" name="id_materia" id="export-pdf-materia">
+    <input type="hidden" name="id_docente" id="export-pdf-docente">
+    <input type="hidden" name="mes" id="export-pdf-mes">
+    <input type="hidden" name="año" id="export-pdf-año">
+</form>
+
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+    
+    
     // Datos de PHP que necesitamos en JavaScript
     const aulaId = @json($aula->id_aula);
     const updateAttendanceUrl = @json(route('asistencias.update-attendance'));
@@ -140,7 +175,62 @@ document.addEventListener('DOMContentLoaded', function() {
     const modeEdit = document.getElementById('modeEdit');
     const editModeControls = document.getElementById('edit-mode-controls');
     const saveAttendanceBtn = document.getElementById('save-attendance-btn');
+
+    // Elementos de botones y formularios
+    const exportExcelBtn = document.getElementById('export-excel-btn');
+    const exportExcelForm = document.getElementById('export-form');
+    const exportPdfBtn = document.getElementById('export-pdf-btn');
+    const exportPdfForm = document.getElementById('export-pdf-form');
+
+    // Elementos para Excel
+    const exportExcelMateria = document.getElementById('export-materia');
+    const exportExcelDocente = document.getElementById('export-docente');
+    const exportExcelMes = document.getElementById('export-mes');
+    const exportExcelAño = document.getElementById('export-año');
+
+    // Elementos para PDF
+    const exportPdfMateria = document.getElementById('export-pdf-materia');
+    const exportPdfDocente = document.getElementById('export-pdf-docente');
+    const exportPdfMes = document.getElementById('export-pdf-mes');
+    const exportPdfAño = document.getElementById('export-pdf-año');
+
+
+    // Habilitar o deshabilitar botones según la selección de filtros
+    [materiaSelect, docenteSelect, mesSelect, añoSelect].forEach(select => {
+        select.addEventListener('change', function() {
+            if (materiaSelect.value && docenteSelect.value && mesSelect.value && añoSelect.value) {
+                exportExcelBtn.disabled = false;
+                exportPdfBtn.disabled = false;
+            } else {
+                exportExcelBtn.disabled = true;
+                exportPdfBtn.disabled = true;
+            }
+        });
+    });
+
+    // Exportar a Excel
+    exportExcelBtn.addEventListener('click', function() {
+        if (materiaSelect.value && docenteSelect.value && mesSelect.value && añoSelect.value) {
+            exportExcelMateria.value = materiaSelect.value;
+            exportExcelDocente.value = docenteSelect.value;
+            exportExcelMes.value = mesSelect.value;
+            exportExcelAño.value = añoSelect.value;
+            exportExcelForm.submit();
+        }
+    });
+
+    // Exportar a PDF
+    exportPdfBtn.addEventListener('click', function() {
+        if (materiaSelect.value && docenteSelect.value && mesSelect.value && añoSelect.value) {
+            exportPdfMateria.value = materiaSelect.value;
+            exportPdfDocente.value = docenteSelect.value;
+            exportPdfMes.value = mesSelect.value;
+            exportPdfAño.value = añoSelect.value;
+            exportPdfForm.submit();
+        }
+    });
     
+   
     // Variables para el modo edición
     let currentMode = 'read';
     let attendanceData = null;
@@ -306,34 +396,56 @@ document.addEventListener('DOMContentLoaded', function() {
             weeks.push(currentWeek);
         }
 
-        // Construir la cabecera de la tabla (3 filas)
+        // Convertir attendance_details a arreglo y ordenar por apellido
+        const students = Object.entries(data.attendance_details).map(([id, studentData]) => ({
+            id,
+            ...studentData
+        }));
+
+        students.sort((a, b) => {
+            // Función para extraer el apellido, asumiendo que es la última palabra del string
+            const getApellido = nombreCompleto => {
+                const partes = nombreCompleto.split(' ');
+                return partes.length > 1 ? partes[partes.length - 1].trim() : partes[0].trim();
+            };
+            const apellidoA = getApellido(a.nombre);
+            const apellidoB = getApellido(b.nombre);
+            return apellidoA.localeCompare(apellidoB, 'es', { sensitivity: 'base' });
+        });
+    
+        // Construir la cabecera de la tabla
         const table = document.getElementById('attendance-table');
         const thead = table.querySelector('thead');
         thead.innerHTML = '';
 
-        // Primera fila: "Apellidos y Nombres", semanas y Totales
         const weekRow = document.createElement('tr');
+        // Agregamos la columna "N° Orden" con título vertical
+        const orderHeader = document.createElement('th');
+        orderHeader.textContent = 'N° Orden';
+        orderHeader.rowSpan = 3;
+        orderHeader.classList.add('vertical-header');
+        weekRow.appendChild(orderHeader);
+
+        // Columna de Apellidos y Nombres
         const nameHeader = document.createElement('th');
         nameHeader.textContent = 'Apellidos y Nombres';
         nameHeader.rowSpan = 3;
-        nameHeader.classList.add('th-blue'); // Encabezado de estudiantes azul
+        nameHeader.classList.add('th-blue');
         weekRow.appendChild(nameHeader);
 
         weeks.forEach((week, index) => {
             const weekHeader = document.createElement('th');
             weekHeader.textContent = `Semana ${index + 1}`;
             weekHeader.colSpan = week.length;
-            weekHeader.classList.add('th-black'); // Encabezado de semanas negro
+            weekHeader.classList.add('th-black');
             weekRow.appendChild(weekHeader);
         });
-        // Agregar la cabecera de Totales con rowSpan de 3
         const totalsHeader = document.createElement('th');
         totalsHeader.textContent = 'Totales';
         totalsHeader.rowSpan = 3;
         totalsHeader.classList.add('th-celeste');
         weekRow.appendChild(totalsHeader);
 
-        // Segunda fila: Iniciales de los días (usando las semanas)
         const dayInitialsRow = document.createElement('tr');
         weeks.forEach(week => {
             week.forEach(sd => {
@@ -344,7 +456,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Tercera fila: Números de días y (sin celda para Totales, ya que está en la primera fila)
         const dateRow = document.createElement('tr');
         weeks.forEach(week => {
             week.forEach(sd => {
@@ -359,42 +470,42 @@ document.addEventListener('DOMContentLoaded', function() {
         thead.appendChild(dayInitialsRow);
         thead.appendChild(dateRow);
 
-        // Construir el cuerpo de la tabla con los datos de asistencia
+        // Construir el cuerpo de la tabla con los estudiantes ordenados
         const tbody = document.getElementById('attendance-body');
         tbody.innerHTML = '';
 
-        // Generar filas para cada estudiante
-        Object.entries(data.attendance_details).forEach(([studentId, studentData]) => {
+        students.forEach((student, index) => {
             const row = document.createElement('tr');
-            
-            // Celda de nombre de estudiante
+
+            // Columna de N° Orden
+            const orderCell = document.createElement('td');
+            orderCell.textContent = index + 1;
+            row.appendChild(orderCell);
+
+            // Columna de Apellidos y Nombres
             const nameCell = document.createElement('td');
-            nameCell.textContent = studentData.nombre;
+            nameCell.textContent = student.nombre;
             nameCell.classList.add('student-name');
             row.appendChild(nameCell);
 
-            // Celdas para cada día escolar
             schoolDays.forEach(sd => {
                 const cell = document.createElement('td');
                 const day = sd.day;
-                const status = studentData.daily_attendance[day];
+                const status = student.daily_attendance[day];
                 
-                // Verificar si hay modificaciones para esta celda
-                if (modifiedAttendance[studentId] && modifiedAttendance[studentId][day]) {
-                    updateAttendanceCell(cell, modifiedAttendance[studentId][day]);
+                if (modifiedAttendance[student.id] && modifiedAttendance[student.id][day]) {
+                    updateAttendanceCell(cell, modifiedAttendance[student.id][day]);
                 } else {
                     updateAttendanceCell(cell, status);
                 }
                 
-                // Agregar atributos para identificar la celda
-                cell.setAttribute('data-student', studentId);
+                cell.setAttribute('data-student', student.id);
                 cell.setAttribute('data-date', day);
                 
-                // En modo edición, hacer las celdas clickeables
                 if (currentMode === 'edit') {
                     cell.classList.add('editable-cell');
                     cell.addEventListener('click', function() {
-                        if (status || modifiedAttendance[studentId]?.[day]) {
+                        if (status || modifiedAttendance[student.id]?.[day]) {
                             handleAttendanceCellClick(cell);
                         }
                     });
@@ -403,27 +514,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 row.appendChild(cell);
             });
 
-            // Agregar la celda de Totales para cada estudiante
             const totalsCell = document.createElement('td');
-            const stats = studentData.monthly_stats;
+            const stats = student.monthly_stats;
             totalsCell.textContent = `P:${stats.P} T:${stats.T} F:${stats.F} J:${stats.J}`;
             row.appendChild(totalsCell);
 
             tbody.appendChild(row);
         });
 
-        // Mostrar la tabla y ocultar mensaje de carga
         loadingMessage.classList.add('d-none');
         attendanceContainer.classList.remove('d-none');
         
-        // Mostrar/ocultar controles de edición según el modo
         if (currentMode === 'edit') {
             editModeControls.classList.remove('d-none');
         } else {
             editModeControls.classList.add('d-none');
         }
     }
-    
+        
     function updateAttendanceCell(cell, status) {
         cell.textContent = status || '';
         cell.className = ''; // Limpiar clases existentes
@@ -449,7 +557,8 @@ document.addEventListener('DOMContentLoaded', function() {
             cell.classList.add('editable-cell');
         }
     }
-    
+
+    // Funcion para que aparezca el panel de acciones en el modo edición
     function handleAttendanceCellClick(cell) {
         if (currentMode === 'edit') {
             const studentId = cell.getAttribute('data-student');
@@ -458,27 +567,39 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('student-id').value = studentId;
             document.getElementById('attendance-date').value = date;
             
-            // Mostrar opciones rápidas en lugar del modal
-            const rect = cell.getBoundingClientRect();
-            quickOptionsPanel.style.top = `${rect.bottom + window.scrollY + 5}px`;
-            quickOptionsPanel.style.left = `${rect.left + window.scrollX}px`;
+            // Obtener las coordenadas iniciales de la celda
+            const updatePanelPosition = () => {
+                const rect = cell.getBoundingClientRect();
+                quickOptionsPanel.style.top = `${rect.top}px`;
+                quickOptionsPanel.style.left = `${rect.right + 5}px`;
+            };
+
+            updatePanelPosition();
             quickOptionsPanel.classList.remove('d-none');
-            
+
+            // Escuchar el evento scroll para actualizar la posición
+            const onScroll = () => {
+                updatePanelPosition();
+            };
+
+            window.addEventListener('scroll', onScroll);
+
             // Cerrar el panel al hacer clic fuera
             const closeQuickPanel = function(e) {
                 if (!quickOptionsPanel.contains(e.target) && e.target !== cell) {
                     quickOptionsPanel.classList.add('d-none');
                     document.removeEventListener('click', closeQuickPanel);
+                    window.removeEventListener('scroll', onScroll);
                 }
             };
-            
+
             // Pequeño retraso para evitar que se cierre inmediatamente
             setTimeout(() => {
                 document.addEventListener('click', closeQuickPanel);
             }, 100);
         }
     }
-    
+
     function saveAttendanceChanges() {
         if (Object.keys(modifiedAttendance).length === 0) {
             alert('No hay cambios para guardar');
@@ -545,28 +666,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* Encabezados de estudiantes: fondo azul */
 .th-blue {
-    background-color: #007bff !important; /* Azul */
+    background-color: #054f9f !important;
     color: #fff !important;
     font-weight: bold;
 }
 
 /* Encabezados de semanas: fondo negro */
 .th-black {
-    background-color: #000 !important;
+    background-color: #1067c4 !important;
     color: #fff !important;
     font-weight: bold;
 }
 
 /* Encabezados de días: fondo gris */
 .th-grey {
-    background-color: #808080 !important;
-    color: #fff !important;
+    background-color: #f8f8f8 !important;
+    color: #212529 !important;
     font-weight: bold;
 }
 
 /* Estilo para la cabecera de Totales */
 .th-celeste {
-    background-color: #17a2b8 !important;
+    background-color: #054f9f !important;
     color: #fff !important;
     font-weight: bold;
 }
@@ -574,8 +695,21 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Alinear a la izquierda la primera columna */
 #attendance-table td:first-child,
 #attendance-table th:first-child {
+    text-align: center;
+}
+
+/* Alinear a la izquierda la segunda columna */
+#attendance-table td:nth-child(2),
+#attendance-table th:nth-child(2) {
     text-align: left;
 }
+
+th.vertical-header{
+    background-color: #03366c !important;
+    color: #fff !important;
+    font-weight: bold;
+}
+
 
 /* Estilos para estados de asistencia */
 .attendance-P { 
@@ -644,6 +778,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .btn-info.attendance-option, .btn-info.quick-option {
     color: white;
+}
+
+/* Hover sobre los botones de acciones rápidas */
+.quick-option {
+    transition: all 0.3s ease-in-out;
+}
+
+.quick-option:hover {
+    color: white !important;
+}
+
+.quick-option[data-value="P"]:hover {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+}
+
+.quick-option[data-value="T"]:hover {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+}
+
+.quick-option[data-value="F"]:hover {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+.quick-option[data-value="J"]:hover {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+}
+
+/* Estilos para el encabezado vertical de la columna N° Orden */
+.vertical-header {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    vertical-align: middle;
+    padding: 5px;
 }
 </style>
 @endsection

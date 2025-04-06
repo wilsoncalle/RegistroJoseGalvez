@@ -89,25 +89,13 @@
                             value="{{ old('fecha_contratacion', $docente->fecha_contratacion) }}">
                     </div>
                     <div class="col-md-3">
-                        <label for="nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
-                        <select class="form-select" id="nivel" name="nivel">
+                        <label for="id_nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
+                        <select class="form-select" id="id_nivel" name="id_nivel" required>
                             <option value="">Seleccione un nivel</option>
                             @foreach ($niveles as $nivel)
                                 <option value="{{ $nivel->id_nivel }}" 
-                                    {{ old('nivel', $docente->materia->nivel->id_nivel) == $nivel->id_nivel ? 'selected' : '' }}>
+                                    {{ old('id_nivel', $docente->id_nivel) == $nivel->id_nivel ? 'selected' : '' }}>
                                     {{ $nivel->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="id_materia" class="form-label">Materia <span class="text-danger">*</span></label>
-                        <select class="form-select" id="id_materia" name="id_materia">
-                            <option value="">Seleccione una materia</option>
-                            @foreach ($materias as $materia)
-                                <option value="{{ $materia->id_materia }}" 
-                                    {{ old('id_materia', $docente->id_materia) == $materia->id_materia ? 'selected' : '' }}>
-                                    {{ $materia->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -126,46 +114,4 @@
         </div>
     </div>
 </div>
-
-<script>
-// Cargar las materias según el nivel seleccionado
-document.getElementById('nivel').addEventListener('change', function() {
-    const nivelId = this.value;
-    const materiaSelect = document.getElementById('id_materia');
-
-    // Reiniciar el select de materias con el placeholder
-    materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
-
-    if (nivelId === '') {
-        materiaSelect.disabled = true;
-        return;
-    }
-
-    // Habilitar el select de materias
-    materiaSelect.disabled = false;
-
-    // Realizar la petición AJAX para obtener las materias según el nivel
-    fetch("{{ route('materias.pornivel') }}?id_nivel=" + nivelId)
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(materia => {
-                let option = document.createElement('option');
-                option.value = materia.id_materia;
-                option.text = materia.nombre;
-                materiaSelect.appendChild(option);
-            });
-
-            // Verificar si el nivel seleccionado coincide con el nivel de la materia del docente
-            const docenteNivel = "{{ $docente->materia ? $docente->materia->nivel->id_nivel : '' }}";
-            if(nivelId === docenteNivel) {
-                // Seleccionar la materia previamente asignada si el nivel coincide
-                document.getElementById('id_materia').value = "{{ old('id_materia', $docente->id_materia) }}";
-            } else {
-                // Dejar el placeholder seleccionado
-                document.getElementById('id_materia').selectedIndex = 0;
-            }
-        })
-        .catch(error => console.error('Error:', error));
-});
-</script>
 @endsection

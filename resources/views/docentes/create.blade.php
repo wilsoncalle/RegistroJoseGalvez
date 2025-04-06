@@ -82,22 +82,15 @@
                         <input type="date" class="form-control" id="fecha_contratacion" name="fecha_contratacion" value="{{ old('fecha_contratacion') }}">
                     </div>
                     <div class="col-md-3">
-                        <!-- Nuevo select para Nivel -->
-                        <label for="nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
-                        <select class="form-select" id="nivel" name="nivel">
+                        <!-- Select para Nivel -->
+                        <label for="id_nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
+                        <select class="form-select" id="id_nivel" name="id_nivel" required>
                             <option value="">Seleccione un nivel</option>
                             @foreach ($niveles as $nivel)
-                                <option value="{{ $nivel->id_nivel }}" {{ old('nivel') == $nivel->id_nivel ? 'selected' : '' }}>
+                                <option value="{{ $nivel->id_nivel }}" {{ old('id_nivel') == $nivel->id_nivel ? 'selected' : '' }}>
                                     {{ $nivel->nombre }}
                                 </option>
                             @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="id_materia" class="form-label">Materia <span class="text-danger">*</span></label>
-                        <select class="form-select" id="id_materia" name="id_materia" disabled>
-                            <option value="">Primero seleccione un nivel</option>
-                            <!-- Las opciones se cargarán dinámicamente según el nivel seleccionado -->
                         </select>
                     </div>
                 </div>
@@ -114,37 +107,4 @@
         </div>
     </div>
 </div>
-
-<!-- Script para cargar dinámicamente las materias según el nivel seleccionado -->
-<script>
-document.getElementById('nivel').addEventListener('change', function() {
-    const nivelId = this.value;
-    const materiaSelect = document.getElementById('id_materia');
-
-    // Reiniciar el select de materias
-    materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
-
-    if (nivelId === '') {
-        materiaSelect.disabled = true;
-        return;
-    }
-
-    // Habilitar el select de materias
-    materiaSelect.disabled = false;
-
-    // Realizar la petición AJAX para obtener las materias según el nivel
-    fetch("{{ route('materias.pornivel') }}?id_nivel=" + nivelId)
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(materia => {
-                let option = document.createElement('option');
-                // Ajusta 'id_materia' según el campo identificador de tu tabla de materias
-                option.value = materia.id_materia;
-                option.text = materia.nombre;
-                materiaSelect.appendChild(option);
-            });
-        })
-        .catch(error => console.error('Error:', error));
-});
-</script>
 @endsection

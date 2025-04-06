@@ -77,16 +77,17 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Nombre</th>
                             <th>Grado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
+                        @php $counter = ($secciones->currentPage() - 1) * $secciones->perPage() + 1; @endphp
                         @forelse($secciones as $seccion)
                             <tr>
-                                <td>{{ $seccion->id_seccion }}</td>
+                                <td>{{ $counter++ }}</td>
                                 <td>{{ $seccion->nombre }}</td>
                                 <td>
                                     @if($seccion->grado)

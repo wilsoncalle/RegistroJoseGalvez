@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app') 
 
 @section('title', 'Años Académicos - Sistema de Gestión Escolar')
 
@@ -59,7 +59,7 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Año</th>
                             <th>Fecha Inicio</th>
                             <th>Fecha Fin</th>
@@ -69,9 +69,10 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $counter = ($anios->currentPage() - 1) * $anios->perPage() + 1; @endphp
                         @forelse($anios as $anio)
                             <tr>
-                                <td>{{ $anio->id_anio }}</td>
+                                <td>{{ $counter++ }}</td>
                                 <td>{{ $anio->anio }}</td>
                                 <td>{{ \Carbon\Carbon::parse($anio->fecha_inicio)->format('d/m/Y') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($anio->fecha_fin)->format('d/m/Y') }}</td>
@@ -137,8 +138,17 @@
                 </table>
             </div>
 
-            <div class="mt-4">
-                {{ $anios->appends(request()->query())->links() }}
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $anios->firstItem() }} - 
+                    {{ $anios->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $anios->total() }} {{ __('resultados') }}
+                </div>
+                <div>
+                    {{ $anios->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
             </div>
         </div>
     </div>

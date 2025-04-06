@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use App\Services\ExportService;
+use Illuminate\Http\Response;
+
 
 class AsistenciaController extends Controller
 {
@@ -25,17 +28,21 @@ class AsistenciaController extends Controller
     }
 
     public function indexNivel(string $nivel): View
-    {
-        $nivelModel = Nivel::where('nombre', $nivel)->firstOrFail();
-        $aulas = Aula::with(['nivel', 'grado', 'seccion'])
-            ->where('id_nivel', $nivelModel->id_nivel)
-            ->get()
-            ->sortBy(function($aula) {
-                return $aula->grado->nombre . ' ' . $aula->seccion->nombre;
-            });
+{
+    $nivelModel = Nivel::where('nombre', $nivel)->firstOrFail();
+    $aulas = Aula::with(['nivel', 'grado', 'seccion'])
+        ->where('id_nivel', $nivelModel->id_nivel)
+        ->get()
+        ->sortBy(function($aula) {
+            return $aula->grado->nombre . ' ' . $aula->seccion->nombre;
+        });
 
-        return view('asistencias.index-nivel', compact('aulas', 'nivel'));
-    }
+    // Extraer los grados únicos de las aulas para el filtro
+    $grados = $aulas->pluck('grado')->unique('id_grado')->sortBy('nombre');
+
+    return view('asistencias.index-nivel', compact('aulas', 'nivel', 'grados'));
+}
+
 
     public function create(Request $request): View
     {
@@ -46,7 +53,7 @@ class AsistenciaController extends Controller
 
         $estudiantes = Estudiante::where('id_aula', $aula->id_aula)
             ->where('estado', 'Activo')
-            ->orderBy('nombre')
+            ->orderBy('apellido')
             ->get();
 
         return view('asistencias.create', compact('aula', 'materias', 'estudiantes'));
@@ -131,15 +138,17 @@ class AsistenciaController extends Controller
 
         // Bulk insert for better performance
         Asistencia::insert($attendanceData);
+        $aula = Aula::find($request->id_aula);
+
 
         DB::commit();
-        return redirect()->route('asistencias.index')
-            ->with('success', 'Asistencias registradas correctamente.');
+        return redirect()->route('asistencias.index-niveles', $aula->nivel->nombre)
+            ->with('success', 'Asistencia registrada correctamente.');
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error('Error al registrar asistencias: ' . $e->getMessage());
         return back()->withInput()
-            ->with('error', 'Error al registrar asistencias: ' . $e->getMessage());
+            ->with('error', 'Error al registrar asistencia: ' . $e->getMessage());
     }
 }
 
@@ -166,10 +175,58 @@ public function show(Request $request, string $nivel, int $aulaId): View
 
     $estudiantes = Estudiante::where('id_aula', $aulaId)
         ->where('estado', 'Activo')
-        ->orderBy('nombre')
+        ->orderBy('apellido')
         ->get();
 
     return view('asistencias.show', compact('aula', 'nivel', 'materias', 'estudiantes'));
+}
+/**
+ * Exportar asistencia a Excel
+ */
+public function exportToExcel(Request $request)
+{
+    $request->validate([
+        'id_aula' => 'required|exists:aulas,id_aula',
+        'id_materia' => 'required|exists:materias,id_materia',
+        'id_docente' => 'required|exists:docentes,id_docente',
+        'mes' => 'required|integer|between:1,12',
+        'año' => 'required|integer|min:2000'
+    ]);
+    
+    $exportService = new ExportService();
+    
+    return $exportService->exportAttendanceToExcel(
+        $request->id_aula,
+        $request->id_materia,
+        $request->id_docente,
+        $request->mes,
+        $request->año
+    );
+    
+}
+
+/**
+ * Exportar asistencia a PDF
+ */
+public function exportToPdf(Request $request)
+{
+    $request->validate([
+        'id_aula' => 'required|exists:aulas,id_aula',
+        'id_materia' => 'required|exists:materias,id_materia',
+        'id_docente' => 'required|exists:docentes,id_docente',
+        'mes' => 'required|integer|between:1,12',
+        'año' => 'required|integer|min:2000'
+    ]);
+    
+    $exportService = new ExportService();
+    
+    return $exportService->exportAttendanceToPdf(
+        $request->id_aula,
+        $request->id_materia,
+        $request->id_docente,
+        $request->mes,
+        $request->año
+    );
 }
 
 public function getAttendanceDetails(Request $request): JsonResponse

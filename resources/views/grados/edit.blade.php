@@ -35,17 +35,7 @@
                 </div>
                 
                 <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="nombre" class="form-label">Nombre del Grado <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('nombre') is-invalid @enderror" 
-                               id="nombre" name="nombre" value="{{ old('nombre', $grado->nombre) }}" 
-                               required placeholder="Ej: Primer Grado">
-                        @error('nombre')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    
-                    <div class="col-md-6">
+                <div class="col-md-6">
                         <label for="nivel_id" class="form-label">Nivel <span class="text-danger">*</span></label>
                         <select class="form-select @error('nivel_id') is-invalid @enderror" 
                                 id="nivel_id" name="nivel_id" required>
@@ -61,6 +51,17 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+                    <div class="col-md-6">
+                        <label for="nombre" class="form-label">Nombre del Grado <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control @error('nombre') is-invalid @enderror" 
+                               id="nombre" name="nombre" value="{{ old('nombre', $grado->nombre) }}" 
+                               required placeholder="Ej: Primer Grado">
+                        @error('nombre')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    
                 </div>
                 
                 <div class="d-flex justify-content-end mt-4">

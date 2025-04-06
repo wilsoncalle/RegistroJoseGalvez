@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use App\Exports\EstudiantesExport;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF; // Asegúrate de importar la facade PDF
 
 class EstudianteController extends Controller
 {
@@ -20,7 +23,7 @@ class EstudianteController extends Controller
         $filtroAula = $request->get('aula');
         $filtroEstado = $request->get('estado');
         $filtroNivel = $request->get('nivel');
-    
+
         // Obtener listas para los select
         $niveles = Nivel::all();
         $aulas = Aula::with(['nivel', 'grado', 'seccion'])
@@ -28,30 +31,123 @@ class EstudianteController extends Controller
                 return $query->where('id_nivel', $filtroNivel);
             })
             ->get();
-    
+
         // Filtrar estudiantes según los parámetros
         $estudiantes = Estudiante::with(['aula.nivel', 'aula.grado', 'aula.seccion', 'apoderados'])
             ->when($busqueda, function ($query) use ($busqueda) {
-                return $query->where('nombre', 'like', "%$busqueda%")
-                ->orWhere('apellido', 'like', "%$busqueda%")
-                ->orWhere('dni', 'like', "%$busqueda%");
+                return $query->where(function ($query) use ($busqueda) {
+                    $query->where('estudiantes.nombre', 'like', "%$busqueda%")
+                        ->orWhere('estudiantes.apellido', 'like', "%$busqueda%")
+                        ->orWhere('estudiantes.dni', 'like', "%$busqueda%");
+                });
             })
             ->when($filtroAula, function ($query) use ($filtroAula) {
-                return $query->where('id_aula', $filtroAula);
+                return $query->where('estudiantes.id_aula', $filtroAula);
             })
             ->when($filtroEstado, function ($query) use ($filtroEstado) {
-                return $query->where('estado', $filtroEstado);
+                return $query->where('estudiantes.estado', $filtroEstado);
             })
             ->when($filtroNivel, function ($query) use ($filtroNivel) {
                 return $query->whereHas('aula', function ($query) use ($filtroNivel) {
-                    $query->where('id_nivel', $filtroNivel);
+                    $query->where('aulas.id_nivel', $filtroNivel);
                 });
             })
-            ->paginate(10);
-    
+            ->join('aulas', 'estudiantes.id_aula', '=', 'aulas.id_aula')
+            ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
+            ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
+            ->leftJoin('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
+            ->select('estudiantes.*', \DB::raw("CONCAT(grados.nombre, ' - ', secciones.nombre) as aula_nombre"))
+            ->orderBy('niveles.nombre', 'asc')
+            ->orderBy('aula_nombre', 'asc')
+            ->orderBy('estudiantes.apellido', 'asc')
+            
+            ->paginate(15);
+
         return view('estudiantes.index', compact('estudiantes', 'busqueda', 'filtroAula', 'filtroEstado', 'filtroNivel', 'aulas', 'niveles'));
     }
-    
+
+    private function generarNombreArchivo($filtroNivel, $filtroAula, $extension)
+    {
+        $nombre = 'Estudiantes';
+
+        if ($filtroAula) {
+            // Si hay filtro de aula, obtenemos el aula y su nivel asociado
+            $aula = Aula::with('nivel', 'grado', 'seccion')->find($filtroAula);
+            if ($aula) {
+                $nombre .= ' de ' . $aula->nivel->nombre . ' - ' . $aula->grado->nombre . ' - ' . $aula->seccion->nombre;
+            }
+        } elseif ($filtroNivel) {
+            // Si solo hay filtro de nivel, obtenemos el nombre del nivel
+            $nivel = Nivel::find($filtroNivel);
+            if ($nivel) {
+                $nombre .= ' de ' . $nivel->nombre;
+            }
+        } else {
+            // Si no hay filtros, usamos "Todos"
+            $nombre .= ' - Todos';
+        }
+
+        // Reemplazamos caracteres no permitidos en nombres de archivos
+        $nombre = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '-', $nombre);
+
+        return $nombre . '.' . $extension;
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $busqueda    = $request->get('busqueda');
+        $filtroAula  = $request->get('aula');
+        $filtroEstado = $request->get('estado');
+        $filtroNivel = $request->get('nivel');
+
+        // Generamos el nombre del archivo con extensión 'xlsx'
+        $nombreArchivo = $this->generarNombreArchivo($filtroNivel, $filtroAula, 'xlsx');
+
+        return Excel::download(
+            new EstudiantesExport($busqueda, $filtroAula, $filtroEstado, $filtroNivel),
+            $nombreArchivo
+        );
+    }
+    public function exportPdf(Request $request)
+    {
+        $busqueda    = $request->get('busqueda');
+        $filtroAula  = $request->get('aula');
+        $filtroEstado = $request->get('estado');
+        $filtroNivel = $request->get('nivel');
+
+        $estudiantes = Estudiante::with(['aula.nivel', 'aula.grado', 'aula.seccion'])
+            ->when($busqueda, function ($query) use ($busqueda) {
+                $query->where(function ($q) use ($busqueda) {
+                    $q->where('nombre', 'like', "%{$busqueda}%")
+                    ->orWhere('apellido', 'like', "%{$busqueda}%")
+                    ->orWhere('dni', 'like', "%{$busqueda}%");
+                });
+            })
+            ->when($filtroAula, function ($query) use ($filtroAula) {
+                $query->where('id_aula', $filtroAula);
+            })
+            ->when($filtroEstado, function ($query) use ($filtroEstado) {
+                $query->where('estado', $filtroEstado);
+            })
+            ->when($filtroNivel, function ($query) use ($filtroNivel) {
+                $query->whereHas('aula', function ($q) use ($filtroNivel) {
+                    $q->where('id_nivel', $filtroNivel);
+                });
+            })
+            ->orderBy('id_estudiante', 'asc')
+            ->get();
+
+        $fechaActual = now()->format('d-m-Y');
+        $pdf = PDF::loadView('pdf.estudiantes', compact('estudiantes', 'fechaActual'));
+        // Configurar el PDF
+        $pdf->setPaper('a4', 'landscape');
+
+
+        // Generamos el nombre del archivo con extensión 'pdf'
+        $nombreArchivo = $this->generarNombreArchivo($filtroNivel, $filtroAula, 'pdf');
+
+        return $pdf->download($nombreArchivo);
+    }
 
     public function create(): View
     {

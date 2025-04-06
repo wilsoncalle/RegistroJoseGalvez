@@ -1,15 +1,31 @@
-@extends('layouts.app')
+@extends('layouts.app') 
 
 @section('title', 'Docentes - Sistema de Gestión Escolar')
 
 @section('content')
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!--<div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Docentes</h1>
         <a href="{{ route('docentes.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i> Nuevo Docente
         </a>
     </div>
+    <!-- Agregar este código después del botón "Nuevo Docente" en la línea 9 del archivo original -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Docentes</h1>
+    <div>
+        <a href="{{ route('docentes.export', request()->query()) }}" class="btn btn-success me-2">
+            <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+        </a>
+        <a href="{{ route('docentes.pdf', request()->query()) }}" class="btn btn-danger me-2">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
+        </a>
+        <a href="{{ route('docentes.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo Docente
+        </a>
+    </div>
+</div>
+
 
     <div class="card mb-4">
         <div class="card-body">
@@ -31,16 +47,7 @@
                         @endforeach
                     </select>
                 </div>
-                
-                <div class="col-md-3">
-                    <label for="materia" class="form-label">Materia</label>
-                    <select class="form-select" id="materia" name="materia" disabled>
-                        <option value="">Seleccione un nivel primero</option>
-                        <!-- Las materias se cargarán dinámicamente -->
-                    </select>
-                </div>
-                
-                <div class="col-md-12 d-flex align-items-end">
+                <div class="col-md-5 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary me-2">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
@@ -72,35 +79,28 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>DNI</th>
                             <th>Nivel</th>
-                            <th>Materia</th>
                             <th>Teléfono</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
+                        @php $counter = ($docentes->currentPage() - 1) * $docentes->perPage() + 1; @endphp
                         @forelse($docentes as $docente)
                             <tr>
-                                <td>{{ $docente->id_docente }}</td>
+                                <td>{{ $counter++ }}</td>  <!-- Contador para el n° orden -->
                                 <td>{{ $docente->nombre }}</td>
                                 <td>{{ $docente->apellido }}</td>
-                                <td>{{ $docente->dni ?: 'No registrado'}}</td>
+                                <td>{{ $docente->dni ?: 'No registrado' }}</td>
                                 <td>
-                                    @if($docente->materia && $docente->materia->nivel)
-                                        {{ $docente->materia->nivel->nombre }}
+                                    @if($docente->nivel)
+                                        {{ $docente->nivel->nombre }}
                                     @else
                                         <span class="text-muted">No especificado</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($docente->materia)
-                                        {{ $docente->materia->nombre }}
-                                    @else
-                                        <span class="text-muted">No especificada</span>
                                     @endif
                                 </td>
                                 <td>{{ $docente->telefono ?? 'No registrado' }}</td>
@@ -145,7 +145,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-4">
+                                <td colspan="7" class="text-center py-4">
                                     <p class="text-muted mb-0">No se encontraron docentes con los criterios especificados.</p>
                                     <a href="{{ route('docentes.index') }}" class="btn btn-sm btn-outline-secondary mt-3">
                                         <i class="bi bi-arrow-repeat me-1"></i> Mostrar todos los docentes
@@ -157,56 +157,19 @@
                 </table>
             </div>
 
-            <div class="mt-4">
-                {{ $docentes->appends(request()->query())->links() }}
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $docentes->firstItem() }} - 
+                    {{ $docentes->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $docentes->total() }} {{ __('resultados') }}
+                </div>
+                <div>
+                    {{ $docentes->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Script para cargar dinámicamente las materias según el nivel seleccionado -->
-<script>
-    // Función para cargar materias basadas en el nivel
-    function cargarMaterias(nivelId, materiaSeleccionada = '') {
-        const materiaSelect = document.getElementById('materia');
-        // Reiniciar opciones
-        materiaSelect.innerHTML = '<option value="">Todas las materias</option>';
-
-        if(nivelId === '') {
-            materiaSelect.disabled = true;
-            return;
-        }
-
-        materiaSelect.disabled = false;
-
-        fetch("{{ route('materias.pornivel') }}?id_nivel=" + nivelId)
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(materia => {
-                    let option = document.createElement('option');
-                    option.value = materia.id_materia; // Ajusta según tu campo identificador
-                    option.text = materia.nombre;
-                    if(materiaSeleccionada == materia.id_materia) {
-                        option.selected = true;
-                    }
-                    materiaSelect.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error:', error));
-    }
-
-    // Escuchar el cambio del select de nivel
-    document.getElementById('nivel').addEventListener('change', function() {
-        cargarMaterias(this.value);
-    });
-
-    // Al cargar la página, si ya hay un nivel seleccionado, cargar las materias correspondientes
-    document.addEventListener('DOMContentLoaded', function() {
-        const nivelSelect = document.getElementById('nivel');
-        const nivelValor = nivelSelect.value;
-        @if(!empty($filtroNivel))
-            cargarMaterias(nivelValor, '{{ $filtroMateria }}');
-        @endif
-    });
-</script>
 @endsection

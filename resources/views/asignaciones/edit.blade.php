@@ -41,20 +41,11 @@
                         <select name="id_docente" id="id_docente" class="form-select" required>
                             <option value="">Seleccione un docente</option>
                             @foreach($docentes as $docente)
-                                <option value="{{ $docente->id_docente }}" {{ $asignacion->id_docente == $docente->id_docente ? 'selected' : '' }}>
+                                <option value="{{ $docente->id_docente }}"
+                                    data-materia="{{ $docente->id_materia ?? '' }}"
+                                    data-nivel="{{ $docente->id_nivel ?? '' }}"
+                                    {{ $asignacion->id_docente == $docente->id_docente ? 'selected' : '' }}>
                                     {{ $docente->nombre }} {{ $docente->apellido }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <!-- Campo Materia -->
-                    <div class="col-md-3">
-                        <label for="id_materia" class="form-label">Materia <span class="text-danger">*</span></label>
-                        <select name="id_materia" id="id_materia" class="form-select" required>
-                            <option value="">Seleccione una materia</option>
-                            @foreach($materias as $materia)
-                                <option value="{{ $materia->id_materia }}" {{ $asignacion->id_materia == $materia->id_materia ? 'selected' : '' }}>
-                                    {{ $materia->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -62,16 +53,23 @@
                     <!-- Campo Nivel -->
                     <div class="col-md-3">
                         <label for="nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
+                        @php
+                            $nivelSeleccionado = $asignacion->aula ? $asignacion->aula->id_nivel : null;
+                        @endphp
                         <select name="nivel" id="nivel" class="form-select" required>
                             <option value="">Seleccione un nivel</option>
                             @foreach($niveles as $nivel)
-                                @php
-                                    $nivelSeleccionado = $asignacion->aula ? $asignacion->aula->id_nivel : null;
-                                @endphp
                                 <option value="{{ $nivel->id_nivel }}" {{ $nivelSeleccionado == $nivel->id_nivel ? 'selected' : '' }}>
                                     {{ $nivel->nombre }}
                                 </option>
                             @endforeach
+                        </select>
+                    </div>
+                    <!-- Campo Materia -->
+                    <div class="col-md-3">
+                        <label for="id_materia" class="form-label">Materia <span class="text-danger">*</span></label>
+                        <select name="id_materia" id="id_materia" class="form-select" required disabled>
+                            <option value="">Seleccione un nivel primero</option>
                         </select>
                     </div>
                 </div>
@@ -80,8 +78,8 @@
                     <!-- Campo Aula -->
                     <div class="col-md-4">
                         <label for="id_aula" class="form-label">Aula <span class="text-danger">*</span></label>
-                        <select name="id_aula" id="id_aula" class="form-select" required>
-                            <option value="">Seleccione un aula</option>
+                        <select name="id_aula" id="id_aula" class="form-select" required disabled>
+                            <option value="">Seleccione un nivel primero</option>
                         </select>
                     </div>
                     <!-- Campo Año Académico -->
@@ -110,72 +108,129 @@
         </div>
     </div>
 </div>
+@endsection
 
 @push('scripts')
-                <script>
-                    // URL base para obtener aulas según el nivel
-                    const urlAulas = "{{ url('/aulas/nivel') }}";
+<script>
+    // URLs base para cargar aulas y materias según el nivel seleccionado
+    const urlAulas = "{{ url('/aulas/nivel') }}";
+    const urlMaterias = "{{ url('/materias/nivel') }}";
 
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const nivelSelect = document.getElementById('nivel');
-                        const aulaSelect = document.getElementById('id_aula');
-                        // Obtener el aula seleccionada previamente
-                        const asignacionAulaId = "{{ old('id_aula', $asignacion->id_aula) }}";
+    document.addEventListener('DOMContentLoaded', function() {
+        const docenteSelect = document.getElementById('id_docente');
+        const nivelSelect = document.getElementById('nivel');
+        const materiaSelect = document.getElementById('id_materia');
+        const aulaSelect = document.getElementById('id_aula');
 
-                        function cargarAulas(nivelId, selectedAula = '') {
-                            aulaSelect.innerHTML = '<option value="">Cargando aulas...</option>';
-                            
-                            if (nivelId) {
-                                aulaSelect.disabled = false;
-                                
-                                fetch(`${urlAulas}/${nivelId}`)
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            throw new Error('Error en la red');
-                                        }
-                                        return response.json();
-                                    })
-                                    .then(aulas => {
-                                        aulaSelect.innerHTML = '';
-                                        
-                                        if (aulas.length > 0) {
-                                            const defaultOption = document.createElement('option');
-                                            defaultOption.value = '';
-                                            defaultOption.textContent = 'Seleccione un aula';
-                                            aulaSelect.appendChild(defaultOption);
-                                            
-                                            aulas.forEach(aula => {
-                                                const option = document.createElement('option');
-                                                option.value = aula.id;
-                                                option.textContent = aula.nombre_completo;
-                                                if(aula.id == selectedAula) {
-                                                    option.selected = true;
-                                                }
-                                                aulaSelect.appendChild(option);
-                                            });
-                                        } else {
-                                            aulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error:', error);
-                                        aulaSelect.innerHTML = '<option value="">Error al cargar aulas</option>';
-                                    });
-                            } else {
-                                aulaSelect.disabled = true;
-                                aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
-                            }
+        // Valores previos de la asignación
+        const asignacionMateriaId = "{{ old('id_materia', $asignacion->id_materia) }}";
+        const asignacionAulaId = "{{ old('id_aula', $asignacion->id_aula) }}";
+
+        // Al seleccionar un docente se asigna automáticamente su nivel y se recargan aulas y materias
+        docenteSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const docenteNivel = selectedOption.getAttribute('data-nivel');
+            if (docenteNivel) {
+                nivelSelect.value = docenteNivel;
+                nivelSelect.disabled = true;
+            } else {
+                nivelSelect.value = '';
+                nivelSelect.disabled = false;
+            }
+            nivelSelect.dispatchEvent(new Event('change'));
+        });
+
+        function cargarAulas(nivelId, selectedAula = '') {
+            aulaSelect.innerHTML = '<option value="">Cargando aulas...</option>';
+            aulaSelect.disabled = true;
+            if (nivelId) {
+                fetch(`${urlAulas}/${nivelId}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Error en la red');
+                        return response.json();
+                    })
+                    .then(aulas => {
+                        aulaSelect.innerHTML = '';
+                        if(aulas.length > 0) {
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = '';
+                            defaultOption.textContent = 'Seleccione un aula';
+                            aulaSelect.appendChild(defaultOption);
+                            aulas.forEach(aula => {
+                                const option = document.createElement('option');
+                                option.value = aula.id;
+                                option.textContent = aula.nombre_completo;
+                                if(aula.id == selectedAula) {
+                                    option.selected = true;
+                                }
+                                aulaSelect.appendChild(option);
+                            });
+                            aulaSelect.disabled = false;
+                        } else {
+                            aulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
                         }
-
-                        // Cargar aulas al iniciar si ya hay un nivel seleccionado
-                        if (nivelSelect.value) {
-                            cargarAulas(nivelSelect.value, asignacionAulaId);
-                        }
-
-                        nivelSelect.addEventListener('change', function() {
-                            cargarAulas(this.value);
-                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        aulaSelect.innerHTML = '<option value="">Error al cargar aulas</option>';
                     });
-                </script>
-                @endpush
-@endsection
+            } else {
+                aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
+                aulaSelect.disabled = true;
+            }
+        }
+
+        function cargarMaterias(nivelId, selectedMateria = '') {
+            materiaSelect.innerHTML = '<option value="">Cargando materias...</option>';
+            materiaSelect.disabled = true;
+            if (nivelId) {
+                fetch(`${urlMaterias}/${nivelId}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Error en la red');
+                        return response.json();
+                    })
+                    .then(materias => {
+                        materiaSelect.innerHTML = '';
+                        if(materias.length > 0) {
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = '';
+                            defaultOption.textContent = 'Seleccione una materia';
+                            materiaSelect.appendChild(defaultOption);
+                            materias.forEach(materia => {
+                                const option = document.createElement('option');
+                                option.value = materia.id_materia;
+                                option.textContent = materia.nombre;
+                                if(materia.id_materia == selectedMateria) {
+                                    option.selected = true;
+                                }
+                                materiaSelect.appendChild(option);
+                            });
+                            materiaSelect.disabled = false;
+                        } else {
+                            materiaSelect.innerHTML = '<option value="">No hay materias disponibles para este nivel</option>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        materiaSelect.innerHTML = '<option value="">Error al cargar materias</option>';
+                    });
+            } else {
+                materiaSelect.innerHTML = '<option value="">Seleccione un nivel primero</option>';
+                materiaSelect.disabled = true;
+            }
+        }
+
+        // Si ya hay un nivel seleccionado, carga automáticamente las aulas y materias correspondientes
+        if(nivelSelect.value) {
+            cargarAulas(nivelSelect.value, asignacionAulaId);
+            cargarMaterias(nivelSelect.value, asignacionMateriaId);
+        }
+
+        // Al cambiar el nivel (por si se decide modificarlo manualmente) se recargan aulas y materias
+        nivelSelect.addEventListener('change', function() {
+            cargarAulas(this.value);
+            cargarMaterias(this.value);
+        });
+    });
+</script>
+@endpush

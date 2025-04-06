@@ -8,6 +8,10 @@ use App\Models\Nivel;
 use App\Models\Docente;
 use App\Models\Materia;
 use App\Models\AnioAcademico;
+use App\Exports\AsignacionExport;
+use App\Services\AsignacionExportService;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
@@ -15,43 +19,55 @@ use Illuminate\Http\RedirectResponse;
 class AsignacionController extends Controller
 {
     public function index(Request $request)
-    {
-        $filtroNivel = $request->get('nivel');
-        $filtroAula = $request->get('aula');
-        $filtroAnio = $request->get('anio');
-        $busqueda = trim($request->get('busqueda'));
+{
+    $filtroNivel = $request->get('nivel');
+    $filtroAula = $request->get('aula');
+    $filtroAnio = $request->get('anio');
+    $busqueda = trim($request->get('busqueda'));
 
-        $anios = AnioAcademico::all();
-        $niveles = Nivel::all();
-        $aulas = Aula::with('nivel')
-            ->when($filtroNivel, function ($query) use ($filtroNivel) {
-                return $query->where('id_nivel', $filtroNivel);
-            })
-            ->get();
+    $anios = AnioAcademico::all();
+    $niveles = Nivel::all();
+    $aulas = Aula::with('nivel')
+        ->when($filtroNivel, function ($query) use ($filtroNivel) {
+            return $query->where('id_nivel', $filtroNivel);
+        })
+        ->get();
 
-        $asignaciones = Asignacion::with(['docente', 'materia', 'aula.nivel', 'anioAcademico'])
-            ->when($filtroNivel, function ($query) use ($filtroNivel) {
-                return $query->whereHas('aula', function ($query) use ($filtroNivel) {
-                    $query->where('id_nivel', $filtroNivel);
-                });
-            })
-            ->when($filtroAula, function ($query) use ($filtroAula) {
-                return $query->where('id_aula', $filtroAula);
-            })
-            ->when($filtroAnio, function ($query) use ($filtroAnio) {
-                return $query->where('id_anio', $filtroAnio);
-            })
-            ->when($busqueda, function ($query) use ($busqueda) {
-                return $query->whereHas('docente', function ($query) use ($busqueda) {
-                    $query->whereRaw("LOWER(nombre) LIKE ?", ["%" . strtolower($busqueda) . "%"])
-                          ->orWhereRaw("LOWER(apellido) LIKE ?", ["%" . strtolower($busqueda) . "%"])
-                          ->orWhere('dni', 'LIKE', "%$busqueda%");
-                });
-            })
-            ->paginate(10);
+    $asignaciones = Asignacion::with(['docente', 'materia', 'aula.nivel', 'anioAcademico'])
+        ->when($filtroNivel, function ($query) use ($filtroNivel) {
+            return $query->whereHas('aula', function ($query) use ($filtroNivel) {
+                $query->where('id_nivel', $filtroNivel);
+            });
+        })
+        ->when($filtroAula, function ($query) use ($filtroAula) {
+            return $query->where('id_aula', $filtroAula);
+        })
+        ->when($filtroAnio, function ($query) use ($filtroAnio) {
+            return $query->where('id_anio', $filtroAnio);
+        })
+        ->when($busqueda, function ($query) use ($busqueda) {
+            return $query->whereHas('docente', function ($query) use ($busqueda) {
+                $query->whereRaw("LOWER(nombre) LIKE ?", ["%" . strtolower($busqueda) . "%"])
+                      ->orWhereRaw("LOWER(apellido) LIKE ?", ["%" . strtolower($busqueda) . "%"])
+                      ->orWhere('dni', 'LIKE', "%$busqueda%");
+            });
+        })
+        // Agregar JOIN para poder ordenar por nivel, grado, sección y apellido del docente
+        ->join('aulas', 'asignaciones.id_aula', '=', 'aulas.id_aula')
+        ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
+        ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
+        ->join('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
+        ->join('docentes', 'asignaciones.id_docente', '=', 'docentes.id_docente')
+        // Ordenar por nivel, grado, sección y apellido del docente
+        ->orderBy('niveles.nombre')  // Ordenar por nombre del nivel
+        ->orderBy('grados.nombre')   // Ordenar por grado
+        ->orderBy('secciones.nombre') // Ordenar por sección
+        ->orderBy('docentes.apellido') // Ordenar por apellido del docente
+        ->paginate(10);
 
-        return view('asignaciones.index', compact('asignaciones', 'filtroNivel', 'filtroAula', 'filtroAnio', 'niveles', 'aulas', 'anios', 'busqueda'));
-    }
+    return view('asignaciones.index', compact('asignaciones', 'filtroNivel', 'filtroAula', 'filtroAnio', 'niveles', 'aulas', 'anios', 'busqueda'));
+}
+
 
     public function create()
     {
@@ -62,6 +78,37 @@ class AsignacionController extends Controller
 
         return view('asignaciones.create', compact('niveles', 'docentes', 'materias', 'anios'));
     }
+    public function getDocentesPorNivel($nivelId)
+    {
+        try {
+            $docentes = Docente::where('id_nivel', $nivelId)
+                            ->orderBy('apellido')
+                            ->get()
+                            ->map(function($docente) {
+                                    return [
+                                        'id_docente' => $docente->id_docente,
+                                        'nombre_completo' => $docente->nombre . ' ' . $docente->apellido
+                                    ];
+                            });
+            return response()->json($docentes);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al cargar los docentes'], 500);
+        }
+    }
+
+    public function getMateriasPorNivel($nivelId)
+    {
+        try {
+            $materias = Materia::where('id_nivel', $nivelId)
+                            ->orderBy('nombre')
+                            ->get();
+            return response()->json($materias);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al cargar las materias'], 500);
+        }
+    }
+
+
 
     public function store(Request $request): RedirectResponse
     {
@@ -175,18 +222,21 @@ class AsignacionController extends Controller
         }
     }
 
-    public function destroy(Asignacion $asignacion)
-    {
-        try {
-            DB::beginTransaction();
+    public function destroy($id) 
+{
+    try {
+        $asignacion = Asignacion::find($id);
+        if ($asignacion) {
             $asignacion->delete();
-            DB::commit();
-            return redirect()->route('asignaciones.index')->with('success', 'Asignación eliminada correctamente.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Error al eliminar asignación: ' . $e->getMessage());
+            return redirect()->back()->with('success', 'Asignación eliminada correctamente.');
+        } else {
+            return redirect()->back()->with('error', 'La asignación no fue encontrada.');
         }
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'No se puede eliminar debido a restricciones de clave foránea.');
     }
+}
+
 
     public function getAulasPorNivel($nivelId)
     {
@@ -204,5 +254,29 @@ class AsignacionController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al cargar las aulas'], 500);
         }
+    }
+
+    /**
+     * Exportar listado de asignaciones a Excel
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportarExcel(Request $request)
+    {
+        $exportService = new AsignacionExportService();
+        return $exportService->exportarExcel($request);
+    }
+
+    /**
+     * Exportar listado de asignaciones a PDF
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function exportarPDF(Request $request)
+    {
+        $exportService = new AsignacionExportService();
+        return $exportService->exportarPDF($request);
     }
 }

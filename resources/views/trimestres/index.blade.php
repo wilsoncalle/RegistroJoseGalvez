@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app') 
 
 @section('title', 'Trimestres - Sistema de Gestión Escolar')
 
@@ -61,7 +61,7 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>N°</th>
                             <th>Nombre</th>
                             <th>Año Académico</th>
                             <th>Fecha de Inicio</th>
@@ -70,9 +70,10 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $counter = ($trimestres->currentPage() - 1) * $trimestres->perPage() + 1; @endphp
                         @forelse($trimestres as $trimestre)
                             <tr>
-                                <td>{{ $trimestre->id_trimestre }}</td>
+                                <td>{{ $counter++ }}</td>
                                 <td>{{ $trimestre->nombre }}</td>
                                 <td>
                                     @if($trimestre->anioAcademico)
@@ -136,8 +137,17 @@
                 </table>
             </div>
 
-            <div class="mt-4">
-                {{ $trimestres->appends(request()->query())->links() }}
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    {{ __('Mostrando') }} 
+                    {{ $trimestres->firstItem() }} - 
+                    {{ $trimestres->lastItem() }} 
+                    {{ __('de') }} 
+                    {{ $trimestres->total() }} {{ __('resultados') }}
+                </div>
+                <div>
+                    {{ $trimestres->appends(request()->query())->links('pagination::custom-bootstrap-5') }}
+                </div>
             </div>
         </div>
     </div>

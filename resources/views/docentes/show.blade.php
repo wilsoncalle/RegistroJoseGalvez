@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Detalles del Docente - Sistema de Gestión Escolar')
+
 @section('content')
 <div class="container">
     <div class="card">
@@ -12,7 +14,7 @@
                     {{ session('success') }}
                 </div>
             @endif
-
+            
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Nombre:</strong> {{ $docente->nombre }} {{ $docente->apellido }}</p>
@@ -28,24 +30,27 @@
                         {{ $docente->fecha_contratacion ? \Carbon\Carbon::parse($docente->fecha_contratacion)->format('d/m/Y') : 'No registrada' }}
                     </p>
                     <p><strong>Nivel:</strong>
-                        @if($docente->materia && $docente->materia->nivel)
-                            {{ $docente->materia->nivel->nombre }}
+                        @if($docente->nivel)
+                            {{ $docente->nivel->nombre }}
                         @else
                             No asignado
                         @endif
                     </p>
-                    <p><strong>Materia Asignada:</strong> 
-                        @if($docente->materia)
-                            {{ $docente->materia->nombre }}
+                    <p><strong>Materias Asignadas:</strong>
+                        @if($docente->asignaciones->count() > 0)
+                            <ul>
+                                @foreach($docente->asignaciones as $asignacion)
+                                    <li>{{ $asignacion->materia->nombre ?? 'Materia no disponible' }}</li>
+                                @endforeach
+                            </ul>
                         @else
-                            No asignada
+                            No tiene materias asignadas
                         @endif
                     </p>
-                    
                     <p><strong>Dirección:</strong> {{ $docente->direccion ?: 'No registrada' }}</p>
                 </div>
             </div>
-
+            
             <div class="mt-4">
                 <a href="{{ route('docentes.edit', $docente) }}" class="btn btn-primary">Editar</a>
                 <a href="{{ route('docentes.index') }}" class="btn btn-secondary">Volver</a>
