@@ -36,8 +36,8 @@
                 </div>
                 
                 <div class="row mb-3">
-                    <div class="col-md-3">
-                        <label for="nombre" class="form-label">Nombre<span class="text-danger">*</span></label>
+                <div class="col-md-3">
+                        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
                         <input type="text" class="form-control @error('nombre') is-invalid @enderror" 
                                id="nombre" name="nombre" 
                                value="{{ old('nombre', $apoderado->nombre) }}" required>
@@ -47,7 +47,7 @@
                     </div>
                     
                     <div class="col-md-3">
-                        <label for="apellido" class="form-label">Apellido<span class="text-danger">*</span></label>
+                        <label for="apellido" class="form-label">Apellido <span class="text-danger">*</span></label>
                         <input type="text" class="form-control @error('apellido') is-invalid @enderror" 
                                id="apellido" name="apellido" 
                                value="{{ old('apellido', $apoderado->apellido) }}" required>
@@ -58,9 +58,15 @@
                     
                     <div class="col-md-3">
                         <label for="dni" class="form-label">DNI</label>
-                        <input type="text" class="form-control @error('dni') is-invalid @enderror" 
-                               id="dni" name="dni" 
-                               value="{{ old('dni', $apoderado->dni) }}">
+                        <div class="input-group">
+                            <input type="text" class="form-control @error('dni') is-invalid @enderror" 
+                                   id="dni" name="dni" value="{{ old('dni', $apoderado->dni) }}"
+                                   maxlength="8" pattern="[0-9]{8}" title="El DNI debe tener 8 dígitos numéricos">
+                            <button class="btn btn-success" type="button" id="btn_buscar_dni">
+                                <i class="bi bi-check"></i>
+                            </button>
+                        </div>
+                        <div class="form-text" id="dni_mensaje"></div>
                         @error('dni')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -253,6 +259,71 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Ejecutar al cargar la página para mostrar los estudiantes asignados
     buscarEstudiante();
+});
+// Lógica para consultar DNI y autocompletar datos
+document.addEventListener('DOMContentLoaded', function() {
+    const btnBuscarDni = document.getElementById('btn_buscar_dni');
+    const dniInput = document.getElementById('dni');
+    const nombreInput = document.getElementById('nombre');
+    const apellidoInput = document.getElementById('apellido');
+    const dniMensaje = document.getElementById('dni_mensaje');
+    
+    btnBuscarDni.addEventListener('click', function() {
+        const dni = dniInput.value.trim();
+        
+        if (!/^\d{8}$/.test(dni)) {
+            dniMensaje.textContent = 'El DNI debe tener 8 dígitos numéricos';
+            dniMensaje.classList.add('text-danger');
+            return;
+        }
+        
+        dniMensaje.textContent = 'Consultando DNI...';
+        dniMensaje.classList.remove('text-danger', 'text-success');
+        dniMensaje.classList.add('text-info');
+        
+        fetch('{{ route("apoderados.consultar-dni") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ dni: dni })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const persona = data.data;
+                
+                if (persona.nombres) {
+                    nombreInput.value = persona.nombres;
+                }
+                
+                if (persona.apellido_paterno && persona.apellido_materno) {
+                    apellidoInput.value = `${persona.apellido_paterno} ${persona.apellido_materno}`;
+                } else if (persona.apellidos) {
+                    apellidoInput.value = persona.apellidos;
+                }
+                
+                dniMensaje.textContent = 'Datos actualizados desde DNI';
+                dniMensaje.classList.add('text-success');
+            } else {
+                dniMensaje.textContent = data.message || 'No se encontraron datos';
+                dniMensaje.classList.add('text-danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            dniMensaje.textContent = 'Error en la consulta';
+            dniMensaje.classList.add('text-danger');
+        });
+    });
+    
+    dniInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value.length > 8) {
+            this.value = this.value.slice(0, 8);
+        }
+    });
 });
 
 </script>

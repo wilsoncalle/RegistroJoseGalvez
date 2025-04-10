@@ -5,7 +5,7 @@
 @section('content')
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Gestión de Apoderados</h1>
+        <h1>Apoderados</h1>
         <div>
             <a href="{{ route('apoderados.export', request()->query()) }}" class="btn btn-success me-2">
                 <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel

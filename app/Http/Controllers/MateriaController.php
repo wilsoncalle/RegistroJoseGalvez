@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Materia;
 use App\Models\Nivel;
+use App\Exports\MateriaExport;
+use App\Services\MateriaExportService;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -98,5 +102,29 @@ class MateriaController extends Controller
             DB::rollBack();
             return back()->with('error', 'Error al eliminar la materia: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Exportar listado de materias a Excel
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportarExcel(Request $request)
+    {
+        $exportService = new MateriaExportService();
+        return $exportService->exportarExcel($request);
+    }
+
+    /**
+     * Exportar listado de materias a PDF
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function exportarPDF(Request $request)
+    {
+        $exportService = new MateriaExportService();
+        return $exportService->exportarPDF($request);
     }
 }

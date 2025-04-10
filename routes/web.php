@@ -31,6 +31,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 // Rutas de Estudiantes
 Route::resource('estudiantes', \App\Http\Controllers\EstudianteController::class);
 Route::get('/get-aulas-por-nivel/{nivelId}', [EstudianteController::class, 'getAulasPorNivel']);
+Route::post('/estudiantes/consultar-dni', [EstudianteController::class, 'consultarDni'])->name('estudiantes.consultar-dni');
     
 // Rutas de Docentes
 Route::resource('docentes', \App\Http\Controllers\DocenteController::class);
@@ -115,6 +116,7 @@ Route::post('/asistencias/pdf', [AsistenciaController::class, 'exportToPdf'])->n
 Route::resource('docentes', DocenteController::class);
 Route::get('docentes-export', [DocenteController::class, 'exportarExcel'])->name('docentes.export');
 Route::get('docentes-pdf', [DocenteController::class, 'exportarPDF'])->name('docentes.pdf');
+Route::post('/docentes/consultar-dni', [DocenteController::class, 'consultarDni'])->name('docentes.consultar-dni');
 
 // Rutas para apoderados export
 Route::get('apoderados-export', [ApoderadoController::class, 'exportarExcel'])->name('apoderados.export');
@@ -127,3 +129,13 @@ Route::get('aulas-pdf', [AulaController::class, 'exportarPDF'])->name('aulas.pdf
 // Rutas para asignaciones export
 Route::get('asignaciones-export', [AsignacionController::class, 'exportarExcel'])->name('asignaciones.export');
 Route::get('asignaciones-pdf', [AsignacionController::class, 'exportarPDF'])->name('asignaciones.pdf');
+
+// Rutas para materias export
+Route::get('materias-export', [\App\Http\Controllers\MateriaController::class, 'exportarExcel'])->name('materias.export');
+Route::get('materias-pdf', [\App\Http\Controllers\MateriaController::class, 'exportarPDF'])->name('materias.pdf');
+
+
+
+//API DE CONSULTAR DNI
+//Apoderados
+Route::post('/apoderados/consultar-dni', [ApoderadoController::class, 'consultarDni'])->name('apoderados.consultar-dni');

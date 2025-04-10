@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'migo' => [
+        'token' => env('MIGO_API_TOKEN', 'ZZTxwaFAB1n2Nbs8z3ZYtJEwByweK9uqzlvejPPciBXolfAOjDocQbUBQYMY'),
+    ],
+
 ];

@@ -45,7 +45,13 @@
                     </div>
                     <div class="col-md-3">
                         <label for="dni" class="form-label">DNI</label>
-                        <input type="text" class="form-control" id="dni" name="dni" value="{{ old('dni') }}">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="dni" name="dni" value="{{ old('dni') }}" maxlength="8" pattern="[0-9]{8}" title="El DNI debe tener 8 dígitos numéricos">
+                            <button class="btn btn-success" type="button" id="btn_buscar_dni">
+                                <i class="bi bi-check"></i>
+                            </button>
+                        </div>
+                        <div class="form-text" id="dni_mensaje"></div>
                     </div>
                     <div class="col-md-3">
                         <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
@@ -107,4 +113,86 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+// Lógica para consultar DNI y autocompletar datos
+document.addEventListener('DOMContentLoaded', function() {
+    const btnBuscarDni = document.getElementById('btn_buscar_dni');
+    const dniInput = document.getElementById('dni');
+    const nombreInput = document.getElementById('nombre');
+    const apellidoInput = document.getElementById('apellido');
+    const dniMensaje = document.getElementById('dni_mensaje');
+    
+    btnBuscarDni.addEventListener('click', function() {
+        const dni = dniInput.value.trim();
+        
+        // Validar que el DNI tenga 8 dígitos
+        if (!/^\d{8}$/.test(dni)) {
+            dniMensaje.textContent = 'El DNI debe tener 8 dígitos numéricos';
+            dniMensaje.classList.add('text-danger');
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        dniMensaje.textContent = 'Consultando DNI...';
+        dniMensaje.classList.remove('text-danger', 'text-success');
+        dniMensaje.classList.add('text-info');
+        
+        // Realizar la consulta AJAX
+        fetch('{{ route("docentes.consultar-dni") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ dni: dni })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Autocompletar los campos con la información obtenida
+                const persona = data.data;
+                
+                if (persona.nombres) {
+                    nombreInput.value = persona.nombres;
+                }
+                
+                // Combinar apellido paterno y materno para el campo apellido
+                if (persona.apellido_paterno && persona.apellido_materno) {
+                    apellidoInput.value = persona.apellido_paterno + ' ' + persona.apellido_materno;
+                } else if (persona.apellido_paterno) {
+                    apellidoInput.value = persona.apellido_paterno;
+                } else if (persona.apellidos) {
+                    apellidoInput.value = persona.apellidos;
+                }
+                
+                dniMensaje.textContent = 'Datos cargados correctamente';
+                dniMensaje.classList.remove('text-danger', 'text-info');
+                dniMensaje.classList.add('text-success');
+            } else {
+                dniMensaje.textContent = data.message || 'No se encontraron datos para este DNI';
+                dniMensaje.classList.remove('text-success', 'text-info');
+                dniMensaje.classList.add('text-danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            dniMensaje.textContent = 'Error al consultar el DNI. Intente nuevamente.';
+            dniMensaje.classList.remove('text-success', 'text-info');
+            dniMensaje.classList.add('text-danger');
+        });
+    });
+    
+    // Evento para validar que solo se ingresen números en el campo DNI
+    dniInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value.length > 8) {
+            this.value = this.value.slice(0, 8);
+        }
+    });
+});
+</script>
+@endpush
+
 @endsection

@@ -13,7 +13,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use App\Exports\EstudiantesExport;
 use Maatwebsite\Excel\Facades\Excel;
-use PDF; // Asegúrate de importar la facade PDF
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Config;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class EstudianteController extends Controller
 {
@@ -138,7 +140,7 @@ class EstudianteController extends Controller
             ->get();
 
         $fechaActual = now()->format('d-m-Y');
-        $pdf = PDF::loadView('pdf.estudiantes', compact('estudiantes', 'fechaActual'));
+        $pdf = Pdf::loadView('pdf.estudiantes', compact('estudiantes', 'fechaActual'));
         // Configurar el PDF
         $pdf->setPaper('a4', 'landscape');
 
@@ -299,5 +301,65 @@ class EstudianteController extends Controller
             });
             
         return response()->json($estudiantes);
+    }
+    
+    /**
+     * Consulta información de persona por DNI usando la API de Migo Perú
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function consultarDni(Request $request): JsonResponse
+    {
+        $request->validate([
+            'dni' => 'required|string|size:8',
+        ]);
+        
+        $dni = $request->input('dni');
+        
+        // Token de apis.net.pe
+        $token = 'apis-token-14158.uFeMfwK5k9el9LYH7077UJJuzuFqsebv';
+        
+        try {
+            // Usando la API de apis.net.pe
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json'
+            ])->get("https://api.apis.net.pe/v2/reniec/dni", [
+                'numero' => $dni
+            ]);
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                // Verificar si la respuesta contiene los datos esperados
+                // La API de apis.net.pe devuelve directamente los datos de la persona
+                if (isset($data['nombres'])) {
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'nombres' => $data['nombres'],
+                            'apellido_paterno' => $data['apellidoPaterno'] ?? '',
+                            'apellido_materno' => $data['apellidoMaterno'] ?? ''
+                        ]
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No se encontraron datos para el DNI proporcionado'
+                    ], 404);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al consultar la API: ' . $response->status()
+                ], $response->status());
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
