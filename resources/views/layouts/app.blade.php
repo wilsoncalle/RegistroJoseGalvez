@@ -6,70 +6,17 @@
     <title>@yield('title', 'Sistema de Gestión Escolar')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="{{ asset('css/custom.css') }}" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .sidebar {
-            background-color: #343a40;
-            min-width: 250px;
-            min-height: calc(100vh - 56px);
-            position: fixed;
-            top: 56px;
-            left: 0;
-            z-index: 100;
-            overflow-y: auto; /* Añadir esta propiedad para permitir scroll vertical */
-            max-height: calc(100vh - 56px); /* Establecer altura máxima */
-        }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 12px 20px;
-            transition: all 0.3s;
-        }
-        .sidebar .nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-        .sidebar .nav-link.active {
-            background-color: #0d6efd;
-            color: white;
-        }
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-            flex-grow: 1;
-        }
-        .sidebar-heading {
-            color: #adb5bd;
-            padding: 10px 20px;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .navbar-brand {
-            font-weight: bold;
-        }
-        .dropdown-menu {
-            min-width: 200px;
-        }
-        .dropdown-item i {
-            margin-right: 5px;
-        }
-        .table th {
-            white-space: nowrap;
-        }
-
-    </style>
 </head>
 <body>
     <!-- Barra de navegación superior -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">Sistema de Gestión Escolar</a>
+            <a class="navbar-brand" href="{{ route('dashboard') }}">
+                <i></i>Sistema de Gestión Escolar
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -81,7 +28,7 @@
                             <i class="bi bi-person-circle"></i> {{ Auth::user()->nombre }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Perfil</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="bi bi-person"></i> Perfil</a></li>
                             <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Configuración</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
@@ -209,7 +156,7 @@
     </div>
 
     <!-- Contenido principal -->
-    <div class="main-content mt-5">
+    <div class="main-content mt-5 fade-transition">
         <div class="container-fluid">
             @yield('content')
         </div>

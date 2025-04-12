@@ -2,18 +2,24 @@
 
 @section('content')
 <div class="container py-4">
-    <div class="row mb-4">
+    <div class="row mb-4"> 
         <div class="col">
+            <!-- Sección de breadcrumb mejorada -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ route('asistencia.index') }}">Niveles</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}">{{ $aula->nivel->nombre }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"
+                    </li>
+                </ol>
+            </nav>
+            
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="d-flex align-items-center">
-                    <a href="{{ route('asistencias.nivel', $aula->nivel->nombre) }}" class="text-decoration-none">
-                        <i class="fas fa-arrow-left mr-2"></i>
-                    </a>
-                    <h2 class="mb-0">Tomar Asistencia - {{ $aula->nivel->nombre }} {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"</h2>
+                <!-- Título -->
+                <div>
+                    <h2>Tomar Asistencia - {{ $aula->nivel->nombre }} {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"</h2>
                 </div>
-                <a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Volver a Secciones
-                </a>
             </div>
         </div>
     </div>

@@ -2,17 +2,68 @@
 
 @section('content')
 <div class="container py-4">
-    <div class="row mb-4">
-        <div class="col">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="row mb-4"> 
+    <div class="col">
+        <!-- Sección de breadcrumb mejorada -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ route('asistencia.index') }}"><i></i>Niveles</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}">{{ $aula->nivel->nombre }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"
+                </li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <!-- Título -->
+            <div>
                 <h2>Control de Asistencia - {{ $aula->nivel->nombre }} {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"</h2>
-                <a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Volver a Secciones
-                </a>
+            </div>
+
+            <!-- Botón de exportar -->
+            <div class="d-flex align-items-center">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown"
+                            data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                        <i class="bi bi-download me-1"></i> Exportar
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                        <li>
+                            <a class="dropdown-item" href="#" id="export-excel-btn">
+                                <i class="bi bi-file-earmark-excel me-2 text-success"></i> Exportar a Excel
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="export-pdf-btn">
+                                <i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Exportar a PDF
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
+<!-- Estilos personalizados: recomendar trasladarlos a un archivo CSS externo -->
+<style>
+    /* Estilo personalizado para PDF */
+    .dropdown-item.text-danger:active,
+    .dropdown-item.text-danger:focus,
+    .dropdown-item.text-danger:hover {
+        background-color: #dc3545 !important;
+        color: #fff !important;
+    }
+
+    /* Estilo personalizado para Excel */
+    .dropdown-item.text-success:active,
+    .dropdown-item.text-success:focus,
+    .dropdown-item.text-success:hover {
+        background-color: #198754 !important;
+        color: #fff !important;
+    }
+</style>
     <!-- Botones de modo -->
     <div class="row mb-3">
         <div class="col-md-12">
@@ -23,18 +74,6 @@
                 <input type="radio" class="btn-check" name="viewMode" id="modeEdit" value="edit">
                 <label class="btn btn-outline-success" for="modeEdit">Modo Edición</label>
             </div>
-        </div>
-    </div>
-
-    <!-- Botones de exportación -->
-    <div class="row mb-3">
-        <div class="col">
-            <button id="export-excel-btn" class="btn btn-success" disabled>
-                <i class="bi bi-file-excel me-1"></i> Exportar a Excel
-            </button>
-            <button id="export-pdf-btn" class="btn btn-danger" disabled>
-                <i class="bi bi-file-pdf me-1"></i> Exportar a PDF
-            </button>
         </div>
     </div>
 
@@ -177,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveAttendanceBtn = document.getElementById('save-attendance-btn');
 
     // Elementos de botones y formularios
+    const exportDropdownBtn = document.getElementById('exportDropdown');
     const exportExcelBtn = document.getElementById('export-excel-btn');
     const exportExcelForm = document.getElementById('export-form');
     const exportPdfBtn = document.getElementById('export-pdf-btn');
@@ -199,9 +239,11 @@ document.addEventListener('DOMContentLoaded', function() {
     [materiaSelect, docenteSelect, mesSelect, añoSelect].forEach(select => {
         select.addEventListener('change', function() {
             if (materiaSelect.value && docenteSelect.value && mesSelect.value && añoSelect.value) {
+                exportDropdownBtn.disabled = false;
                 exportExcelBtn.disabled = false;
                 exportPdfBtn.disabled = false;
             } else {
+                exportDropdownBtn.disabled = true;
                 exportExcelBtn.disabled = true;
                 exportPdfBtn.disabled = true;
             }

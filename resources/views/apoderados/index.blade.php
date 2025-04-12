@@ -6,17 +6,51 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Apoderados</h1>
-        <div>
-            <a href="{{ route('apoderados.export', request()->query()) }}" class="btn btn-success me-2">
-                <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
-            </a>
-            <a href="{{ route('apoderados.pdf', request()->query()) }}" class="btn btn-danger me-2">
-                <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
-            </a>
-            <a href="{{ route('apoderados.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Nuevo Apoderado
-            </a>
+        <div class="d-flex gap-2">
+        <!-- Dropdown Exportar -->
+        <div class="dropdown">
+            <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-download me-1"></i> Exportar
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                <li>
+                    <a class="dropdown-item text-success" href="{{ route('apoderados.export', request()->query()) }}">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{{ route('apoderados.pdf', request()->query()) }}">
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
+                    </a>
+                </li>
+            </ul>
         </div>
+
+        <!-- Estilos personalizados -->
+        <style>
+            /* Estilo personalizado para PDF */
+            .dropdown-item.text-danger:active,
+            .dropdown-item.text-danger:focus,
+            .dropdown-item.text-danger:hover {
+                background-color: #dc3545 !important;
+                color: #fff !important;
+            }
+
+            /* Estilo personalizado para Excel */
+            .dropdown-item.text-success:active,
+            .dropdown-item.text-success:focus,
+            .dropdown-item.text-success:hover {
+                background-color: #198754 !important;
+                color: #fff !important;
+            }
+        </style>
+
+        <!-- Botón de Nuevo Apoderado -->
+        <a href="{{ route('apoderados.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo Apoderado
+        </a>
+    </div>
+
     </div>
     
     <!-- Filtros -->
@@ -98,10 +132,10 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ route('apoderados.show', $apoderado) }}" class="btn btn-info" title="Ver detalles">
+                                        <a href="{{ route('apoderados.show', $apoderado) }}" class="btn btn-sm btn-info text-white" title="Ver detalles">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a href="{{ route('apoderados.edit', $apoderado) }}" class="btn btn-warning" title="Editar">
+                                        <a href="{{ route('apoderados.edit', $apoderado) }}" class="btn btn-sm btn-warning text-white" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <button type="button" class="btn btn-danger" 

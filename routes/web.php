@@ -96,7 +96,13 @@ Route::get('/asistencias/index-nivel', [AsistenciaController::class, 'indexNivel
 Route::resource('incidentes', \App\Http\Controllers\IncidenteController::class);
     
  // Rutas de Usuarios
-Route::resource('usuarios', \App\Http\Controllers\UsuarioController::class);});
+Route::resource('usuarios', \App\Http\Controllers\UsuarioController::class);
+Route::patch('/usuarios/{usuario}/cambiar-estado', [UsuarioController::class, 'cambiarEstado'])->name('usuarios.cambiar-estado');
+
+// Rutas de Perfil
+Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
+Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+});
 
 
 //RUTAS DE EXPORTS TO EXCEL AND TO PDF

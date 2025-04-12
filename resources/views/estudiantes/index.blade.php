@@ -6,11 +6,47 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Estudiantes</h1>
-        <a href="{{ route('estudiantes.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Nuevo Estudiante
-        </a>
+        <div class="d-flex gap-2">
+            <!-- Dropdown Exportar -->
+            <div class="dropdown">
+                <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-download me-1"></i> Exportar
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li>
+                        <a class="dropdown-item text-danger" href="{{ route('estudiantes.exportPdf', request()->query()) }}">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-success" href="{{ route('estudiantes.exportExcel', request()->query()) }}">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <style>
+                /* Estilo personalizado para PDF */
+                .dropdown-item.text-danger:active,
+                .dropdown-item.text-danger:focus,
+                .dropdown-item.text-danger:hover {
+                    background-color: #dc3545 !important; /* rojo Bootstrap */
+                    color: #fff !important;
+                }
+
+                /* Estilo personalizado para Excel */
+                .dropdown-item.text-success:active,
+                .dropdown-item.text-success:focus,
+                .dropdown-item.text-success:hover {
+                    background-color: #198754 !important; /* verde Bootstrap */
+                    color: #fff !important;
+                }
+            </style>
+            <a href="{{ route('estudiantes.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Nuevo Estudiante
+            </a>
+        </div>
     </div>
-    
 
     <div class="card mb-4">
         <div class="card-body">
@@ -63,24 +99,8 @@
                         <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
                     </a>
 
-                    <!-- Dropdown Exportar -->
-                    <div class="dropdown">
-                        <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-download me-1"></i> Exportar
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                            <li>
-                                <a class="dropdown-item text-danger" href="{{ route('estudiantes.exportPdf', request()->query()) }}">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item text-success" href="{{ route('estudiantes.exportExcel', request()->query()) }}">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    
+
                 </div>
             </form>
         </div>

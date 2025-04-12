@@ -4,26 +4,53 @@
 
 @section('content')
 <div class="container">
-    <!--<div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Docentes</h1>
-        <a href="{{ route('docentes.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Nuevo Docente
-        </a>
-    </div>
-    <!-- Agregar este código después del botón "Nuevo Docente" en la línea 9 del archivo original -->
     <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Docentes</h1>
-    <div>
-        <a href="{{ route('docentes.export', request()->query()) }}" class="btn btn-success me-2">
-            <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
-        </a>
-        <a href="{{ route('docentes.pdf', request()->query()) }}" class="btn btn-danger me-2">
-            <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
-        </a>
+        <div class="d-flex gap-2">
+        <!-- Dropdown Exportar -->
+        <div class="dropdown">
+            <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-download me-1"></i> Exportar
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                <li>
+                    <a class="dropdown-item text-success" href="{{ route('docentes.export', request()->query()) }}">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{{ route('docentes.pdf', request()->query()) }}">
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Estilos personalizados -->
+        <style>
+            /* Estilo personalizado para PDF */
+            .dropdown-item.text-danger:active,
+            .dropdown-item.text-danger:focus,
+            .dropdown-item.text-danger:hover {
+                background-color: #dc3545 !important;
+                color: #fff !important;
+            }
+
+            /* Estilo personalizado para Excel */
+            .dropdown-item.text-success:active,
+            .dropdown-item.text-success:focus,
+            .dropdown-item.text-success:hover {
+                background-color: #198754 !important;
+                color: #fff !important;
+            }
+        </style>
+
+        <!-- Botón de Nuevo Docente -->
         <a href="{{ route('docentes.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i> Nuevo Docente
         </a>
     </div>
+
 </div>
 
 
