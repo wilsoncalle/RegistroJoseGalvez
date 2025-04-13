@@ -26,10 +26,15 @@
                         @endif
                     </p>
                     <dt class="col-sm-3">Creado:</dt>
-                    <dd class="col-sm-9">{{ $materia->created_at->format('d/m/Y H:i') }}</dd>
+                    <dd class="col-sm-9">
+                        {{ $materia->created_at ? $materia->created_at->format('d/m/Y H:i') : 'No disponible' }}
+                    </dd>
 
                     <dt class="col-sm-3">Actualizado:</dt>
-                    <dd class="col-sm-9">{{ $materia->updated_at->format('d/m/Y H:i') }}</dd>
+                    <dd class="col-sm-9">
+                        {{ $materia->updated_at ? $materia->updated_at->format('d/m/Y H:i') : 'No disponible' }}
+                    </dd>
+
                 </div>
             </div>
 

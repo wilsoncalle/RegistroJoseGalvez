@@ -59,6 +59,8 @@ body {
 .fade-transition {
     animation: fadeIn 0.3s ease-out;
     will-change: opacity, transform;
+    /* Evitar que cree un contexto de apilamiento que atrape modales */
+    z-index: auto;
 }
 
 @keyframes fadeIn {
@@ -226,6 +228,8 @@ body {
     transform: translateZ(0);
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
+    /* Asegurar que no cree un contexto de apilamiento que atrape modales */
+    z-index: auto;
 }
 
 /* Componentes */
@@ -237,6 +241,8 @@ body {
     overflow: hidden;
     margin-bottom: 24px;
     will-change: transform, box-shadow;
+    /* Evitar que cree un contexto de apilamiento que atrape modales */
+    z-index: auto;
 }
 
 .card:hover {
@@ -264,6 +270,9 @@ body {
     overflow: hidden;
     box-shadow: var(--card-shadow);
     margin-bottom: 24px;
+    /* Evitar que cree un contexto de apilamiento que atrape modales */
+    position: relative;
+    z-index: 1;
 }
 
 .table th {
@@ -564,7 +573,8 @@ body {
 
 /* Modales - Solución para parpadeo */
 .modal {
-    z-index: 1060;
+    z-index: 1080;
+    position: fixed;
     /* Mejora para hardware acceleration */
     transform: translateZ(0);
     -webkit-backface-visibility: hidden;
@@ -572,7 +582,7 @@ body {
 }
 
 .modal-backdrop {
-    z-index: 1040;
+    z-index: 1070;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
@@ -583,6 +593,7 @@ body {
     margin: 1.75rem auto;
     transition: transform var(--transition-normal) !important;
     will-change: transform;
+    z-index: 1090; /* Asegurar que el diálogo esté por encima del backdrop */
 }
 
 .modal.fade .modal-dialog {
@@ -601,6 +612,9 @@ body {
     overflow: hidden;
     animation: modalFadeIn 0.3s ease-out;
     will-change: transform, opacity;
+    /* Asegurar que el contenido esté por encima del backdrop */
+    position: relative;
+    z-index: 1090;
 }
 
 @keyframes modalFadeIn {
@@ -632,6 +646,16 @@ body {
 .modal-footer {
     border-top: 1px solid rgba(0, 0, 0, 0.05);
     padding: 16px 20px;
+}
+
+/* Asegurar que los modales en estado show sean visibles e interactivos */
+.modal.show {
+    display: block;
+    z-index: 1080;
+}
+
+.modal.show .modal-backdrop {
+    opacity: 1;
 }
 
 /* Badges */

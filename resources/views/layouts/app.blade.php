@@ -165,5 +165,29 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @yield('scripts')
     @stack('scripts')
+    
+    <!-- Script para corregir problemas de modales -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Asegurar que todos los modales se muevan directamente al body
+            document.querySelectorAll('.modal').forEach(function(modal) {
+                // Solo mover si no es hijo directo del body
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            });
+            
+            // Corregir problemas de z-index dinámicamente
+            $(document).on('show.bs.modal', '.modal', function() {
+                // Asegurar que el modal esté por encima del backdrop
+                $(this).css('z-index', 1080);
+                
+                // Asegurar que el backdrop esté visible pero por debajo del modal
+                setTimeout(function() {
+                    $('.modal-backdrop').css('z-index', 1070);
+                }, 10);
+            });
+        });
+    </script>
 </body>
 </html>
