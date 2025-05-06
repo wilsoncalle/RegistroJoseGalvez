@@ -9,7 +9,12 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Excel as ExcelType;
 use Carbon\Carbon;
-
+use App\Models\Aula;
+use App\Models\Estudiante;
+use App\Models\CalificacionOld;
+use App\Models\Materia;
+use App\Models\Asignacion;
+use App\Models\Trimestre;
 
 class ExportService
 {
@@ -61,5 +66,14 @@ class ExportService
         Storage::disk('local')->delete($tempFile);
         
         return $pdf->download($fileName);
+    }
+    
+    /**
+     * Exportar calificaciones antiguas a Excel
+     */
+    public function exportCalificacionesOldToExcel(int $aulaId, int $año, int $trimestreId, string $fileName)
+    {
+        $export = new \App\Exports\CalificacionesOldExport($aulaId, $año, $trimestreId);
+        return Excel::download($export, $fileName, ExcelType::XLSX);
     }
 }

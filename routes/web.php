@@ -13,6 +13,7 @@ use App\Http\Controllers\IncidenteController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AulaController;
 use App\Http\Controllers\DocenteController;
+use App\Http\Controllers\CalificacionOldController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -77,6 +78,26 @@ Route::get('/docentes/nivel/{nivelId}', [AsignacionController::class, 'getDocent
 
 // Rutas de Calificaciones
 Route::resource('calificaciones', \App\Http\Controllers\CalificacionController::class);
+
+// Redirección de la ruta antigua a la nueva para compatibilidad
+Route::get('/calificacionesOld', function() {
+    return redirect('/calificaciones-old');
+});
+
+// Rutas para calificaciones de estudiantes egresados
+Route::prefix('calificaciones-old')->name('calificaciones-old.')->group(function () {
+     Route::get('/', [CalificacionOldController::class, 'index'])->name('index');
+     Route::get('/{nivel}', [CalificacionOldController::class, 'indexNivel'])->name('index-nivel');
+     Route::get('/{nivel}/{aulaId}', [CalificacionOldController::class, 'createShow'])->name('create-show');
+     
+     // Rutas API para gestión de calificaciones
+     Route::post('/get-calificaciones', [CalificacionOldController::class, 'getCalificaciones'])->name('get-calificaciones');
+     Route::post('/save-calificaciones', [CalificacionOldController::class, 'saveCalificaciones'])->name('save-calificaciones');
+     
+     // Rutas para exportación
+     Route::post('/export/excel', [CalificacionOldController::class, 'exportToExcel'])->name('export.excel');
+     Route::post('/export/pdf', [CalificacionOldController::class, 'exportToPdf'])->name('export.pdf');
+ });
     
 // Rutas de Asistencias
 Route::resource('asistencia', AsistenciaController::class);

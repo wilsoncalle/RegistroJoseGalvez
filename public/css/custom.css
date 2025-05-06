@@ -687,6 +687,50 @@ body {
     background-color: var(--secondary-color) !important;
 }
 
+/* Quick Attendance Options Panel */
+#quick-attendance-options {
+    z-index: 1050;  /* Ensure it appears above other elements */
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    position: absolute; /* Cambiamos a absolute para posicionamiento relativo al documento */
+    transform: translateZ(0); /* Hardware acceleration */
+    will-change: top, left; /* Optimize animations */
+    pointer-events: auto; /* Asegurar que reciba eventos de clic */
+    margin-top: 0; /* Eliminar cualquier margen */
+}
+
+#quick-attendance-options .quick-option {
+    min-width: 40px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+#quick-attendance-options .quick-option:hover {
+    transform: scale(1.1);
+}
+
+/* Hover states for quick options */
+#quick-attendance-options .quick-option[data-value="P"]:hover {
+    background-color: #28a745;
+    color: white;
+}
+
+#quick-attendance-options .quick-option[data-value="T"]:hover {
+    background-color: #ffc107;
+    color: white;
+}
+
+#quick-attendance-options .quick-option[data-value="F"]:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+#quick-attendance-options .quick-option[data-value="J"]:hover {
+    background-color: #17a2b8;
+    color: white;
+}
+
 /* Responsividad */
 @media (max-width: 992px) {
     .sidebar {
@@ -731,6 +775,24 @@ body {
 .dropdown-item.text-success:focus,
 .dropdown-item.text-success:hover {
     background-color: rgba(46, 196, 182, 0.1) !important;
+    color: #2ec4b6 !important;
+}
+
+/* Colorea los íconos de PDF y Excel en el dropdown de exportar */
+.dropdown-menu .dropdown-item .bi-file-earmark-pdf {
+    color: #dc3545 !important;
+}
+.dropdown-menu .dropdown-item .bi-file-earmark-excel {
+    color: #198754 !important;
+}
+
+/* Cambia el color del ícono al hacer hover/focus en el item correspondiente */
+.dropdown-menu .dropdown-item.text-danger:hover .bi-file-earmark-pdf,
+.dropdown-menu .dropdown-item.text-danger:focus .bi-file-earmark-pdf {
+    color: #f43f5e !important;
+}
+.dropdown-menu .dropdown-item.text-success:hover .bi-file-earmark-excel,
+.dropdown-menu .dropdown-item.text-success:focus .bi-file-earmark-excel {
     color: #2ec4b6 !important;
 }
 

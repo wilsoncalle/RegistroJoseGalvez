@@ -132,6 +132,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('calificaciones-old.*') ? 'active' : '' }}" href="{{ route('calificaciones-old.index') }}">
+                    <i class="bi bi-journal-check me-2"></i> Calificaciones Viejas
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('asistencia.*') ? 'active' : '' }}" href="{{ route('asistencia.index') }}">
                     <i class="bi bi-calendar-check me-2"></i> Asistencia
                 </a>

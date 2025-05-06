@@ -25,23 +25,6 @@
                     </li>
                 </ul>
             </div>
-            <style>
-                /* Estilo personalizado para PDF */
-                .dropdown-item.text-danger:active,
-                .dropdown-item.text-danger:focus,
-                .dropdown-item.text-danger:hover {
-                    background-color: #dc3545 !important; /* rojo Bootstrap */
-                    color: #fff !important;
-                }
-
-                /* Estilo personalizado para Excel */
-                .dropdown-item.text-success:active,
-                .dropdown-item.text-success:focus,
-                .dropdown-item.text-success:hover {
-                    background-color: #198754 !important; /* verde Bootstrap */
-                    color: #fff !important;
-                }
-            </style>
             <a href="{{ route('estudiantes.create') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i> Nuevo Estudiante
             </a>

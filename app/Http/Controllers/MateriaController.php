@@ -20,10 +20,10 @@ class MateriaController extends Controller
     
     $materias = Materia::with('nivel')
         ->when($busqueda, function ($query, $busqueda) {
-            return $query->where('nombre', 'LIKE', "%{$busqueda}%");
+            return $query->where('materias.nombre', 'LIKE', "%{$busqueda}%");
         })
         ->when($filtroNivel, function ($query, $nivel) {
-            return $query->where('id_nivel', $nivel);
+            return $query->where('materias.id_nivel', $nivel);
         })
         ->join('niveles', 'materias.id_nivel', '=', 'niveles.id_nivel')
         ->orderByRaw("FIELD(niveles.nombre, 'Inicial', 'Primaria', 'Secundaria')")

@@ -24,18 +24,18 @@
             <!-- Botón de exportar -->
             <div class="d-flex align-items-center">
                 <div class="dropdown">
-                    <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown"
+                    <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown"
                             data-bs-toggle="dropdown" aria-expanded="false" disabled>
                         <i class="bi bi-download me-1"></i> Exportar
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
                         <li>
-                            <a class="dropdown-item" href="#" id="export-excel-btn">
+                            <a class="dropdown-item text-success" href="#" id="export-excel-btn">
                                 <i class="bi bi-file-earmark-excel me-2 text-success"></i> Exportar a Excel
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="#" id="export-pdf-btn">
+                            <a class="dropdown-item text-danger" href="#" id="export-pdf-btn">
                                 <i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Exportar a PDF
                             </a>
                         </li>
@@ -46,24 +46,6 @@
     </div>
 </div>
 
-<!-- Estilos personalizados: recomendar trasladarlos a un archivo CSS externo -->
-<style>
-    /* Estilo personalizado para PDF */
-    .dropdown-item.text-danger:active,
-    .dropdown-item.text-danger:focus,
-    .dropdown-item.text-danger:hover {
-        background-color: #dc3545 !important;
-        color: #fff !important;
-    }
-
-    /* Estilo personalizado para Excel */
-    .dropdown-item.text-success:active,
-    .dropdown-item.text-success:focus,
-    .dropdown-item.text-success:hover {
-        background-color: #198754 !important;
-        color: #fff !important;
-    }
-</style>
     <!-- Botones de modo -->
     <div class="row mb-3">
         <div class="col-md-12">
@@ -159,7 +141,7 @@
 </div>
 
 <!-- Opciones rápidas de asistencia (visible solo en modo edición) -->
-<div id="quick-attendance-options" class="position-fixed d-none" style="border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 0;">
+<div id="quick-attendance-options" class="d-none" style="border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 0; position: absolute; z-index: 1050;">
   <div class="d-flex">
     <button class="btn rounded-0 rounded-start quick-option" data-value="P" 
       style="background-color: white; color: #28a745; border: 1.5px solid #28a745;">P</button>
@@ -313,18 +295,17 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const studentId = document.getElementById('student-id').value;
             const date = document.getElementById('attendance-date').value;
-            const value = this.getAttribute('data-value');
             
             // Guardar el cambio en el objeto de modificaciones
             if (!modifiedAttendance[studentId]) {
                 modifiedAttendance[studentId] = {};
             }
-            modifiedAttendance[studentId][date] = value;
+            modifiedAttendance[studentId][date] = this.getAttribute('data-value');
             
             // Actualizar la celda en la tabla
             const cell = document.querySelector(`[data-student="${studentId}"][data-date="${date}"]`);
             if (cell) {
-                updateAttendanceCell(cell, value);
+                updateAttendanceCell(cell, this.getAttribute('data-value'));
             }
             
             attendanceModal.hide();
@@ -609,29 +590,64 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('student-id').value = studentId;
             document.getElementById('attendance-date').value = date;
             
-            // Obtener las coordenadas iniciales de la celda
+            // Creamos un panel temporal directamente junto a la celda
+            const tempPanel = document.createElement('div');
+            tempPanel.className = 'temp-quick-options';
+            tempPanel.style.cssText = 'position: absolute; z-index: 1050; background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 0; display: flex;';
+            
+            // Añadimos los botones directamente
+            tempPanel.innerHTML = `
+                <button class="btn rounded-0 rounded-start quick-option" data-value="P" style="background-color: white; color: #28a745; border: 1.5px solid #28a745; min-width: 40px; font-weight: bold;">P</button>
+                <button class="btn rounded-0 quick-option" data-value="T" style="background-color: white; color: #ffc107; border: 1.5px solid #ffc107; min-width: 40px; font-weight: bold;">T</button>
+                <button class="btn rounded-0 quick-option" data-value="F" style="background-color: white; color: #dc3545; border: 1.5px solid #dc3545; min-width: 40px; font-weight: bold;">F</button>
+                <button class="btn rounded-0 rounded-end quick-option" data-value="J" style="background-color: white; color: #17a2b8; border: 1.5px solid #17a2b8; min-width: 40px; font-weight: bold;">J</button>
+            `;
+            
+            // Función para actualizar la posición del panel
             const updatePanelPosition = () => {
-                const rect = cell.getBoundingClientRect();
-                quickOptionsPanel.style.top = `${rect.top}px`;
-                quickOptionsPanel.style.left = `${rect.right + 5}px`;
+                const updatedRect = cell.getBoundingClientRect();
+                const cellHeight = updatedRect.height;
+                const panelHeight = 38; // Altura aproximada del panel
+                
+                // Calculamos la posición para centrar verticalmente el panel con la celda
+                const topPosition = updatedRect.top + window.scrollY + (cellHeight - panelHeight) / 2;
+                
+                tempPanel.style.top = topPosition + 'px';
+                tempPanel.style.left = (updatedRect.right + window.scrollX + 5) + 'px';
             };
-
+            
+            // Posicionamos inicialmente el panel
             updatePanelPosition();
-            quickOptionsPanel.classList.remove('d-none');
-
-            // Escuchar el evento scroll para actualizar la posición
+            
+            // Añadimos el panel al documento
+            document.body.appendChild(tempPanel);
+            
+            // Añadimos evento de scroll para actualizar la posición
             const onScroll = () => {
                 updatePanelPosition();
             };
-
+            
             window.addEventListener('scroll', onScroll);
-
+            window.addEventListener('resize', onScroll);
+            
+            // Añadimos los event listeners a los botones
+            tempPanel.querySelectorAll('.quick-option').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    updateAttendanceValue(studentId, date, value);
+                    tempPanel.remove();
+                    window.removeEventListener('scroll', onScroll);
+                    window.removeEventListener('resize', onScroll);
+                });
+            });
+            
             // Cerrar el panel al hacer clic fuera
             const closeQuickPanel = function(e) {
-                if (!quickOptionsPanel.contains(e.target) && e.target !== cell) {
-                    quickOptionsPanel.classList.add('d-none');
+                if (!tempPanel.contains(e.target) && e.target !== cell) {
+                    tempPanel.remove();
                     document.removeEventListener('click', closeQuickPanel);
                     window.removeEventListener('scroll', onScroll);
+                    window.removeEventListener('resize', onScroll);
                 }
             };
 
@@ -639,6 +655,20 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 document.addEventListener('click', closeQuickPanel);
             }, 100);
+        }
+    }
+
+    function updateAttendanceValue(studentId, date, value) {
+        // Guardar el cambio en el objeto de modificaciones
+        if (!modifiedAttendance[studentId]) {
+            modifiedAttendance[studentId] = {};
+        }
+        modifiedAttendance[studentId][date] = value;
+        
+        // Actualizar la celda en la tabla
+        const cell = document.querySelector(`[data-student="${studentId}"][data-date="${date}"]`);
+        if (cell) {
+            updateAttendanceCell(cell, value);
         }
     }
 
@@ -750,8 +780,11 @@ th.vertical-header{
     background-color: #03366c !important;
     color: #fff !important;
     font-weight: bold;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    vertical-align: middle;
+    padding: 5px;
 }
-
 
 /* Estilos para estados de asistencia */
 .attendance-P { 
@@ -849,14 +882,6 @@ th.vertical-header{
 .quick-option[data-value="J"]:hover {
     background-color: #17a2b8 !important;
     border-color: #17a2b8 !important;
-}
-
-/* Estilos para el encabezado vertical de la columna N° Orden */
-.vertical-header {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    vertical-align: middle;
-    padding: 5px;
 }
 </style>
 @endsection
