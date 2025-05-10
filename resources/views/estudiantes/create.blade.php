@@ -42,7 +42,7 @@
                         <label for="apellido" class="form-label">Apellido <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="apellido" name="apellido" value="{{ old('apellido') }}" required>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="dni" class="form-label">DNI</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="dni" name="dni" value="{{ old('dni') }}" maxlength="8" pattern="[0-9]{8}" title="El DNI debe tener 8 dígitos numéricos">
@@ -52,11 +52,11 @@
                         </div>
                         <div class="form-text" id="dni_mensaje"></div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
                         <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" value="{{ old('fecha_nacimiento') }}">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="telefono" class="form-label">Teléfono</label>
                         <input type="text" class="form-control" id="telefono" name="telefono" value="{{ old('telefono') }}">
                     </div>

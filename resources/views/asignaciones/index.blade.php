@@ -34,6 +34,35 @@
 
     </div>
 
+    <!-- Mensajes de alerta -->
+    @php
+        // Asegurarse de que cada tipo de mensaje se muestre solo una vez
+        $successMessage = session('success');
+        $errorMessage = session('error');
+        $warningMessage = session('warning');
+    @endphp
+
+    @if($successMessage)
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ $successMessage }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    @endif
+
+    @if($errorMessage)
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ $errorMessage }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    @endif
+
+    @if($warningMessage)
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            {{ $warningMessage }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    @endif
+
     <!-- Filtros de búsqueda -->
     <div class="card mb-4">
         <div class="card-body">

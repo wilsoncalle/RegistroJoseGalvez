@@ -144,6 +144,13 @@
                         <!-- Materias se agregarán dinámicamente aquí -->
                     </tr>
                 </thead>
+                <tbody>
+                    <tr id="letras-row">
+                        <td colspan="4"></td>
+                        <!-- Letras del abecedario se agregarán dinámicamente aquí -->
+                        <td colspan="3"></td>
+                    </tr>
+                </tbody>
                 <tbody id="calificaciones-body">
                     <!-- Los datos se cargarán dinámicamente -->
                 </tbody>
@@ -266,10 +273,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Limpiar filas anteriores
         materiasRow.innerHTML = '';
+        document.getElementById('letras-row').innerHTML = '<td colspan="4"></td><td colspan="3"></td>';
         calificacionesBody.innerHTML = '';
         
         // Agregar columnas de materias rotadas
-        materias.forEach(materia => {
+        materias.forEach((materia, index) => {
             const th = document.createElement('th');
             th.className = 'text-center materia-column';
             th.setAttribute('data-id-materia', materia.id_materia);
@@ -281,6 +289,20 @@ document.addEventListener('DOMContentLoaded', function() {
             
             th.appendChild(divContainer);
             materiasRow.appendChild(th);
+            
+            // Agregar letras del abecedario en la fila de letras
+            const letrasRow = document.getElementById('letras-row');
+            const tdLetra = document.createElement('td');
+            tdLetra.className = 'text-center';
+            tdLetra.style.fontWeight = 'bold';
+            tdLetra.style.backgroundColor = '#f8f9fa'; // Fondo gris claro para destacar
+            
+            // Obtener la letra correspondiente (a, b, c, ...)
+            const letra = String.fromCharCode(97 + index); // 97 es el código ASCII para 'a'
+            tdLetra.textContent = letra;
+            
+            // Insertar la letra antes del último td (que es el colspan="3")
+            letrasRow.insertBefore(tdLetra, letrasRow.lastChild);
         });
         
         // Agregar filas de estudiantes
@@ -526,7 +548,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Actualizar situación final
         const tdSituacion = fila.querySelector('.situacion-final');
-        const situacion = desaprobadas > 0 ? 'P' : 'A';
+        const situacion = desaprobadas > 0 ? 'R' : 'A';
         tdSituacion.textContent = situacion;
         
         // Actualizar color
@@ -574,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         nota: nota,
                         comportamiento: comportamientoInput.value || 0,
                         asignaturas_reprobadas: asignaturasDesaprobadas,
-                        conclusion: situacionFinal === 'A' ? 'Aprobado' : 'Pendiente',
+                        conclusion: situacionFinal === 'A' ? 'Aprobado' : 'Reprobado',
                         grado: "{{ $aula->grado->nombre }} '{{ $aula->seccion->nombre }}'",
                         fecha: new Date().toISOString().split('T')[0],
                         año: año

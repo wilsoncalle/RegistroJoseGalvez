@@ -60,7 +60,7 @@
                     <!-- Campo Aula -->
                     <div class="col-md-4">
                         <label for="id_aula" class="form-label">Aula <span class="text-danger">*</span></label>
-                        <select name="id_aula" id="id_aula" class="form-select" required disabled>
+                        <select name="aulas[]" id="id_aula" class="form-select" required disabled>
                             <option value="">Primero seleccione un nivel</option>
                         </select>
                     </div>
@@ -76,7 +76,15 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" id="agregar-aula" class="btn btn-success mb-2" disabled>
+                            <i class="bi bi-plus-circle me-1"></i> Agregar Aula
+                        </button>
+                    </div>
                 </div>
+                
+                <!-- Contenedor para aulas adicionales -->
+                <div id="aulas-adicionales"></div>
 
                 @push('scripts')
                 <script>
@@ -90,6 +98,9 @@
                         const docenteSelect = document.getElementById('id_docente');
                         const materiaSelect = document.getElementById('id_materia');
                         const aulaSelect = document.getElementById('id_aula');
+                        const agregarAulaBtn = document.getElementById('agregar-aula');
+                        const aulasAdicionalesContainer = document.getElementById('aulas-adicionales');
+                        let contadorAulas = 1; // Contador para identificar las aulas adicionales
 
                         // Al cambiar el nivel, se actualizan docentes, aulas y materias
                         nivelSelect.addEventListener('change', function() {
@@ -158,8 +169,10 @@
                                                 aulaSelect.appendChild(option);
                                             });
                                             aulaSelect.disabled = false;
+                                            agregarAulaBtn.disabled = false;
                                         } else {
                                             aulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
+                                            agregarAulaBtn.disabled = true;
                                         }
                                     })
                                     .catch(error => {
@@ -169,6 +182,10 @@
                             } else {
                                 aulaSelect.innerHTML = '<option value="">Primero seleccione un nivel</option>';
                                 aulaSelect.disabled = true;
+                                agregarAulaBtn.disabled = true;
+                                // Limpiar aulas adicionales cuando se cambia el nivel
+                                aulasAdicionalesContainer.innerHTML = '';
+                                contadorAulas = 1;
                             }
                             
                             // Cargar materias (igual que antes)
@@ -208,6 +225,73 @@
                                 materiaSelect.innerHTML = '<option value="">Seleccione un nivel primero</option>';
                                 materiaSelect.disabled = true;
                             }
+                        });
+
+                        // Función para agregar una nueva aula
+                        agregarAulaBtn.addEventListener('click', function() {
+                            const nivelId = nivelSelect.value;
+                            if (!nivelId) return;
+
+                            contadorAulas++;
+                            const aulaId = `id_aula_${contadorAulas}`;
+                            const divRow = document.createElement('div');
+                            divRow.className = 'row mb-3';
+                            divRow.id = `aula-row-${contadorAulas}`;
+                            
+                            divRow.innerHTML = `
+                                <div class="col-md-4">
+                                    <label for="${aulaId}" class="form-label">Aula ${contadorAulas} <span class="text-danger">*</span></label>
+                                    <select name="aulas[]" id="${aulaId}" class="form-select" required>
+                                        <option value="">Cargando aulas...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger mb-2 eliminar-aula" data-id="${contadorAulas}">
+                                        <i class="bi bi-trash me-1"></i> Eliminar
+                                    </button>
+                                </div>
+                            `;
+                            
+                            aulasAdicionalesContainer.appendChild(divRow);
+                            
+                            const nuevoAulaSelect = document.getElementById(aulaId);
+                            
+                            // Cargar las aulas para el nuevo select
+                            fetch(`${urlAulas}/${nivelId}`)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Error en la red');
+                                    }
+                                    return response.json();
+                                })
+                                .then(aulas => {
+                                    nuevoAulaSelect.innerHTML = '';
+                                    if(aulas.length > 0) {
+                                        const defaultOption = document.createElement('option');
+                                        defaultOption.value = '';
+                                        defaultOption.textContent = 'Seleccione un aula';
+                                        nuevoAulaSelect.appendChild(defaultOption);
+                                        aulas.forEach(aula => {
+                                            const option = document.createElement('option');
+                                            option.value = aula.id;
+                                            option.textContent = aula.nombre_completo;
+                                            nuevoAulaSelect.appendChild(option);
+                                        });
+                                    } else {
+                                        nuevoAulaSelect.innerHTML = '<option value="">No hay aulas disponibles para este nivel</option>';
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    nuevoAulaSelect.innerHTML = '<option value="">Error al cargar aulas</option>';
+                                });
+                            
+                            // Agregar evento para eliminar el aula
+                            divRow.querySelector('.eliminar-aula').addEventListener('click', function() {
+                                const aulaId = this.getAttribute('data-id');
+                                const aulaRow = document.getElementById(`aula-row-${aulaId}`);
+                                aulaRow.remove();
+                            });
                         });
                     });
                 </script>

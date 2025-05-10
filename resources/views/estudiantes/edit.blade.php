@@ -45,7 +45,7 @@
                         <input type="text" class="form-control" id="apellido" name="apellido" 
                             value="{{ old('apellido', $estudiante->apellido) }}" required>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="dni" class="form-label">DNI</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="dni" name="dni" 
@@ -57,12 +57,12 @@
                         </div>
                         <div class="form-text" id="dni_mensaje"></div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
                         <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" 
                                value="{{ old('fecha_nacimiento', $estudiante->fecha_nacimiento) }}">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="telefono" class="form-label">Teléfono</label>
                         <input type="text" class="form-control" id="telefono" name="telefono" 
                                value="{{ old('telefono', $estudiante->telefono) }}">
@@ -100,7 +100,7 @@
                     <div class="col-md-2">
                         <label for="fecha_ingreso" class="form-label">Fecha de Ingreso</label>
                         <input type="date" class="form-control" id="fecha_ingreso" name="fecha_ingreso"
-                               value="{{ old('fecha_ingreso', $estudiante->fecha_ingreso) }}">
+                               value="{{ old('fecha_ingreso', $estudiante->fecha_ingreso ? $estudiante->fecha_ingreso->format('Y-m-d') : '') }}">
                     </div>
                     <div class="col-md-2">
                         <label for="estado" class="form-label">Estado</label>

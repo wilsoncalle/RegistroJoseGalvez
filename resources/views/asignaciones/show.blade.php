@@ -25,10 +25,10 @@
                     <p><strong>Aula:</strong> {{ $asignacion->aula->nombre_completo }}</p>
                     <dl class="row">
                         <dt class="col-sm-3">Creado:</dt>
-                        <dd class="col-sm-9">{{ $asignacion->created_at->format('d/m/Y H:i') }}</dd>
+                        <dd class="col-sm-9">{{ $asignacion->created_at ? $asignacion->created_at->format('d/m/Y H:i') : 'No disponible' }}</dd>
 
                         <dt class="col-sm-3">Actualizado:</dt>
-                        <dd class="col-sm-9">{{ $asignacion->updated_at->format('d/m/Y H:i') }}</dd>
+                        <dd class="col-sm-9">{{ $asignacion->updated_at ? $asignacion->updated_at->format('d/m/Y H:i') : 'No disponible' }}</dd>
                     </dl>
                 </div>
             </div>
@@ -36,7 +36,7 @@
             <hr>
 
             <div class="mt-4">
-                <a href="{{ route('asignaciones.show', ['asignacione' => $asignacion->id_asignacion]) }}" class="btn btn-primary">Editar</a>
+                <a href="{{ route('asignaciones.edit', ['asignacione' => $asignacion->id_asignacion]) }}" class="btn btn-primary">Editar</a>
                 <a href="{{ route('asignaciones.index') }}" class="btn btn-secondary">Volver</a>
                 
                 <form action="{{ route('asignaciones.destroy', $asignacion) }}" method="POST" class="d-inline">
