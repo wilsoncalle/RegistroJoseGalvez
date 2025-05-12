@@ -98,7 +98,7 @@
     </div>
 
     <!-- Mensaje de carga -->
-    <div id="loading-message" class="alert alert-info" style="width: 425px; text-align: center">
+    <div id="loading-message" class="alert alert-info" style="width: 450px; text-align: center">
         Seleccione los filtros de asistencia para cargar los datos
     </div>
 

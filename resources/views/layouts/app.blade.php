@@ -11,12 +11,19 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <!-- Barra de navegación superior -->
-    <nav class="navbar navbar-expand-lg fixed-top">
+    <!-- Barra de navegación superior con efecto blur y fecha reposicionada -->
+    <nav class="navbar navbar-expand-lg fixed-top navbar-blur">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <i></i>Sistema de Gestión Escolar
-            </a>
+            <div class="navbar-brand-container">
+                <a class="navbar-brand" href="{{ route('dashboard') }}">
+                    <i></i>Sistema de Gestión Escolar
+                </a>
+                <!-- Markup para la fecha con día de la semana -->
+                <div class="navbar-date">
+                    <span id="current-date">{{ date('l, d \d\e F \d\e Y') }}</span>
+                </div>
+            </div>
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -24,7 +31,7 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                           data-bs-toggle="dropdown" aria-expanded="false">
+                        data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle"></i> {{ Auth::user()->nombre }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
@@ -45,7 +52,6 @@
             </div>
         </div>
     </nav>
-
     <!-- Menú lateral (sidebar) -->
     <div class="sidebar">
         <div class="pt-4"></div>
@@ -159,18 +165,110 @@
             </li>
         </ul>
     </div>
-
     <!-- Contenido principal -->
     <div class="main-content mt-5 fade-transition">
         <div class="container-fluid">
             @yield('content')
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @yield('scripts')
     @stack('scripts')
-    
+    <script>
+        // Función inmediata para restaurar la posición del scroll lo antes posible
+        (function() {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
+                if (savedScrollPosition) {
+                    // Desactivar temporalmente el comportamiento suave para la restauración inicial
+                    sidebar.style.scrollBehavior = 'auto';
+                    sidebar.scrollTop = parseInt(savedScrollPosition);
+                }
+            }
+        })();
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (sidebar) {
+                // Establecer comportamiento suave para futuros scrolls iniciados por el usuario
+                setTimeout(() => {
+                    sidebar.style.scrollBehavior = 'smooth';
+                }, 100);
+                
+                // Aplicar la posición guardada nuevamente después de cualquier manipulación del DOM
+                const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
+                if (savedScrollPosition) {
+                    // Usar requestAnimationFrame para asegurar que ocurra en el próximo ciclo de pintado
+                    requestAnimationFrame(function() {
+                        sidebar.style.scrollBehavior = 'auto';
+                        sidebar.scrollTop = parseInt(savedScrollPosition);
+                        
+                        // Restaurar el comportamiento suave después de establecer la posición
+                        setTimeout(() => {
+                            sidebar.style.scrollBehavior = 'smooth';
+                        }, 50);
+                    });
+                }
+                
+                // Guardar la posición del scroll cuando cambia, pero con throttling
+                let scrollTimeoutId;
+                sidebar.addEventListener('scroll', function() {
+                    clearTimeout(scrollTimeoutId);
+                    scrollTimeoutId = setTimeout(() => {
+                        localStorage.setItem('sidebarScrollPosition', sidebar.scrollTop);
+                    }, 100);
+                });
+                
+                // Mejorar el manejo de clics en los enlaces
+                document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                    link.addEventListener('click', function(event) {
+                        // Solo para enlaces que navegan a otra página (no tienen preventDefault)
+                        if (link.getAttribute('href') && link.getAttribute('href') !== '#') {
+                            // Guardar la posición actual
+                            localStorage.setItem('sidebarScrollPosition', sidebar.scrollTop);
+                            
+                            // Añadir un pequeño retraso para asegurar que se guarde la posición
+                            if (!link.getAttribute('target')) {
+                                const href = link.getAttribute('href');
+                                if (!event.ctrlKey && !event.metaKey) {
+                                    event.preventDefault();
+                                    setTimeout(() => {
+                                        window.location.href = href;
+                                    }, 10);
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+        });
+        
+        // Prevenir parpadeos en la navegación mediante history API
+        window.addEventListener('pageshow', function(event) {
+            // Verificar si la página se cargó desde la caché (navegación hacia atrás/adelante)
+            if (event.persisted) {
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar) {
+                    // Desactivar animaciones brevemente
+                    sidebar.style.transition = 'none';
+                    
+                    // Restaurar la posición del scroll
+                    const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
+                    if (savedScrollPosition) {
+                        sidebar.scrollTop = parseInt(savedScrollPosition);
+                    }
+                    
+                    // Reactivar animaciones
+                    setTimeout(() => {
+                        sidebar.style.transition = '';
+                        sidebar.style.scrollBehavior = 'smooth';
+                    }, 50);
+                }
+            }
+        });
+    </script>
     <!-- Script para corregir problemas de modales -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -194,5 +292,179 @@
             });
         });
     </script>
+    <!-- Script para actualizar la fecha dinámicamente con día de la semana -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Función para actualizar la fecha con día de la semana
+        function updateDate() {
+            const dateElement = document.getElementById('current-date');
+            if (!dateElement) return;
+            
+            const now = new Date();
+            
+            // Nombres de los días de la semana en español
+            const weekdays = [
+                'Domingo', 'Lunes', 'Martes', 'Miércoles', 
+                'Jueves', 'Viernes', 'Sábado'
+            ];
+            
+            // Nombres de los meses en español
+            const months = [
+                'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+            ];
+            
+            // Obtener el día de la semana
+            const weekday = weekdays[now.getDay()];
+            
+            // Formatear la fecha completa en español con día de la semana
+            let formattedDate;
+            
+            try {
+                // Intentar usar la API Intl si está disponible
+                const options = { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                };
+                formattedDate = now.toLocaleDateString('es-ES', options);
+            } catch (e) {
+                // Fallback manual con nuestra propia implementación
+                formattedDate = weekday + ', ' + 
+                                now.getDate() + ' de ' + 
+                                months[now.getMonth()] + ' de ' + 
+                                now.getFullYear();
+            }
+            
+            // Actualizar el texto del elemento con la fecha formateada
+            dateElement.textContent = formattedDate;
+        }
+        
+        // Actualizar la fecha al cargar la página
+        updateDate();
+        
+        // Actualizar la fecha cada minuto
+        setInterval(updateDate, 60000);
+    });
+    </script>
+    <style>
+        .sidebar {
+            /* Mejorar el rendimiento del scroll */
+            will-change: scroll-position;
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+            
+            /* Prevenir los parpadeos con hardware acceleration */
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+            
+            /* Transición suave para cambios visuales */
+            transition: transform 0.2s ease-out;
+        }
+
+        .sidebar .nav-link {
+            /* Asegurar que los enlaces tengan una transición suave */
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .sidebar .nav-link.active {
+            /* Mejorar la visibilidad del ítem activo sin causar reflows */
+            position: relative;
+            z-index: 1;
+        }
+
+        .fade-transition {
+            /* Añadir transición suave al contenido principal */
+            opacity: 1;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .loading .fade-transition {
+            opacity: 0.7;
+        }
+        /* Estilos para la barra de navegación con efecto blur y fecha reposicionada */
+
+        /* Efecto blur moderno para la barra de navegación */
+        .navbar-blur {
+            background-color: rgba(255, 255, 255, 0.7) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Contenedor para el título y la fecha */
+        .navbar-brand-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            line-height: 1.2;
+            padding-right: 1rem;
+        }
+
+        /* Título principal */
+        .navbar-brand {
+            margin-bottom: 0.15rem;
+            padding-bottom: 0;
+            font-weight: bold;
+        }
+
+        /* Estilo para la fecha debajo del título */
+        .navbar-date {
+            font-size: 0.8rem;
+            color: rgba(0, 0, 0, 0.6);
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            letter-spacing: 0.01rem;
+            transition: color 0.3s ease;
+        }
+
+        /* Icono del calendario */
+        .navbar-date i {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-right: 0.4rem;
+            color: var(--bs-primary, #0d6efd);
+        }
+
+        /* Efecto hover para el contenedor del título */
+        .navbar-brand-container:hover .navbar-date {
+            color: rgba(0, 0, 0, 0.85);
+        }
+
+        /* Transiciones suaves */
+        .navbar-blur, .navbar-date, .navbar-brand {
+            transition: all 0.3s ease;
+        }
+
+        /* Mejores estilos para el menú desplegable */
+        .dropdown-menu {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ajustes responsive */
+        @media (max-width: 767.98px) {
+            .navbar-brand-container {
+                max-width: 70%;
+            }
+            
+            .navbar-date {
+                font-size: 0.7rem;
+            }
+            
+            .navbar-brand {
+                font-size: 0.9rem;
+            }
+        }
+        
+    </style>
 </body>
 </html>
+
