@@ -73,6 +73,16 @@
         </div>
     </div>
 
+    <!-- Contenedor para mensajes de alerta -->
+    <div id="alertContainer" class="row mb-3" style="display: none;">
+        <div class="col-md-12">
+            <div id="alertMessage" class="alert alert-dismissible fade show" role="alert">
+                <span id="alertText"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Filtros superiores -->
     <div class="row mb-4">
         <div class="col-md-3">
@@ -188,6 +198,41 @@
     <input type="hidden" name="id_trimestre" id="export-pdf-trimestre">
 </form>
 
+<!-- Modal para observaciones de situación final -->
+<div class="modal fade" id="observacionModal" tabindex="-1" aria-labelledby="observacionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="observacionModalLabel">Observación del Estudiante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="observacionForm">
+                    <input type="hidden" id="estudiante-id" name="estudiante_id">
+                    <div class="mb-3">
+                        <label for="situacion" class="form-label">Situación</label>
+                        <select class="form-select" id="situacion" name="situacion">
+                            <option value="P">Promovido (P)</option>
+                            <option value="A">Aplazado (A)</option>
+                            <option value="R">Reprobado (R)</option>
+                            <option value="RET">Retirado (RET)</option>
+                            <option value="TRA">Trasladado (TRA)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacion" class="form-label">Observación</label>
+                        <textarea class="form-control" id="observacion" name="observacion" rows="3" placeholder="Ingrese una observación sobre el estudiante"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="guardarObservacion">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -195,6 +240,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const aulaId = "{{ $aula->id_aula }}";
     const nivelId = "{{ $aula->nivel->id_nivel }}";
     const getCalificacionesUrl = "{{ route('calificaciones-old.get-calificaciones') }}";
+    
+    // Función para mostrar mensajes de alerta
+    function mostrarAlerta(mensaje, tipo) {
+        const alertContainer = document.getElementById('alertContainer');
+        const alertMessage = document.getElementById('alertMessage');
+        const alertText = document.getElementById('alertText');
+        
+        // Establecer el texto del mensaje
+        alertText.textContent = mensaje;
+        
+        // Establecer el tipo de alerta (success, danger, warning, info)
+        alertMessage.className = 'alert alert-' + tipo + ' alert-dismissible fade show';
+        
+        // Mostrar el contenedor
+        alertContainer.style.display = 'block';
+        
+        // Desplazarse al inicio de la página para ver la alerta
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Ocultar automáticamente después de 5 segundos
+        setTimeout(function() {
+            alertContainer.style.display = 'none';
+        }, 5000);
+    }
     const saveCalificacionesUrl = "{{ route('calificaciones-old.save-calificaciones') }}";
     
     // Elementos del DOM
@@ -553,17 +622,130 @@ document.addEventListener('DOMContentLoaded', function() {
             const tdSituacion = document.createElement('td');
             tdSituacion.className = 'text-center situacion-final';
             tdSituacion.setAttribute('data-id-estudiante', estudiante.id_estudiante);
+            tdSituacion.setAttribute('data-bs-toggle', 'tooltip');
             
-            // Determinar situación final (A = Aprobado, P = Pendiente)
-            const situacion = asignaturasDesaprobadas > 3 ? 'R' : 'A';
-            tdSituacion.textContent = situacion;
+            // El tooltip y el estilo del cursor dependen del modo
+            if (currentMode === 'edit') {
+                tdSituacion.setAttribute('title', 'Haga clic para agregar o editar observación');
+                tdSituacion.style.cursor = 'pointer';
+            } else {
+                tdSituacion.setAttribute('title', 'Ver observación (si existe)');
+                tdSituacion.style.cursor = 'default';
+            }
+            
+            // Determinar situación final (P = Promovido, A = Aplazado, R = Reprobado)
+            let situacion;
+            if (asignaturasDesaprobadas === 0) {
+                situacion = 'P'; // Promovido (0 cursos desaprobados)
+            } else if (asignaturasDesaprobadas >= 1 && asignaturasDesaprobadas <= 3) {
+                situacion = 'A'; // Aplazado (1 a 3 cursos desaprobados)
+            } else {
+                situacion = 'R'; // Reprobado (4 o más cursos desaprobados)
+            }
+            
+            // Verificar si hay observaciones guardadas para este estudiante
+            let observacionGuardada = '';
+            let situacionGuardada = situacion;
+            
+            // Si hay datos guardados en localStorage, usarlos
+            const observacionKey = `observacion_${aulaId}_${estudiante.id_estudiante}`;
+            const observacionData = localStorage.getItem(observacionKey);
+            
+            if (observacionData) {
+                const data = JSON.parse(observacionData);
+                observacionGuardada = data.observacion || '';
+                situacionGuardada = data.situacion || situacion;
+            }
+            
+            tdSituacion.textContent = situacionGuardada;
+            tdSituacion.setAttribute('data-observacion', observacionGuardada);
             
             // Colorear según situación
-            if (situacion === 'A') {
+            if (situacionGuardada === 'P') {
                 tdSituacion.classList.add('text-success');
+            } else if (situacionGuardada === 'A') {
+                tdSituacion.classList.add('text-warning');
+            } else if (situacionGuardada === 'RET') {
+                tdSituacion.classList.add('text-secondary');
+            } else if (situacionGuardada === 'TRA') {
+                tdSituacion.classList.add('text-info');
             } else {
                 tdSituacion.classList.add('text-danger');
             }
+            
+            // Agregar icono de observación si hay una observación guardada
+            if (observacionGuardada) {
+                tdSituacion.classList.add('has-observacion');
+            }
+            
+            // Agregar evento de clic para mostrar el modal
+            tdSituacion.addEventListener('click', function() {
+                // Verificar si estamos en modo edición
+                if (currentMode === 'edit') {
+                    const estudianteId = this.getAttribute('data-id-estudiante');
+                    const observacion = this.getAttribute('data-observacion') || '';
+                    const situacion = this.textContent;
+                    
+                    // Llenar el modal con los datos actuales
+                    document.getElementById('estudiante-id').value = estudianteId;
+                    document.getElementById('observacion').value = observacion;
+                    document.getElementById('situacion').value = situacion;
+                    
+                    // Mostrar el modal
+                    const modal = new bootstrap.Modal(document.getElementById('observacionModal'));
+                    modal.show();
+                } else {
+                    // En modo lectura, mostrar un panel pequeño con la observación
+                    const observacion = this.getAttribute('data-observacion');
+                    if (observacion) {
+                        // Crear un panel flotante para mostrar la observación
+                        const rect = this.getBoundingClientRect();
+                        const panel = document.createElement('div');
+                        panel.className = 'observacion-panel';
+                        panel.innerHTML = `
+                            <div class="observacion-header">Observación</div>
+                            <div class="observacion-content">${observacion}</div>
+                            <div class="observacion-footer">
+                                <button class="btn btn-sm btn-secondary">Cerrar</button>
+                            </div>
+                        `;
+                        
+                        // Agregar al DOM primero para poder calcular dimensiones
+                        document.body.appendChild(panel);
+                        
+                        // Ahora podemos obtener las dimensiones reales
+                        const panelHeight = panel.offsetHeight;
+                        const panelWidth = panel.offsetWidth;
+                        
+                        // Posicionar el panel en la parte superior izquierda de la celda
+                        panel.style.top = (rect.top + window.scrollY - panelHeight - 5) + 'px';
+                        panel.style.left = (rect.left + window.scrollX - 300) + 'px';
+                        
+                        // Asegurarse de que el panel no se salga de la pantalla por arriba
+                        if (rect.top - panelHeight < 0) {
+                            panel.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+                        }
+                        
+                        // Asegurarse de que el panel no se salga de la pantalla por la izquierda
+                        if (rect.left - 20 < 0) {
+                            panel.style.left = rect.left + 'px';
+                        }
+                        
+                        // Configurar el botón de cerrar
+                        panel.querySelector('button').addEventListener('click', function() {
+                            document.body.removeChild(panel);
+                        });
+                        
+                        // Cerrar el panel si se hace clic fuera de él
+                        document.addEventListener('click', function closePanel(e) {
+                            if (!panel.contains(e.target) && e.target !== tdSituacion) {
+                                document.body.removeChild(panel);
+                                document.removeEventListener('click', closePanel);
+                            }
+                        });
+                    }
+                }
+            });
             
             tr.appendChild(tdSituacion);
             
@@ -612,6 +794,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Función para activar/desactivar el modo de solo lectura
     function setReadOnlyMode(isReadOnly) {
+        // Actualizar tooltips y cursor de las celdas de situación final
+        document.querySelectorAll('.situacion-final').forEach(cell => {
+            if (isReadOnly) {
+                cell.setAttribute('title', 'Ver observación (si existe)');
+                cell.style.cursor = 'default';
+            } else {
+                cell.setAttribute('title', 'Haga clic para agregar o editar observación');
+                cell.style.cursor = 'pointer';
+            }
+        });
         // Hacer todos los inputs de notas readonly o editables
         document.querySelectorAll('.nota-input').forEach(input => {
             input.readOnly = isReadOnly;
@@ -888,34 +1080,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Función para actualizar conteo de asignaturas desaprobadas
-    function actualizarDesaprobadas(event) {
-        const idEstudiante = event.target.closest('td').getAttribute('data-id-estudiante');
-        const fila = document.querySelector(`tr[data-id-estudiante="${idEstudiante}"]`);
-        const inputs = fila.querySelectorAll('.nota-input');
-        
-        let desaprobadas = 0;
-        inputs.forEach(input => {
-            if (input.value && parseFloat(input.value) < 11) {
-                desaprobadas++;
+    function actualizarDesaprobadas() {
+        // Recorrer todas las filas de estudiantes
+        document.querySelectorAll('[data-id-estudiante]').forEach(row => {
+            if (row.tagName === 'TR') {
+                const estudianteId = row.getAttribute('data-id-estudiante');
+                let desaprobadas = 0;
+                
+                // Contar materias desaprobadas
+                row.querySelectorAll('.nota-input').forEach(input => {
+                    const nota = parseInt(input.value) || 0;
+                    if (nota < 11) {
+                        desaprobadas++;
+                    }
+                });
+                
+                // Actualizar celda de asignaturas desaprobadas
+                const tdDesaprobadas = row.querySelector(`.asignaturas-desaprobadas[data-id-estudiante="${estudianteId}"]`);
+                if (tdDesaprobadas) {
+                    tdDesaprobadas.textContent = desaprobadas;
+                }
+                
+                // Actualizar situación final
+                const tdSituacion = row.querySelector(`.situacion-final[data-id-estudiante="${estudianteId}"]`);
+                if (tdSituacion) {
+                    // Solo actualizar si no tiene una observación manual
+                    if (!tdSituacion.classList.contains('has-observacion')) {
+                        // Determinar situación según cantidad de desaprobados
+                        let situacion;
+                        if (desaprobadas === 0) {
+                            situacion = 'P'; // Promovido (0 cursos desaprobados)
+                        } else if (desaprobadas >= 1 && desaprobadas <= 3) {
+                            situacion = 'A'; // Aplazado (1 a 3 cursos desaprobados)
+                        } else {
+                            situacion = 'R'; // Reprobado (4 o más cursos desaprobados)
+                        }
+                        
+                        tdSituacion.textContent = situacion;
+                        
+                        // Actualizar color
+                        tdSituacion.classList.remove('text-success', 'text-warning', 'text-danger');
+                        if (situacion === 'P') {
+                            tdSituacion.classList.add('text-success');
+                        } else if (situacion === 'A') {
+                            tdSituacion.classList.add('text-warning');
+                        } else {
+                            tdSituacion.classList.add('text-danger');
+                        }
+                    }
+                }
             }
         });
-        
-        // Actualizar celda de asignaturas desaprobadas
-        const tdDesaprobadas = fila.querySelector('.asignaturas-desaprobadas');
-        tdDesaprobadas.textContent = desaprobadas;
-        
-        // Actualizar situación final
-        const tdSituacion = fila.querySelector('.situacion-final');
-        const situacion = desaprobadas > 0 ? 'R' : 'A';
-        tdSituacion.textContent = situacion;
-        
-        // Actualizar color
-        tdSituacion.classList.remove('text-success', 'text-danger');
-        if (situacion === 'A') {
-            tdSituacion.classList.add('text-success');
-        } else {
-            tdSituacion.classList.add('text-danger');
-        }
     }
     
     // Guardar calificaciones
@@ -977,16 +1192,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Calificaciones guardadas correctamente');
+                // Mostrar mensaje de éxito en el contenedor de alertas
+                mostrarAlerta('Calificaciones guardadas correctamente', 'success');
                 // Recargar datos para mostrar cambios
                 cargarCalificaciones();
             } else {
-                alert('Error al guardar calificaciones: ' + data.message);
+                // Mostrar mensaje de error en el contenedor de alertas
+                mostrarAlerta('Error al guardar calificaciones: ' + data.message, 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al guardar calificaciones');
+            // Mostrar mensaje de error en el contenedor de alertas
+            mostrarAlerta('Error al guardar calificaciones', 'danger');
         });
     });
     
@@ -1008,11 +1226,148 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar el sistema moderno de arrastrar y soltar
     setTimeout(initDragAndDrop, 500); // Pequeño retraso para asegurar que todo esté cargado
+    
+    // Configurar el evento para guardar observaciones
+    document.getElementById('guardarObservacion').addEventListener('click', function() {
+        const estudianteId = document.getElementById('estudiante-id').value;
+        const observacion = document.getElementById('observacion').value;
+        const situacion = document.getElementById('situacion').value;
+        const año = document.getElementById('año').value;
+        const idTrimestre = document.getElementById('id_trimestre').value;
+        
+        // Obtener el primer id_asignacion disponible
+        const primeraCeldaNota = document.querySelector('.nota-cell');
+        if (!primeraCeldaNota) {
+            alert('Error: No se encontró ninguna asignación');
+            return;
+        }
+        const idAsignacion = primeraCeldaNota.getAttribute('data-id-asignacion');
+        
+        if (!idAsignacion) {
+            alert('Error: No se pudo obtener el ID de la asignación');
+            return;
+        }
+
+        // Validar que tenemos todos los datos necesarios
+        if (!estudianteId || !año || !idTrimestre || !idAsignacion) {
+            alert('Error: Faltan datos necesarios para guardar la observación');
+            return;
+        }
+
+        // Preparar los datos en el formato que espera el controlador
+        const datos = {
+            calificaciones: [{
+                id_estudiante: parseInt(estudianteId),
+                id_asignacion: parseInt(idAsignacion),
+                id_trimestre: parseInt(idTrimestre),
+                nota: 0,
+                comportamiento: 0,
+                asignaturas_reprobadas: 0,
+                conclusion: situacion,
+                grado: "{{ $aula->grado->nombre }} '{{ $aula->seccion->nombre }}'",
+                fecha: new Date().toISOString().split('T')[0],
+                año: parseInt(año),
+                observacion: observacion
+            }]
+        };
+
+        console.log('Enviando datos:', datos); // Para depuración
+
+        // Enviar datos al servidor
+        fetch(saveCalificacionesUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta del servidor:', data); // Para depuración
+            
+            if (data.success) {
+                // Actualizar la celda de situación final
+                const tdSituacion = document.querySelector(`.situacion-final[data-id-estudiante="${estudianteId}"]`);
+                if (tdSituacion) {
+                    tdSituacion.textContent = situacion;
+                    tdSituacion.setAttribute('data-observacion', observacion);
+                    
+                    // Limpiar clases de color
+                    tdSituacion.classList.remove('text-success', 'text-danger', 'text-warning', 'text-info', 'text-secondary');
+                    
+                    // Aplicar clase según situación
+                    if (situacion === 'P') {
+                        tdSituacion.classList.add('text-success');
+                    } else if (situacion === 'A') {
+                        tdSituacion.classList.add('text-warning');
+                    } else if (situacion === 'RET') {
+                        tdSituacion.classList.add('text-secondary');
+                    } else if (situacion === 'TRA') {
+                        tdSituacion.classList.add('text-info');
+                    } else {
+                        tdSituacion.classList.add('text-danger');
+                    }
+                    
+                    // Agregar o quitar clase de observación
+                    if (observacion) {
+                        tdSituacion.classList.add('has-observacion');
+                    } else {
+                        tdSituacion.classList.remove('has-observacion');
+                    }
+                }
+                
+                // Cerrar el modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('observacionModal'));
+                modal.hide();
+            } else {
+                mostrarAlerta('Error al guardar la observación: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarAlerta('Error al guardar la observación: ' + error.message, 'danger');
+        });
+    });
 });
 </script>
 @endpush
 
 <style>
+    /* Panel de observaciones */
+    .observacion-panel {
+        position: absolute;
+        z-index: 1000;
+        width: 300px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        font-size: 14px;
+    }
+    
+    .observacion-header {
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .observacion-content {
+        padding: 15px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .observacion-footer {
+        padding: 10px;
+        text-align: right;
+        border-top: 1px solid #dee2e6;
+        background-color: #ffffff; /*#f8f9fa color del header */
+        border-radius: 0 0 10px 10px;
+    }
+    
+    /* Indicador de arrastre */
     .drag-indicator {
         display: flex;
         justify-content: center;
@@ -1117,6 +1472,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .text-danger {
     font-weight: bold;
+}
+
+.text-warning {
+    font-weight: bold;
+    color: #ffc107 !important;
+}
+
+.text-info {
+    font-weight: bold;
+    color: #17a2b8 !important;
+}
+
+.text-secondary {
+    font-weight: bold;
+    color: #6c757d !important;
+}
+
+/* Estilos para situación final con hover */
+.situacion-final {
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.situacion-final:hover {
+    background-color: #f0f0f0;
+    transform: scale(1.05);
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+/* Indicador de observación */
+.has-observacion {
+    position: relative;
+}
+
+.has-observacion::after {
+    content: '•';
+    position: absolute;
+    top: -5px;
+    right: 0;
+    font-size: 16px;
+    color: #007bff;
 }
 
 /* Padding para todas las celdas de la tabla */

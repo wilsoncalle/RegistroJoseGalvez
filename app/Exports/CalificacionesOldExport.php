@@ -20,6 +20,7 @@ use App\Models\Estudiante;
 use App\Models\CalificacionOld;
 use App\Models\Asignacion;
 use App\Models\Trimestre;
+use App\Models\AnioAcademico;
 
 class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize, WithStyles, WithCustomStartCell, WithEvents
 {
@@ -31,6 +32,7 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
     protected $asignaturas = [];
     protected $aula;
     protected $trimestre;
+    protected $estudiantesConObservaciones = [];
 
     public function __construct(int $aulaId, int $año, int $trimestreId)
     {
@@ -49,32 +51,9 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
         $this->aula = Aula::with(['nivel', 'grado', 'seccion'])->findOrFail($this->aulaId);
         $this->trimestre = Trimestre::findOrFail($this->trimestreId);
         
-        // Obtener estudiantes del aula
-        $estudiantes = Estudiante::where('id_aula', $this->aulaId)
-            ->orderBy('apellido')
-            ->get();
-            
-        // Filtrar estudiantes que tienen calificaciones en este año académico
-        $estudiantesConCalificaciones = collect();
+        // Identificar a los estudiantes que pertenecen al año académico seleccionado
         
-        foreach ($estudiantes as $estudiante) {
-            // Verificar si el estudiante tiene calificaciones en este año académico
-            $tieneCalificaciones = CalificacionOld::where('id_estudiante', $estudiante->id_estudiante)
-                ->whereHas('asignacion', function($query) {
-                    $query->whereHas('anioAcademico', function($q) {
-                        $q->where('anio', $this->año);
-                    });
-                })
-                ->exists();
-            
-            if ($tieneCalificaciones) {
-                $estudiantesConCalificaciones->push($estudiante);
-            }
-        }
-        
-        $estudiantes = $estudiantesConCalificaciones;
-            
-        // Obtener asignaciones y materias para este aula y año
+        // 1. Obtener asignaciones para este aula y año académico
         $asignaciones = Asignacion::with('materia')
             ->where('id_aula', $this->aulaId)
             ->whereHas('anioAcademico', function($query) {
@@ -83,8 +62,35 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
             ->get();
             
         $this->asignaturas = $asignaciones;
+        
+        if ($asignaciones->isEmpty()) {
+            $this->data = [];
+            return;
+        }
+        
+        // 2. Obtener los IDs de los estudiantes que tienen calificaciones o observaciones en este año académico
+        $estudiantesIds = CalificacionOld::whereIn('id_asignacion', $asignaciones->pluck('id_asignacion'))
+            ->where(function($query) {
+                $query->whereNotNull('nota')
+                      ->orWhereNotNull('observacion');
+            })
+            ->pluck('id_estudiante')
+            ->unique()
+            ->toArray();
             
-        // Obtener calificaciones
+        // 3. Obtener estudiantes del aula que corresponden al año académico seleccionado
+        // Incluimos tanto los que tienen calificaciones/observaciones como los que no
+        $estudiantes = Estudiante::where('id_aula', $this->aulaId)
+            ->where(function($query) use ($estudiantesIds) {
+                // Incluir estudiantes que tienen alguna calificación u observación en este año académico
+                $query->whereIn('id_estudiante', $estudiantesIds)
+                    // O estudiantes que se crearon en este año académico
+                    ->orWhereYear('created_at', $this->año);
+            })
+            ->orderBy('apellido')
+            ->get();
+            
+        // Obtener calificaciones y observaciones
         $calificaciones = CalificacionOld::where('id_trimestre', $this->trimestreId)
             ->whereIn('id_estudiante', $estudiantes->pluck('id_estudiante'))
             ->get();
@@ -104,6 +110,8 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
         
         // Datos de estudiantes
         foreach ($estudiantes as $index => $estudiante) {
+            $currentRowIndex = count($this->data); // Índice de la fila actual
+            
             $row = [
                 $index + 1, // N° Orden
                 $estudiante->codigo, // N° Matrícula
@@ -113,32 +121,91 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
             
             // Notas por asignatura
             $desaprobadas = 0;
-            foreach ($asignaciones as $asignacion) {
-                $calificacion = $calificaciones->first(function ($cal) use ($estudiante, $asignacion) {
-                    return $cal->id_estudiante == $estudiante->id_estudiante && 
-                           $cal->id_asignacion == $asignacion->id_asignacion;
+            $tieneObservacion = false;
+            $observacion = '';
+
+            // Primero verificar si hay una observación para este estudiante
+            $calificacionConObservacion = $calificaciones->first(function ($cal) use ($estudiante) {
+                return $cal->id_estudiante == $estudiante->id_estudiante && 
+                       !empty($cal->observacion);
+            });
+
+            if ($calificacionConObservacion) {
+                $tieneObservacion = true;
+                $observacion = $calificacionConObservacion->observacion;
+            }
+
+            if (!$tieneObservacion) {
+                // Si no tiene observación, procesar normalmente
+                foreach ($asignaciones as $asignacion) {
+                    $calificacion = $calificaciones->first(function ($cal) use ($estudiante, $asignacion) {
+                        return $cal->id_estudiante == $estudiante->id_estudiante && 
+                               $cal->id_asignacion == $asignacion->id_asignacion;
+                    });
+                    
+                    $nota = $calificacion ? $calificacion->nota : '';
+                    $row[] = $nota;
+                    
+                    // Contar desaprobadas
+                    if ($nota && $nota < 11) {
+                        $desaprobadas++;
+                    }
+                }
+                
+                // Comportamiento
+                $comportamiento = $calificaciones->first(function ($cal) use ($estudiante) {
+                    return $cal->id_estudiante == $estudiante->id_estudiante;
+                });
+                $row[] = $comportamiento ? $comportamiento->comportamiento : '';
+                
+                // N° Asignaturas Desaprobadas
+                $row[] = $desaprobadas;
+                
+                // Situación Final
+                $situacion = '';
+                
+                // Primero verificar si hay una situación guardada en la base de datos
+                $calificacionEstudiante = $calificaciones->first(function ($cal) use ($estudiante) {
+                    return $cal->id_estudiante == $estudiante->id_estudiante;
                 });
                 
-                $nota = $calificacion ? $calificacion->nota : '';
-                $row[] = $nota;
-                
-                // Contar desaprobadas
-                if ($nota && $nota < 11) {
-                    $desaprobadas++;
+                if ($calificacionEstudiante) {
+                    // Si hay una conclusión especial, usarla
+                    if (in_array($calificacionEstudiante->conclusion, ['RET', 'TRA'])) {
+                        $situacion = $calificacionEstudiante->conclusion;
+                    }
                 }
+                
+                // Si no hay situación especial, aplicar la lógica normal
+                if (empty($situacion)) {
+                    if ($desaprobadas === 0) {
+                        $situacion = 'P'; // Promovido (0 cursos desaprobados)
+                    } else if ($desaprobadas >= 1 && $desaprobadas <= 3) {
+                        $situacion = 'A'; // Aplazado (1 a 3 cursos desaprobados)
+                    } else {
+                        $situacion = 'R'; // Reprobado (4 o más cursos desaprobados)
+                    }
+                }
+                
+                $row[] = $situacion;
+            } else {
+                // Si tiene observación, agregar una celda vacía para cada asignatura
+                // (estas celdas se combinarán después en el evento AfterSheet)
+                foreach ($asignaciones as $asignacion) {
+                    $row[] = '';
+                }
+                
+                // Agregar celdas vacías para comportamiento, asignaturas desaprobadas y situación final
+                $row[] = '';
+                $row[] = '';
+                $row[] = '';
+                
+                // Guardar la información de la observación para usarla en el evento AfterSheet
+                $this->estudiantesConObservaciones[] = [
+                    'observacion' => $observacion,
+                    'rowIndex' => $currentRowIndex
+                ];
             }
-            
-            // Comportamiento
-            $comportamiento = $calificaciones->first(function ($cal) use ($estudiante) {
-                return $cal->id_estudiante == $estudiante->id_estudiante;
-            });
-            $row[] = $comportamiento ? $comportamiento->comportamiento : '';
-            
-            // N° Asignaturas Desaprobadas
-            $row[] = $desaprobadas;
-            
-            // Situación Final
-            $row[] = $desaprobadas > 0 ? 'P' : 'A';
             
             $this->data[] = $row;
         }
@@ -350,9 +417,9 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 }
                 
                 // Ajustar el ancho de las columnas - Forzar ancho fijo solo para las tres primeras columnas
-                $sheet->getColumnDimension('A')->setWidth(9.5)->setAutoSize(false); // N° Orden
-                $sheet->getColumnDimension('B')->setWidth(9.5)->setAutoSize(false); // N° Matrícula
-                $sheet->getColumnDimension('C')->setWidth(9.5)->setAutoSize(false); // Condición
+                $sheet->getColumnDimension('A')->setWidth(9)->setAutoSize(false); // N° Orden
+                $sheet->getColumnDimension('B')->setWidth(9)->setAutoSize(false); // N° Matrícula
+                $sheet->getColumnDimension('C')->setWidth(9)->setAutoSize(false); // Condición
                 // Las demás columnas se autoajustarán
                 
                 // Agregar título general en la fila 12 que cubra todas las columnas
@@ -590,6 +657,38 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $highestRow = $sheet->getHighestRow();
                 $highestColumn = $sheet->getHighestColumn();
                 $sheet->getStyle('A1:' . $highestColumn . $highestRow)->getFont()->setName('Times New Roman');
+                
+                // Procesar estudiantes con observaciones
+                $dataStartRow = 15; // La fila donde comienzan los datos
+                
+                // Recorrer los estudiantes con observaciones
+                foreach ($this->estudiantesConObservaciones as $estudianteData) {
+                    $rowIndex = $estudianteData['rowIndex'];
+                    $observacion = $estudianteData['observacion'];
+                    $excelRowIndex = $rowIndex + $dataStartRow;
+                    
+                    // Calcular el rango de columnas a combinar
+                    $startCol = 'E'; // Columna donde comienzan las asignaturas
+                    $endCol = $highestColumn; // Última columna (situación final)
+                    
+                    // Combinar las celdas
+                    $sheet->mergeCells($startCol . $excelRowIndex . ':' . $endCol . $excelRowIndex);
+                    
+                    // Establecer el texto de la observación
+                    $sheet->setCellValue($startCol . $excelRowIndex, $observacion);
+                    
+                    // Aplicar estilo a la celda combinada
+                    $sheet->getStyle($startCol . $excelRowIndex)->applyFromArray([
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                        ],
+                        'font' => [
+                            'italic' => true,
+                            'color' => ['rgb' => 'FF0000'], // Rojo
+                        ],
+                    ]);
+                }
                 
                 // No necesitamos añadir datos en la fila 13, ya que startCell() ya se encarga de eso
             },

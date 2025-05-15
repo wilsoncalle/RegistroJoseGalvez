@@ -563,24 +563,30 @@ class CalificacionOldController extends Controller
      */
     public function saveCalificaciones(Request $request): JsonResponse
     {
-        $request->validate([
-            'calificaciones' => 'required|array',
-            'calificaciones.*.id_estudiante' => 'required|exists:estudiantes,id_estudiante',
-            'calificaciones.*.id_asignacion' => 'required',
-            'calificaciones.*.id_trimestre' => 'required|exists:trimestres,id_trimestre',
-            'calificaciones.*.nota' => 'required|numeric|min:0|max:20',
-            'calificaciones.*.comportamiento' => 'required|integer|min:0|max:20',
-            'calificaciones.*.asignaturas_reprobadas' => 'required|integer|min:0',
-            'calificaciones.*.conclusion' => 'required|string|max:50',
-            'calificaciones.*.grado' => 'required|string|max:50',
-            'calificaciones.*.fecha' => 'required|date',
-            'calificaciones.*.año' => 'required|integer',
-        ]);
-
         try {
+            Log::info('Datos recibidos:', $request->all());
+            
+            // Validación más flexible para permitir observaciones sin notas
+            $request->validate([
+                'calificaciones' => 'required|array',
+                'calificaciones.*.id_estudiante' => 'required|exists:estudiantes,id_estudiante',
+                'calificaciones.*.id_asignacion' => 'required',
+                'calificaciones.*.id_trimestre' => 'required|exists:trimestres,id_trimestre',
+                'calificaciones.*.nota' => 'nullable|numeric|min:0|max:20',
+                'calificaciones.*.comportamiento' => 'nullable|integer|min:0|max:20',
+                'calificaciones.*.asignaturas_reprobadas' => 'nullable|integer|min:0',
+                'calificaciones.*.conclusion' => 'required|string|max:50',
+                'calificaciones.*.grado' => 'required|string|max:50',
+                'calificaciones.*.fecha' => 'required|date',
+                'calificaciones.*.año' => 'required|integer',
+                'calificaciones.*.observacion' => 'nullable|string|max:200',
+            ]);
+
             DB::beginTransaction();
             
             foreach ($request->calificaciones as $calificacionData) {
+                Log::info('Procesando calificación:', $calificacionData);
+                
                 // Verificar si ya existe una calificación para este estudiante, asignación y trimestre
                 $calificacionExistente = CalificacionOld::where('id_estudiante', $calificacionData['id_estudiante'])
                     ->where('id_asignacion', $calificacionData['id_asignacion'])
@@ -588,23 +594,26 @@ class CalificacionOldController extends Controller
                     ->first();
                     
                 if ($calificacionExistente) {
+                    Log::info('Actualizando calificación existente:', ['id' => $calificacionExistente->id_calificacion]);
                     // Actualizar la calificación existente
                     $calificacionExistente->update([
-                        'nota' => $calificacionData['nota'],
-                        'comportamiento' => $calificacionData['comportamiento'],
-                        'asignaturas_reprobadas' => $calificacionData['asignaturas_reprobadas'],
+                        'nota' => $calificacionData['nota'] ?? 0,
+                        'comportamiento' => $calificacionData['comportamiento'] ?? 0,
+                        'asignaturas_reprobadas' => $calificacionData['asignaturas_reprobadas'] ?? 0,
                         'conclusion' => $calificacionData['conclusion'],
                         'fecha' => $calificacionData['fecha'],
+                        'observacion' => $calificacionData['observacion'] ?? null,
                     ]);
                 } else {
+                    Log::info('Creando nueva calificación');
                     // Crear una nueva calificación
                     CalificacionOld::create([
                         'id_estudiante' => $calificacionData['id_estudiante'],
                         'id_asignacion' => $calificacionData['id_asignacion'],
                         'id_trimestre' => $calificacionData['id_trimestre'],
-                        'nota' => $calificacionData['nota'],
-                        'comportamiento' => $calificacionData['comportamiento'],
-                        'asignaturas_reprobadas' => $calificacionData['asignaturas_reprobadas'],
+                        'nota' => $calificacionData['nota'] ?? 0,
+                        'comportamiento' => $calificacionData['comportamiento'] ?? 0,
+                        'asignaturas_reprobadas' => $calificacionData['asignaturas_reprobadas'] ?? 0,
                         'conclusion' => $calificacionData['conclusion'],
                         'grado' => $calificacionData['grado'],
                         'fecha' => $calificacionData['fecha'],
@@ -618,9 +627,17 @@ class CalificacionOldController extends Controller
                 'success' => true,
                 'message' => 'Calificaciones guardadas correctamente.'
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::error('Error de validación:', ['errors' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación: ' . json_encode($e->errors())
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error al guardar calificaciones: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar calificaciones: ' . $e->getMessage()
