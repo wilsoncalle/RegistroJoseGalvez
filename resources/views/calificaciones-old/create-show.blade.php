@@ -23,6 +23,9 @@
 
                 <!-- Botón de exportar -->
                 <div class="d-flex align-items-center">
+                    <button class="btn btn-primary text-white me-2 shadow-sm" type="button" id="estadisticasBtn" disabled>
+                        <i class="bi bi-bar-chart-fill me-1"></i> Estadísticas
+                    </button>
                     <div class="dropdown">
                         <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false" disabled>
@@ -198,6 +201,155 @@
     <input type="hidden" name="id_trimestre" id="export-pdf-trimestre">
 </form>
 
+<!-- Modal para mostrar estadísticas -->
+<div class="modal fade" id="estadisticasModal" tabindex="-1" aria-labelledby="estadisticasModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-gradient-primary text-white border-0">
+                <h5 class="modal-title" id="estadisticasModalLabel">
+                    <i></i>Resumen Estadístico
+                 <!--    <i class="bi bi-bar-chart-fill me-2"></i>Resumen Estadístico -->
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row">
+                    <!-- Columna izquierda: Gráfico de pastel -->
+                    <div class="col-md-5">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-center mb-3">Distribución de Estudiantes</h6>
+                                <div class="chart-container" style="position: relative; height: 260px;">
+                                    <canvas id="grafico-pastel"></canvas>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <h4 class="mb-0" id="total-matriculados">0</h4>
+                                    <p class="text-muted">Total de Estudiantes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna derecha: Tarjetas de estadísticas -->
+                    <div class="col-md-7">
+                        <div class="row g-3">
+                            <!-- Promovidos -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0 text-success">Promovidos</h6>
+                                                <small class="text-muted">(P)</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <h4 class="mb-0" id="total-promovidos">0</h4>
+                                                <small class="text-success" id="porcentaje-promovidos">0%</small>
+                                            </div>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-success" id="barra-promovidos" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Aplazados -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0 text-warning">Aplazados</h6>
+                                                <small class="text-muted">(A)</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <h4 class="mb-0" id="total-aplazados">0</h4>
+                                                <small class="text-warning" id="porcentaje-aplazados">0%</small>
+                                            </div>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-warning" id="barra-aplazados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Repitentes -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0 text-danger">Repitentes</h6>
+                                                <small class="text-muted">(R)</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <h4 class="mb-0" id="total-repitentes">0</h4>
+                                                <small class="text-danger" id="porcentaje-repitentes">0%</small>
+                                            </div>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-danger" id="barra-repitentes" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Retirados -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0 text-secondary">Retirados</h6>
+                                                <small class="text-muted">(RET)</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <h4 class="mb-0" id="total-retirados">0</h4>
+                                                <small class="text-secondary" id="porcentaje-retirados">0%</small>
+                                            </div>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-secondary" id="barra-retirados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Trasladados -->
+                            <div class="col-12">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0 text-info">Trasladados</h6>
+                                                <small class="text-muted">(TRA)</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <h4 class="mb-0" id="total-trasladados">0</h4>
+                                                <small class="text-info" id="porcentaje-trasladados">0%</small>
+                                            </div>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-info" id="barra-trasladados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para observaciones de situación final -->
 <div class="modal fade" id="observacionModal" tabindex="-1" aria-labelledby="observacionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -234,6 +386,8 @@
 </div>
 
 @push('scripts')
+<!-- Incluir Chart.js para el gráfico de pastel (versión más ligera) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Datos de PHP que necesitamos en JavaScript
@@ -280,10 +434,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const modeEdit = document.getElementById('modeEdit');
     const editModeControls = document.getElementById('edit-mode-controls');
     
-    // Elementos para exportación
+    // Elementos para exportación y estadísticas
     const exportDropdownBtn = document.getElementById('exportDropdown');
     const exportExcelBtn = document.getElementById('export-excel-btn');
     const exportPdfBtn = document.getElementById('export-pdf-btn');
+    const estadisticasBtn = document.getElementById('estadisticasBtn');
     
     // Estado de las calificaciones
     let estudiantes = [];
@@ -304,6 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadingMessage.classList.remove('d-none');
         calificacionesContainer.classList.add('d-none');
         exportDropdownBtn.disabled = true;
+        estadisticasBtn.disabled = true;
         
         // Realizar la petición AJAX para obtener los datos
         fetch(getCalificacionesUrl, {
@@ -335,6 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingMessage.classList.add('d-none');
                 calificacionesContainer.classList.remove('d-none');
                 exportDropdownBtn.disabled = false;
+                estadisticasBtn.disabled = false;
                 
                 // Actualizar formularios de exportación
                 document.getElementById('export-año').value = año;
@@ -353,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Función para mostrar las calificaciones en la tabla
+    // Función para mostrar las calificaciones en la tabla (optimizada)
     function mostrarCalificaciones() {
         // Actualizar el encabezado de asignaturas para abarcar todas las materias
         asignaturasHeader.colSpan = materias.length;
@@ -365,10 +522,24 @@ document.addEventListener('DOMContentLoaded', function() {
             setReadOnlyMode(false);
         }
         
+        // Usar DocumentFragment para mejorar el rendimiento
+        const materiasFragment = document.createDocumentFragment();
+        const letrasFragment = document.createDocumentFragment();
+        const bodyFragment = document.createDocumentFragment();
+        
+        // Crear elementos iniciales para la fila de letras
+        const tdInicio = document.createElement('td');
+        tdInicio.colSpan = 4;
+        const tdFin = document.createElement('td');
+        tdFin.colSpan = 3;
+        
         // Limpiar filas anteriores
         materiasRow.innerHTML = '';
-        document.getElementById('letras-row').innerHTML = '<td colspan="4"></td><td colspan="3"></td>';
+        document.getElementById('letras-row').innerHTML = '';
         calificacionesBody.innerHTML = '';
+        
+        // Agregar elementos iniciales al fragmento
+        letrasFragment.appendChild(tdInicio);
         
         // Agregar columnas de materias rotadas
         materias.forEach((materia, index) => {
@@ -407,8 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
             th.appendChild(dragIndicator);
             materiasRow.appendChild(th);
             
-            // Agregar letras del abecedario en la fila de letras
-            const letrasRow = document.getElementById('letras-row');
+            // Agregar letras del abecedario en el fragmento
             const tdLetra = document.createElement('td');
             tdLetra.className = 'text-center';
             tdLetra.style.fontWeight = 'bold';
@@ -418,8 +588,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const letra = String.fromCharCode(97 + index); // 97 es el código ASCII para 'a'
             tdLetra.textContent = letra;
             
-            // Insertar la letra antes del último td (que es el colspan="3")
-            letrasRow.insertBefore(tdLetra, letrasRow.lastChild);
+            // Agregar la letra al fragmento
+            letrasFragment.appendChild(tdLetra);
         });
         
         // Agregar filas de estudiantes
@@ -645,16 +815,33 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Verificar si hay observaciones guardadas para este estudiante
             let observacionGuardada = '';
-            let situacionGuardada = situacion;
+            let situacionGuardada = situacion; // Por defecto, usar la situación calculada
             
-            // Si hay datos guardados en localStorage, usarlos
-            const observacionKey = `observacion_${aulaId}_${estudiante.id_estudiante}`;
-            const observacionData = localStorage.getItem(observacionKey);
-            
-            if (observacionData) {
-                const data = JSON.parse(observacionData);
-                observacionGuardada = data.observacion || '';
-                situacionGuardada = data.situacion || situacion;
+            // Buscar la observación en los datos de calificaciones de la base de datos
+            // Intentar encontrar la calificación para este estudiante usando la primera asignación
+            if (materias.length > 0) {
+                const primeraAsignacion = materias[0].id_asignacion;
+                const calificacionKey = `${estudiante.id_estudiante}_${primeraAsignacion}`;
+                
+                if (calificacionesData[calificacionKey]) {
+                    // Usar la observación de la base de datos si existe
+                    observacionGuardada = calificacionesData[calificacionKey].observacion || '';
+                    
+                    // Si hay una conclusión guardada, verificar si es un caso especial
+                    if (calificacionesData[calificacionKey].conclusion) {
+                        const conclusion = calificacionesData[calificacionKey].conclusion;
+                        // Solo usar casos especiales de la base de datos (Retirado o Trasladado)
+                        // Para Promovido, Aplazado o Reprobado, usar el cálculo basado en asignaturas desaprobadas
+                        if (conclusion === 'Retirado') {
+                            situacionGuardada = 'RET';
+                        } else if (conclusion === 'Trasladado') {
+                            situacionGuardada = 'TRA';
+                        } else {
+                            // Para los demás casos, priorizar el cálculo basado en asignaturas desaprobadas
+                            situacionGuardada = situacion;
+                        }
+                    }
+                }
             }
             
             tdSituacion.textContent = situacionGuardada;
@@ -749,13 +936,24 @@ document.addEventListener('DOMContentLoaded', function() {
             
             tr.appendChild(tdSituacion);
             
-            // Agregar fila a la tabla
-            calificacionesBody.appendChild(tr);
+            // Agregar fila al fragmento
+            bodyFragment.appendChild(tr);
         });
         
-        // Configurar evento para recalcular asignaturas desaprobadas
-        document.querySelectorAll('.nota-input').forEach(input => {
-            input.addEventListener('change', actualizarDesaprobadas);
+        // Agregar los fragmentos al DOM
+        materiasRow.appendChild(materiasFragment);
+        
+        const letrasRow = document.getElementById('letras-row');
+        letrasRow.appendChild(letrasFragment);
+        letrasRow.appendChild(tdFin);
+        
+        calificacionesBody.appendChild(bodyFragment);
+        
+        // Configurar evento para recalcular asignaturas desaprobadas (delegación de eventos)
+        calificacionesBody.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('nota-input')) {
+                actualizarDesaprobadas(e);
+            }
         });
     }
     
@@ -1080,57 +1278,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Función para actualizar conteo de asignaturas desaprobadas
-    function actualizarDesaprobadas() {
-        // Recorrer todas las filas de estudiantes
-        document.querySelectorAll('[data-id-estudiante]').forEach(row => {
-            if (row.tagName === 'TR') {
-                const estudianteId = row.getAttribute('data-id-estudiante');
-                let desaprobadas = 0;
-                
-                // Contar materias desaprobadas
-                row.querySelectorAll('.nota-input').forEach(input => {
-                    const nota = parseInt(input.value) || 0;
-                    if (nota < 11) {
-                        desaprobadas++;
-                    }
-                });
-                
-                // Actualizar celda de asignaturas desaprobadas
-                const tdDesaprobadas = row.querySelector(`.asignaturas-desaprobadas[data-id-estudiante="${estudianteId}"]`);
-                if (tdDesaprobadas) {
-                    tdDesaprobadas.textContent = desaprobadas;
-                }
-                
-                // Actualizar situación final
-                const tdSituacion = row.querySelector(`.situacion-final[data-id-estudiante="${estudianteId}"]`);
-                if (tdSituacion) {
-                    // Solo actualizar si no tiene una observación manual
-                    if (!tdSituacion.classList.contains('has-observacion')) {
-                        // Determinar situación según cantidad de desaprobados
-                        let situacion;
-                        if (desaprobadas === 0) {
-                            situacion = 'P'; // Promovido (0 cursos desaprobados)
-                        } else if (desaprobadas >= 1 && desaprobadas <= 3) {
-                            situacion = 'A'; // Aplazado (1 a 3 cursos desaprobados)
-                        } else {
-                            situacion = 'R'; // Reprobado (4 o más cursos desaprobados)
-                        }
-                        
-                        tdSituacion.textContent = situacion;
-                        
-                        // Actualizar color
-                        tdSituacion.classList.remove('text-success', 'text-warning', 'text-danger');
-                        if (situacion === 'P') {
-                            tdSituacion.classList.add('text-success');
-                        } else if (situacion === 'A') {
-                            tdSituacion.classList.add('text-warning');
-                        } else {
-                            tdSituacion.classList.add('text-danger');
-                        }
-                    }
-                }
+    function actualizarDesaprobadas(event) {
+        const input = event.target;
+        const row = input.closest('tr');
+        const idEstudiante = row.getAttribute('data-id-estudiante');
+        
+        // Contar asignaturas desaprobadas
+        let asignaturasDesaprobadas = 0;
+        const notaInputs = row.querySelectorAll('.nota-input');
+        
+        notaInputs.forEach(notaInput => {
+            const nota = parseFloat(notaInput.value);
+            if (!isNaN(nota) && nota < 11) {
+                asignaturasDesaprobadas++;
             }
         });
+        
+        // Actualizar el contador de asignaturas desaprobadas
+        const tdDesaprobadas = row.querySelector('.asignaturas-desaprobadas');
+        tdDesaprobadas.textContent = asignaturasDesaprobadas;
+        
+        // Actualizar la situación final
+        const tdSituacion = row.querySelector('.situacion-final');
+        const situacionActual = tdSituacion.textContent;
+        
+        // Solo actualizar si no es un caso especial (RET o TRA)
+        if (situacionActual !== 'RET' && situacionActual !== 'TRA') {
+            let nuevaSituacion;
+            
+            if (asignaturasDesaprobadas === 0) {
+                nuevaSituacion = 'P'; // Siempre promovido si no hay asignaturas desaprobadas
+            } else if (asignaturasDesaprobadas >= 1 && asignaturasDesaprobadas <= 3) {
+                nuevaSituacion = 'A';
+            } else {
+                nuevaSituacion = 'R';
+            }
+            
+            // Actualizar el texto y las clases
+            tdSituacion.textContent = nuevaSituacion;
+            
+            // Limpiar clases de color
+            tdSituacion.classList.remove('text-success', 'text-danger', 'text-warning', 'text-info', 'text-secondary');
+            
+            // Aplicar clase según situación
+            if (nuevaSituacion === 'P') {
+                tdSituacion.classList.add('text-success');
+            } else if (nuevaSituacion === 'A') {
+                tdSituacion.classList.add('text-warning');
+            } else {
+                tdSituacion.classList.add('text-danger');
+            }
+        }
     }
     
     // Guardar calificaciones
@@ -1152,7 +1350,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const notaCells = fila.querySelectorAll('.nota-cell');
             const comportamientoInput = fila.querySelector('.comportamiento-input');
             const asignaturasDesaprobadas = fila.querySelector('.asignaturas-desaprobadas').textContent;
-            const situacionFinal = fila.querySelector('.situacion-final').textContent;
+            const situacionFinalCell = fila.querySelector('.situacion-final');
+            const situacionFinal = situacionFinalCell.textContent;
+            // Obtener la observación existente si existe
+            const observacionExistente = situacionFinalCell.getAttribute('data-observacion') || '';
             
             // Para cada materia de este estudiante
             notaCells.forEach(cell => {
@@ -1162,6 +1363,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const nota = notaInput.value.trim();
                 
                 if (nota) { // Solo guardar si hay una nota
+                    // Determinar la conclusión basada en la situación final
+                    let conclusion;
+                    if (situacionFinal === 'P') {
+                        conclusion = 'Promovido';
+                    } else if (situacionFinal === 'A') {
+                        conclusion = 'Aplazado';
+                    } else if (situacionFinal === 'R') {
+                        conclusion = 'Reprobado';
+                    } else if (situacionFinal === 'TRA') {
+                        conclusion = 'Trasladado';
+                    } else if (situacionFinal === 'RET') {
+                        conclusion = 'Retirado';
+                    } else {
+                        conclusion = 'Promovido'; // Valor por defecto (cambiado de 'Reprobado' a 'Promovido')
+                    }
+                    
                     calificaciones.push({
                         id_estudiante: idEstudiante,
                         id_asignacion: idAsignacion, // Usar el id_asignacion correcto
@@ -1169,10 +1386,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         nota: nota,
                         comportamiento: comportamientoInput.value || 0,
                         asignaturas_reprobadas: asignaturasDesaprobadas,
-                        conclusion: situacionFinal === 'A' ? 'Aprobado' : 'Reprobado',
+                        conclusion: conclusion,
                         grado: "{{ $aula->grado->nombre }} '{{ $aula->seccion->nombre }}'",
                         fecha: new Date().toISOString().split('T')[0],
-                        año: año
+                        año: año,
+                        observacion: observacionExistente // Preservar la observación existente
                     });
                 }
             });
@@ -1218,6 +1436,191 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         document.getElementById('export-pdf-form').submit();
     });
+    
+    // Evento para mostrar estadísticas (optimizado)
+    estadisticasBtn.addEventListener('click', function() {
+        // Mostrar el modal primero para mejor percepción de velocidad
+        const modal = new bootstrap.Modal(document.getElementById('estadisticasModal'));
+        modal.show();
+        
+        // Usar setTimeout para permitir que el modal se muestre antes de calcular
+        setTimeout(() => {
+            calcularEstadisticas();
+        }, 50);
+    });
+    
+    // Variable para almacenar el gráfico de pastel
+    let graficoEstadisticas = null;
+    
+    // Función para calcular estadísticas
+    function calcularEstadisticas() {
+        // Obtener todas las filas de estudiantes
+        const filas = document.querySelectorAll('#calificaciones-body tr');
+        
+        // Inicializar contadores
+        let totalMatriculados = filas.length;
+        let totalPromovidos = 0;
+        let totalAplazados = 0;
+        let totalRepitentes = 0;
+        let totalRetirados = 0;
+        let totalTrasladados = 0;
+        
+        // Contar cada categoría
+        filas.forEach(fila => {
+            const situacionCell = fila.querySelector('.situacion-final');
+            if (situacionCell) {
+                const situacion = situacionCell.textContent.trim();
+                
+                switch(situacion) {
+                    case 'P':
+                        totalPromovidos++;
+                        break;
+                    case 'A':
+                        totalAplazados++;
+                        break;
+                    case 'R':
+                        totalRepitentes++;
+                        break;
+                    case 'RET':
+                        totalRetirados++;
+                        break;
+                    case 'TRA':
+                        totalTrasladados++;
+                        break;
+                }
+            }
+        });
+        
+        // Calcular porcentajes
+        const calcularPorcentaje = (valor) => {
+            return totalMatriculados > 0 ? ((valor / totalMatriculados) * 100).toFixed(1) : 0;
+        };
+        
+        // Actualizar la tarjeta principal
+        document.getElementById('total-matriculados').textContent = totalMatriculados;
+        
+        // Actualizar las tarjetas de estadísticas
+        document.getElementById('total-promovidos').textContent = totalPromovidos;
+        document.getElementById('porcentaje-promovidos').textContent = calcularPorcentaje(totalPromovidos) + '%';
+        document.getElementById('barra-promovidos').style.width = calcularPorcentaje(totalPromovidos) + '%';
+        document.getElementById('barra-promovidos').setAttribute('aria-valuenow', calcularPorcentaje(totalPromovidos));
+        
+        document.getElementById('total-aplazados').textContent = totalAplazados;
+        document.getElementById('porcentaje-aplazados').textContent = calcularPorcentaje(totalAplazados) + '%';
+        document.getElementById('barra-aplazados').style.width = calcularPorcentaje(totalAplazados) + '%';
+        document.getElementById('barra-aplazados').setAttribute('aria-valuenow', calcularPorcentaje(totalAplazados));
+        
+        document.getElementById('total-repitentes').textContent = totalRepitentes;
+        document.getElementById('porcentaje-repitentes').textContent = calcularPorcentaje(totalRepitentes) + '%';
+        document.getElementById('barra-repitentes').style.width = calcularPorcentaje(totalRepitentes) + '%';
+        document.getElementById('barra-repitentes').setAttribute('aria-valuenow', calcularPorcentaje(totalRepitentes));
+        
+        document.getElementById('total-retirados').textContent = totalRetirados;
+        document.getElementById('porcentaje-retirados').textContent = calcularPorcentaje(totalRetirados) + '%';
+        document.getElementById('barra-retirados').style.width = calcularPorcentaje(totalRetirados) + '%';
+        document.getElementById('barra-retirados').setAttribute('aria-valuenow', calcularPorcentaje(totalRetirados));
+        
+        document.getElementById('total-trasladados').textContent = totalTrasladados;
+        document.getElementById('porcentaje-trasladados').textContent = calcularPorcentaje(totalTrasladados) + '%';
+        document.getElementById('barra-trasladados').style.width = calcularPorcentaje(totalTrasladados) + '%';
+        document.getElementById('barra-trasladados').setAttribute('aria-valuenow', calcularPorcentaje(totalTrasladados));
+        
+        // Efecto de animación para las barras de progreso (optimizado)
+        document.querySelectorAll('.progress-bar').forEach(barra => {
+            barra.style.transition = 'width 0.3s ease-out';
+        });
+        
+        // Actualizar el gráfico de pastel
+        actualizarGraficoPastel({
+            promovidos: totalPromovidos,
+            aplazados: totalAplazados,
+            repitentes: totalRepitentes,
+            retirados: totalRetirados,
+            trasladados: totalTrasladados
+        });
+    }
+    
+    // Función para crear o actualizar el gráfico de pastel (optimizada)
+    function actualizarGraficoPastel(datos) {
+        const ctx = document.getElementById('grafico-pastel').getContext('2d');
+        
+        // Actualizar datos si el gráfico ya existe (mejor rendimiento)
+        if (graficoEstadisticas) {
+            graficoEstadisticas.data.datasets[0].data = [
+                datos.promovidos,
+                datos.aplazados,
+                datos.repitentes,
+                datos.retirados,
+                datos.trasladados
+            ];
+            graficoEstadisticas.update('none'); // Actualizar sin animación
+            return;
+        }
+        
+        // Datos para el gráfico
+        const datosGrafico = {
+            labels: ['Promovidos', 'Aplazados', 'Repitentes', 'Retirados', 'Trasladados'],
+            datasets: [{
+                data: [
+                    datos.promovidos,
+                    datos.aplazados,
+                    datos.repitentes,
+                    datos.retirados,
+                    datos.trasladados
+                ],
+                backgroundColor: [
+                    '#2ec4b6', // Verde para Promovidos
+                    '#ffbe0b', // Amarillo para Aplazados
+                    '#f43f5e', // Rojo para Repitentes
+                    '#6c757d', // Gris para Retirados
+                    '#3abff8'  // Azul claro para Trasladados
+                ],
+                borderWidth: 1,
+                borderColor: '#fff'
+            }]
+        };
+        
+        // Opciones del gráfico
+        const opciones = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 10,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const porcentaje = total > 0 ? Math.round((value / total) * 100) : 0;
+                            return `${label}: ${value} (${porcentaje}%)`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: false,
+                duration: 400
+            }
+        };
+        
+        // Crear el gráfico
+        graficoEstadisticas = new Chart(ctx, {
+            type: 'pie',
+            data: datosGrafico,
+            options: opciones
+        });
+    }
     
     // Eventos para cargar datos cuando cambien los filtros
     añoSelect.addEventListener('change', cargarCalificaciones);

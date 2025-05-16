@@ -533,6 +533,7 @@ class CalificacionOldController extends Controller
                     'comportamiento' => $calificacion->comportamiento,
                     'asignaturas_reprobadas' => $calificacion->asignaturas_reprobadas,
                     'conclusion' => $calificacion->conclusion,
+                    'observacion' => $calificacion->observacion, // Incluir el campo observacion
                 ];
                 
                 // Agregar el comportamiento al objeto del estudiante
