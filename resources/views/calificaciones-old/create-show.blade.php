@@ -203,148 +203,235 @@
 
 <!-- Modal para mostrar estadísticas -->
 <div class="modal fade" id="estadisticasModal" tabindex="-1" aria-labelledby="estadisticasModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg mx-auto" style="max-width: 800px;">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-gradient-primary text-white border-0">
+            <div class="modal-header bg-gradient-primary text-white border-0 py-3" >
                 <h5 class="modal-title" id="estadisticasModalLabel">
-                    <i></i>Resumen Estadístico
-                 <!--    <i class="bi bi-bar-chart-fill me-2"></i>Resumen Estadístico -->
+                    <i ></i>Resumen Estadístico
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-black" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="row">
-                    <!-- Columna izquierda: Gráfico de pastel -->
-                    <div class="col-md-5">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body">
-                                <h6 class="card-title text-center mb-3">Distribución de Estudiantes</h6>
-                                <div class="chart-container" style="position: relative; height: 260px;">
-                                    <canvas id="grafico-pastel"></canvas>
+            <div class="modal-body p-3">
+                <!-- Pestañas de navegación -->
+                <ul class="nav nav-tabs mb-3" id="estadisticasTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="resumen-tab" data-bs-toggle="tab" data-bs-target="#resumen-tab-pane" type="button" role="tab" aria-controls="resumen-tab-pane" aria-selected="true">
+                            <i class="bi bi-bar-chart-fill me-1"></i> Resumen
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="asignaturas-tab" data-bs-toggle="tab" data-bs-target="#asignaturas-tab-pane" type="button" role="tab" aria-controls="asignaturas-tab-pane" aria-selected="false">
+                            <i class="bi bi-book me-1"></i> Asignaturas
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Contenido de las pestañas -->
+                <div class="tab-content" id="estadisticasTabsContent" style="height: 480px; overflow: hidden;">
+                    <!-- Pestaña de Resumen -->
+                    <div class="tab-pane fade show active" id="resumen-tab-pane" role="tabpanel" aria-labelledby="resumen-tab" tabindex="0">
+                        <div class="row">
+                            <!-- Columna izquierda: Gráfico de pastel -->
+                            <div class="col-md-5">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-center mb-2">Distribución de Estudiantes</h6>
+                                        <div class="chart-container" style="position: relative; height: 200px;">
+                                            <canvas id="grafico-pastel"></canvas>
+                                        </div>
+                                        <div class="text-center mt-2">
+                                            <h4 class="mb-0" id="total-matriculados">0</h4>
+                                            <p class="text-muted">Total de Estudiantes</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-center mt-3">
-                                    <h4 class="mb-0" id="total-matriculados">0</h4>
-                                    <p class="text-muted">Total de Estudiantes</p>
+                            </div>
+                            
+                            <!-- Columna derecha: Tarjetas de estadísticas -->
+                            <div class="col-md-7">
+                                <div class="row g-3">
+                                    <!-- Promovidos -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 shadow-sm card-estadistica" data-tipo="promovidos">
+                                            <div class="card-body p-3" style="cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0 text-success">Promovidos</h6>
+                                                        <small class="text-muted">(P)</small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <h4 class="mb-0" id="total-promovidos">0</h4>
+                                                        <small class="text-success" id="porcentaje-promovidos">0%</small>
+                                                    </div>
+                                                </div>
+                                                <div class="progress mt-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-success" id="barra-promovidos" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Aplazados -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 shadow-sm card-estadistica" data-tipo="aplazados">
+                                            <div class="card-body p-3" style="cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0 text-warning">Aplazados</h6>
+                                                        <small class="text-muted">(A)</small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <h4 class="mb-0" id="total-aplazados">0</h4>
+                                                        <small class="text-warning" id="porcentaje-aplazados">0%</small>
+                                                    </div>
+                                                </div>
+                                                <div class="progress mt-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-warning" id="barra-aplazados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Repitentes -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 shadow-sm card-estadistica" data-tipo="repitentes">
+                                            <div class="card-body p-3" style="cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0 text-danger">Repitentes</h6>
+                                                        <small class="text-muted">(R)</small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <h4 class="mb-0" id="total-repitentes">0</h4>
+                                                        <small class="text-danger" id="porcentaje-repitentes">0%</small>
+                                                    </div>
+                                                </div>
+                                                <div class="progress mt-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-danger" id="barra-repitentes" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Retirados -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 shadow-sm card-estadistica" data-tipo="retirados">
+                                            <div class="card-body p-3" style="cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0 text-secondary">Retirados</h6>
+                                                        <small class="text-muted">(RET)</small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <h4 class="mb-0" id="total-retirados">0</h4>
+                                                        <small class="text-secondary" id="porcentaje-retirados">0%</small>
+                                                    </div>
+                                                </div>
+                                                <div class="progress mt-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-secondary" id="barra-retirados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Trasladados -->
+                                    <div class="col-12">
+                                        <div class="card h-100 border-0 shadow-sm card-estadistica" data-tipo="trasladados">
+                                            <div class="card-body p-3" style="cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0 text-info">Trasladados</h6>
+                                                        <small class="text-muted">(TRA)</small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <h4 class="mb-0" id="total-trasladados">0</h4>
+                                                        <small class="text-info" id="porcentaje-trasladados">0%</small>
+                                                    </div>
+                                                </div>
+                                                <div class="progress mt-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-info" id="barra-trasladados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Columna derecha: Tarjetas de estadísticas -->
-                    <div class="col-md-7">
-                        <div class="row g-3">
-                            <!-- Promovidos -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0 text-success">Promovidos</h6>
-                                                <small class="text-muted">(P)</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h4 class="mb-0" id="total-promovidos">0</h4>
-                                                <small class="text-success" id="porcentaje-promovidos">0%</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress mt-2" style="height: 6px;">
-                                            <div class="progress-bar bg-success" id="barra-promovidos" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
+                    <!-- Pestaña de Asignaturas -->
+                    <div class="tab-pane fade" id="asignaturas-tab-pane" role="tabpanel" aria-labelledby="asignaturas-tab" tabindex="0" style="height: 100%; overflow: hidden;">
+                        <div class="table-responsive" style="height: 450px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0" style="background-color: #fff;">
+                                <thead class="bg-light sticky-top">
+                                    <tr>
+                                        <th scope="col" class="ps-3 py-3 text-nowrap">#</th>
+                                        <th scope="col" class="py-3">Asignatura</th>
+                                        <th scope="col" class="py-3">Docente</th>
+                                        <th scope="col" class="text-center py-3 text-nowrap">Desaprobados</th>
+                                        <th scope="col" class="text-center py-3 text-nowrap">Porcentaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="asignaturas-body" style="background-color: #fff;">
+                                    <!-- Los datos se cargarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="sin-asignaturas" class="text-center p-5 d-none">
+                            <div class="empty-state-container p-4">
+                                <div class="empty-state-icon bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-book" style="font-size: 2rem; opacity: 0.5;"></i>
                                 </div>
-                            </div>
-                            
-                            <!-- Aplazados -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0 text-warning">Aplazados</h6>
-                                                <small class="text-muted">(A)</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h4 class="mb-0" id="total-aplazados">0</h4>
-                                                <small class="text-warning" id="porcentaje-aplazados">0%</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress mt-2" style="height: 6px;">
-                                            <div class="progress-bar bg-warning" id="barra-aplazados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Repitentes -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0 text-danger">Repitentes</h6>
-                                                <small class="text-muted">(R)</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h4 class="mb-0" id="total-repitentes">0</h4>
-                                                <small class="text-danger" id="porcentaje-repitentes">0%</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress mt-2" style="height: 6px;">
-                                            <div class="progress-bar bg-danger" id="barra-repitentes" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Retirados -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0 text-secondary">Retirados</h6>
-                                                <small class="text-muted">(RET)</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h4 class="mb-0" id="total-retirados">0</h4>
-                                                <small class="text-secondary" id="porcentaje-retirados">0%</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress mt-2" style="height: 6px;">
-                                            <div class="progress-bar bg-secondary" id="barra-retirados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Trasladados -->
-                            <div class="col-12">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0 text-info">Trasladados</h6>
-                                                <small class="text-muted">(TRA)</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h4 class="mb-0" id="total-trasladados">0</h4>
-                                                <small class="text-info" id="porcentaje-trasladados">0%</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress mt-2" style="height: 6px;">
-                                            <div class="progress-bar bg-info" id="barra-trasladados" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <h5 class="mb-2">Sin asignaturas</h5>
+                                <p class="text-muted">No se encontraron asignaturas para mostrar.</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Cerrar
-                </button>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar lista de estudiantes por categoría -->
+<div class="modal fade" id="listaEstudiantesModal" tabindex="-1" aria-labelledby="listaEstudiantesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="width: 800px; max-width: 95vw;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 0.75rem; overflow: hidden;">
+            <div class="modal-header border-0 py-3" id="listaEstudiantesHeader">
+                <div class="d-flex align-items-center">
+                    <div class="modal-icon me-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: rgba(255,255,255,0.2);">
+                        <i class="bi bi-people-fill text-white"></i>
+                    </div>
+                    <h5 class="modal-title text-white fw-bold mb-0" id="listaEstudiantesModalLabel">Lista de Estudiantes</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 570px; overflow-y: auto;">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="min-width: 100%;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th scope="col" class="ps-3 py-3" style="width: 60px;">#</th>
+                                <th scope="col" class="py-3">Estudiante</th>
+                                <th scope="col" class="py-3">Cursos Desaprobados</th>
+                                <th scope="col" class="text-center py-3" style="width: 120px;">Situación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaEstudiantesBody" class="border-top-0">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="sinEstudiantes" class="text-center p-5 d-none">
+                    <div class="empty-state-container p-4">
+                        <div class="empty-state-icon bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                            <i class="bi bi-search" style="font-size: 2rem; opacity: 0.5;"></i>
+                        </div>
+                        <h5 class="mb-2">Sin resultados</h5>
+                        <p class="text-muted">No se encontraron estudiantes en esta categoría.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -548,6 +635,7 @@ document.addEventListener('DOMContentLoaded', function() {
             th.setAttribute('data-id-materia', materia.id_materia);
             th.setAttribute('data-id-asignacion', materia.id_asignacion);
             th.setAttribute('data-index', index);
+            th.title = materia.docente || 'Sin docente asignado';
             
             const divContainer = document.createElement('div');
             divContainer.className = 'vertical-text';
@@ -1446,18 +1534,252 @@ document.addEventListener('DOMContentLoaded', function() {
         // Usar setTimeout para permitir que el modal se muestre antes de calcular
         setTimeout(() => {
             calcularEstadisticas();
+            
+            // Configurar eventos de clic para las tarjetas de estadísticas
+            document.querySelectorAll('.card-estadistica').forEach(card => {
+                // Eliminar event listeners anteriores para evitar duplicados
+                card.removeEventListener('click', mostrarListaEstudiantes);
+                // Agregar efecto hover
+                card.classList.add('card-hover-effect');
+                // Agregar nuevo event listener
+                card.addEventListener('click', mostrarListaEstudiantes);
+            });
         }, 50);
     });
     
-    // Variable para almacenar el gráfico de pastel
+    // Event listener para cuando se muestra el modal de estadísticas
+    document.getElementById('estadisticasModal').addEventListener('shown.bs.modal', function() {
+        console.log('Modal de estadísticas mostrado');
+    });
+    
+    // Event listener para la pestaña de asignaturas
+    document.addEventListener('DOMContentLoaded', function() {
+        // Asegurarse de que el elemento existe antes de agregar el event listener
+        const asignaturasTab = document.getElementById('asignaturas-tab');
+        if (asignaturasTab) {
+            asignaturasTab.addEventListener('click', function() {
+                console.log('Pestaña de asignaturas clickeada');
+                cargarDatosAsignaturas();
+            });
+        } else {
+            console.log('No se encontró el elemento asignaturas-tab');
+        }
+    });
+    
+    // Función para cargar los datos de asignaturas
+    function cargarDatosAsignaturas() {
+        console.log('Cargando datos de asignaturas');
+        // Crear una copia local de las materias para trabajar con ella
+        const materiasLocales = [...materias];
+        
+        // Verificar si hay materias disponibles
+        if (!materiasLocales || materiasLocales.length === 0) {
+            console.log('No hay materias disponibles para mostrar');
+            document.getElementById('sin-asignaturas').classList.remove('d-none');
+            return;
+        }
+        
+        // Asegurarse de que la pestaña de asignaturas esté visible
+        const asignaturasTabPane = document.getElementById('asignaturas-tab-pane');
+        if (asignaturasTabPane) {
+            // Activar la pestaña de asignaturas
+            const asignaturasTab = document.getElementById('asignaturas-tab');
+            if (asignaturasTab) {
+                asignaturasTab.classList.add('active');
+                asignaturasTabPane.classList.add('show', 'active');
+                
+                // Desactivar la pestaña de resumen
+                document.getElementById('resumen-tab').classList.remove('active');
+                document.getElementById('resumen-tab-pane').classList.remove('show', 'active');
+            }
+        }
+        
+        // Calcular estadísticas
+        calcularEstadisticasAsignaturas();
+        
+        // Mostrar la tabla
+        mostrarTablaAsignaturas();
+    }
+    
+    // Función para mostrar la lista de estudiantes según la categoría
+    function mostrarListaEstudiantes() {
+        const tipo = this.getAttribute('data-tipo');
+        const estudiantes = estudiantesPorCategoria[tipo] || [];
+        const listaEstudiantesBody = document.getElementById('listaEstudiantesBody');
+        const sinEstudiantes = document.getElementById('sinEstudiantes');
+        const header = document.getElementById('listaEstudiantesHeader');
+        const modalTitle = document.getElementById('listaEstudiantesModalLabel');
+        
+        // Limpiar contenido anterior
+        listaEstudiantesBody.innerHTML = '';
+        
+        // Configurar el título y estilo del header según la categoría
+        let titulo = '';
+        let headerClass = '';
+        
+        switch(tipo) {
+            case 'promovidos':
+                titulo = 'Estudiantes Promovidos';
+                headerClass = 'bg-success text-white';
+                break;
+            case 'aplazados':
+                titulo = 'Estudiantes Aplazados';
+                headerClass = 'bg-warning text-dark';
+                break;
+            case 'repitentes':
+                titulo = 'Estudiantes Repitentes';
+                headerClass = 'bg-danger text-white';
+                break;
+            case 'retirados':
+                titulo = 'Estudiantes Retirados';
+                headerClass = 'bg-secondary text-white';
+                break;
+            case 'trasladados':
+                titulo = 'Estudiantes Trasladados';
+                headerClass = 'bg-info text-white';
+                break;
+        }
+        
+        modalTitle.textContent = titulo;
+        header.className = 'modal-header ' + headerClass;
+        
+        // Verificar si hay estudiantes
+        if (estudiantes.length === 0) {
+            listaEstudiantesBody.innerHTML = '';
+            sinEstudiantes.classList.remove('d-none');
+        } else {
+            sinEstudiantes.classList.add('d-none');
+            
+            // Crear filas para cada estudiante
+            estudiantes.forEach(estudiante => {
+                const tr = document.createElement('tr');
+                
+                // Columna de orden
+                const tdOrden = document.createElement('td');
+                tdOrden.className = 'ps-3 fw-bold text-muted';
+                tdOrden.textContent = estudiante.orden;
+                tr.appendChild(tdOrden);
+                
+                // Columna de nombre
+                const tdNombre = document.createElement('td');
+                tdNombre.innerHTML = `<div class="fw-medium">${estudiante.nombre}</div>`;
+                tr.appendChild(tdNombre);
+                
+                // Columna de cursos desaprobados
+                const tdCursos = document.createElement('td');
+                if (estudiante.materias.length > 0) {
+                    const cursosContainer = document.createElement('div');
+                    cursosContainer.className = 'curso-list';
+                    
+                    estudiante.materias.forEach(materia => {
+                        const cursoItem = document.createElement('div');
+                        cursoItem.className = 'curso-item d-flex align-items-center mb-2';
+                        
+                        const cursoNombre = document.createElement('div');
+                        cursoNombre.className = 'curso-nombre me-2';
+                        cursoNombre.textContent = materia.nombre;
+                        
+                        const cursoNota = document.createElement('div');
+                        cursoNota.className = 'curso-nota ms-auto';
+                        
+                        // Determinar color de la nota basado en el valor
+                        let notaClass = 'bg-danger';
+                        if (materia.nota >= 8 && materia.nota < 11) {
+                            notaClass = 'bg-warning text-dark';
+                        } else if (materia.nota < 8) {
+                            notaClass = 'bg-danger';
+                        }
+                        
+                        cursoNota.innerHTML = `<span class="badge ${notaClass} rounded-pill">${materia.nota}</span>`;
+                        
+                        cursoItem.appendChild(cursoNombre);
+                        cursoItem.appendChild(cursoNota);
+                        cursosContainer.appendChild(cursoItem);
+                    });
+                    
+                    tdCursos.appendChild(cursosContainer);
+                } else {
+                    const noCursos = document.createElement('div');
+                    noCursos.className = 'text-muted fst-italic';
+                    noCursos.textContent = 'Ninguno';
+                    tdCursos.appendChild(noCursos);
+                }
+                tr.appendChild(tdCursos);
+                
+                // Columna de situación
+                const tdSituacion = document.createElement('td');
+                tdSituacion.className = 'text-center';
+                
+                let badgeClass = '';
+                let situacionTexto = '';
+                let iconClass = '';
+                
+                switch(estudiante.situacion) {
+                    case 'P':
+                        badgeClass = 'bg-success';
+                        situacionTexto = 'Promovido';
+                        iconClass = 'bi-check-circle-fill';
+                        break;
+                    case 'A':
+                        badgeClass = 'bg-warning text-dark';
+                        situacionTexto = 'Aplazado';
+                        iconClass = 'bi-exclamation-triangle-fill';
+                        break;
+                    case 'R':
+                        badgeClass = 'bg-danger';
+                        situacionTexto = 'Repitente';
+                        iconClass = 'bi-x-circle-fill';
+                        break;
+                    case 'RET':
+                        badgeClass = 'bg-secondary';
+                        situacionTexto = 'Retirado';
+                        iconClass = 'bi-box-arrow-right';
+                        break;
+                    case 'TRA':
+                        badgeClass = 'bg-info';
+                        situacionTexto = 'Trasladado';
+                        iconClass = 'bi-arrow-right-circle-fill';
+                        break;
+                }
+                
+                const badge = document.createElement('span');
+                badge.className = `badge ${badgeClass} d-flex align-items-center justify-content-center mx-auto`;
+                badge.style.width = 'fit-content';
+                badge.style.minWidth = '100px';
+                badge.style.padding = '0.5rem 0.75rem';
+                badge.innerHTML = `<i class="bi ${iconClass} me-1"></i> ${situacionTexto}`;
+                tdSituacion.appendChild(badge);
+                
+                tr.appendChild(tdSituacion);
+                
+                // Agregar fila a la tabla
+                listaEstudiantesBody.appendChild(tr);
+            });
+        }
+        
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('listaEstudiantesModal'));
+        modal.show();
+    }
+    
+    // Variables globales
     let graficoEstadisticas = null;
+    let estudiantesPorCategoria = {
+        promovidos: [],
+        aplazados: [],
+        repitentes: [],
+        retirados: [],
+        trasladados: []
+    };
+    let materiasInfo = [];
+    let estadisticasAsignaturas = [];
     
     // Función para calcular estadísticas
     function calcularEstadisticas() {
         // Obtener todas las filas de estudiantes
         const filas = document.querySelectorAll('#calificaciones-body tr');
         
-        // Inicializar contadores
+        // Inicializar contadores y arreglos
         let totalMatriculados = filas.length;
         let totalPromovidos = 0;
         let totalAplazados = 0;
@@ -1465,27 +1787,83 @@ document.addEventListener('DOMContentLoaded', function() {
         let totalRetirados = 0;
         let totalTrasladados = 0;
         
-        // Contar cada categoría
-        filas.forEach(fila => {
+        // Reiniciar arreglos de estudiantes por categoría
+        estudiantesPorCategoria = {
+            promovidos: [],
+            aplazados: [],
+            repitentes: [],
+            retirados: [],
+            trasladados: []
+        };
+        
+        // Guardar información de materias
+        materiasInfo = materias.map(materia => ({
+            id: materia.id_materia || materia.id_asignacion,
+            nombre: materia.nombre,
+            docente: materia.docente || 'Sin asignar'
+        }));
+        
+        // Contar cada categoría y recopilar información de estudiantes
+        filas.forEach((fila, index) => {
+            const estudianteId = fila.getAttribute('data-id-estudiante');
+            const nombreCell = fila.querySelector('td:nth-child(4)');
             const situacionCell = fila.querySelector('.situacion-final');
-            if (situacionCell) {
+            const desaprobadasCell = fila.querySelector('.asignaturas-desaprobadas');
+            
+            if (situacionCell && nombreCell) {
                 const situacion = situacionCell.textContent.trim();
+                const nombre = nombreCell.textContent.trim();
+                const numDesaprobadas = desaprobadasCell ? parseInt(desaprobadasCell.textContent.trim()) || 0 : 0;
                 
+                // Obtener las materias desaprobadas
+                const materiasDesaprobadas = [];
+                const notaCells = fila.querySelectorAll('.nota-cell');
+                
+                notaCells.forEach((cell, idx) => {
+                    const input = cell.querySelector('input');
+                    const idMateria = cell.getAttribute('data-id-materia') || cell.getAttribute('data-id-asignacion');
+                    const nota = input ? parseFloat(input.value) : 0;
+                    
+                    if (nota < 11 && nota > 0) {
+                        const nombreMateria = materiasInfo.find(m => m.id == idMateria)?.nombre || `Materia ${idx + 1}`;
+                        materiasDesaprobadas.push({
+                            nombre: nombreMateria,
+                            nota: nota
+                        });
+                    }
+                });
+                
+                // Crear objeto de estudiante
+                const estudiante = {
+                    id: estudianteId,
+                    nombre: nombre,
+                    situacion: situacion,
+                    desaprobadas: numDesaprobadas,
+                    materias: materiasDesaprobadas,
+                    orden: index + 1
+                };
+                
+                // Agregar a la categoría correspondiente
                 switch(situacion) {
                     case 'P':
                         totalPromovidos++;
+                        estudiantesPorCategoria.promovidos.push(estudiante);
                         break;
                     case 'A':
                         totalAplazados++;
+                        estudiantesPorCategoria.aplazados.push(estudiante);
                         break;
                     case 'R':
                         totalRepitentes++;
+                        estudiantesPorCategoria.repitentes.push(estudiante);
                         break;
                     case 'RET':
                         totalRetirados++;
+                        estudiantesPorCategoria.retirados.push(estudiante);
                         break;
                     case 'TRA':
                         totalTrasladados++;
+                        estudiantesPorCategoria.trasladados.push(estudiante);
                         break;
                 }
             }
@@ -1538,6 +1916,145 @@ document.addEventListener('DOMContentLoaded', function() {
             retirados: totalRetirados,
             trasladados: totalTrasladados
         });
+        
+        // Calcular estadísticas de asignaturas
+        calcularEstadisticasAsignaturas();
+    }
+    
+    // Función para calcular estadísticas de asignaturas
+    function calcularEstadisticasAsignaturas() {
+        // Depuración
+        console.log('Calculando estadísticas de asignaturas');
+        console.log('Materias:', materias);
+        
+        // Obtener todas las filas de estudiantes
+        const filas = document.querySelectorAll('#calificaciones-body tr');
+        const totalEstudiantes = filas.length;
+        
+        // Reiniciar el array de estadísticas
+        estadisticasAsignaturas = [];
+        
+        // Verificar si hay materias
+        if (!materias || materias.length === 0) {
+            console.log('No hay materias disponibles');
+            return;
+        }
+        
+        // Inicializar contadores para cada asignatura
+        materias.forEach((materia, index) => {
+            // Depuración
+            console.log(`Materia ${index}:`, materia);
+            
+            estadisticasAsignaturas.push({
+                id: materia.id_materia || materia.id_asignacion,
+                nombre: materia.nombre,
+                docente: materia.docente || 'Sin asignar',
+                desaprobados: 0,
+                porcentaje: 0
+            });
+        });
+        
+        // Contar desaprobados por asignatura
+        filas.forEach(fila => {
+            const notaCells = fila.querySelectorAll('.nota-cell');
+            
+            notaCells.forEach(cell => {
+                const input = cell.querySelector('input');
+                const idMateria = cell.getAttribute('data-id-materia') || cell.getAttribute('data-id-asignacion');
+                const nota = input ? parseFloat(input.value) : 0;
+                
+                if (nota < 11 && nota > 0) {
+                    // Buscar la asignatura en el array de estadísticas
+                    const asignaturaIndex = estadisticasAsignaturas.findIndex(a => a.id == idMateria);
+                    if (asignaturaIndex !== -1) {
+                        estadisticasAsignaturas[asignaturaIndex].desaprobados++;
+                    }
+                }
+            });
+        });
+        
+        // Calcular porcentajes
+        estadisticasAsignaturas.forEach(asignatura => {
+            asignatura.porcentaje = totalEstudiantes > 0 ? 
+                ((asignatura.desaprobados / totalEstudiantes) * 100).toFixed(1) : 0;
+        });
+        
+        // Ordenar por número de desaprobados (de mayor a menor)
+        estadisticasAsignaturas.sort((a, b) => b.desaprobados - a.desaprobados);
+        
+        // Mostrar los datos en la tabla
+        mostrarTablaAsignaturas();
+    }
+    
+    // Función para mostrar la tabla de asignaturas
+    function mostrarTablaAsignaturas() {
+        const asignaturasBody = document.getElementById('asignaturas-body');
+        const sinAsignaturas = document.getElementById('sin-asignaturas');
+        
+        // Depuración
+        console.log('Materias disponibles:', materias);
+        console.log('Estadísticas de asignaturas:', estadisticasAsignaturas);
+        
+        // Limpiar contenido anterior
+        asignaturasBody.innerHTML = '';
+        
+        // Verificar si hay asignaturas
+        if (estadisticasAsignaturas.length === 0) {
+            console.log('No hay estadísticas de asignaturas');
+            sinAsignaturas.classList.remove('d-none');
+            return;
+        }
+        
+        sinAsignaturas.classList.add('d-none');
+        
+        // Crear filas para cada asignatura
+        estadisticasAsignaturas.forEach((asignatura, index) => {
+            const tr = document.createElement('tr');
+            
+            // Columna de orden
+            const tdOrden = document.createElement('td');
+            tdOrden.className = 'ps-3 fw-bold text-muted';
+            tdOrden.textContent = index + 1;
+            tr.appendChild(tdOrden);
+            
+            // Columna de nombre de asignatura
+            const tdNombre = document.createElement('td');
+            tdNombre.innerHTML = `<div class="fw-medium">${asignatura.nombre}</div>`;
+            tr.appendChild(tdNombre);
+            
+            // Columna de docente
+            const tdDocente = document.createElement('td');
+            tdDocente.textContent = asignatura.docente;
+            tr.appendChild(tdDocente);
+            
+            // Columna de desaprobados
+            const tdDesaprobados = document.createElement('td');
+            tdDesaprobados.className = 'text-center';
+            tdDesaprobados.textContent = asignatura.desaprobados;
+            tr.appendChild(tdDesaprobados);
+            
+            // Columna de porcentaje
+            const tdPorcentaje = document.createElement('td');
+            tdPorcentaje.className = 'text-center';
+            
+            // Determinar color basado en el porcentaje
+            let badgeClass = 'bg-success';
+            if (asignatura.porcentaje > 30) {
+                badgeClass = 'bg-danger';
+            } else if (asignatura.porcentaje > 15) {
+                badgeClass = 'bg-warning text-dark';
+            }
+            
+            const badge = document.createElement('span');
+            badge.className = `badge ${badgeClass}`;
+            badge.textContent = `${asignatura.porcentaje}%`;
+            tdPorcentaje.appendChild(badge);
+            
+            tr.appendChild(tdPorcentaje);
+            
+            // Agregar fila a la tabla
+            asignaturasBody.appendChild(tr);
+        });
     }
     
     // Función para crear o actualizar el gráfico de pastel (optimizada)
@@ -1589,13 +2106,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     position: 'bottom',
                     labels: {
                         boxWidth: 12,
-                        padding: 10,
+                        padding: 8,
                         font: {
                             size: 11
                         }
                     }
                 },
                 tooltip: {
+                    bodyFont: {
+                        size: 12
+                    },
+                    padding: 8,
                     callbacks: {
                         label: function(context) {
                             const label = context.label || '';
@@ -1617,6 +2138,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Crear el gráfico
         graficoEstadisticas = new Chart(ctx, {
             type: 'pie',
+            cutout: '45%',
             data: datosGrafico,
             options: opciones
         });

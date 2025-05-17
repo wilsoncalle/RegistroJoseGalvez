@@ -514,7 +514,8 @@ class CalificacionOldController extends Controller
                 return [
                     'id_materia' => $asignacion->materia->id_materia,
                     'id_asignacion' => $asignacion->id_asignacion,
-                    'nombre' => $asignacion->materia->nombre
+                    'nombre' => $asignacion->materia->nombre,
+                    'docente' => $asignacion->docente ? $asignacion->docente->nombre . ' ' . $asignacion->docente->apellido : 'Sin docente asignado',
                 ];
             });
             
