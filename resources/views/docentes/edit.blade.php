@@ -61,7 +61,7 @@
                     <div class="col-md-3">
                         <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
                         <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" 
-                            value="{{ old('fecha_nacimiento', $docente->fecha_nacimiento) }}">
+                            value="{{ old('fecha_nacimiento', $docente->fecha_nacimiento ? date('Y-m-d', strtotime($docente->fecha_nacimiento)) : '') }}">
                     </div>
                 </div>
 
@@ -95,7 +95,7 @@
                     <div class="col-md-3">
                         <label for="fecha_contratacion" class="form-label">Fecha de Contratación</label>
                         <input type="date" class="form-control" id="fecha_contratacion" name="fecha_contratacion" 
-                            value="{{ old('fecha_contratacion', $docente->fecha_contratacion) }}">
+                            value="{{ old('fecha_contratacion', $docente->fecha_contratacion ? date('Y-m-d', strtotime($docente->fecha_contratacion)) : '') }}">
                     </div>
                     <div class="col-md-3">
                         <label for="id_nivel" class="form-label">Nivel <span class="text-danger">*</span></label>

@@ -31,8 +31,8 @@
                         {{ $estudiante->fecha_ingreso ? \Carbon\Carbon::parse($estudiante->fecha_ingreso)->format('d/m/Y') : 'No registrada' }}
                     </p>
                     <p><strong>Estado:</strong> 
-                        <span class="badge bg-{{ $estudiante->estado == 'Activo' ? 'success' : ($estudiante->estado == 'Retirado' ? 'warning' : 'secondary') }}">
-                            {{ $estudiante->estado }}
+                        <span class="badge bg-{{ $estudiante->estado_real == 'Activo' ? 'success' : ($estudiante->estado_real == 'Retirado' ? 'danger' : 'secondary') }}">
+                            {{ $estudiante->estado_real }}
                         </span>
                     </p>
                     <dl class="row">

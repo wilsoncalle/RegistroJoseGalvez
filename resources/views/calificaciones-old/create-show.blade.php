@@ -107,12 +107,7 @@
                 <label for="año">Año Académico</label>
                 <select class="form-control" id="año" name="año" required>
                     <option value="">Seleccione un año</option>
-                    @php
-                        $currentYear = date('Y');
-                        for ($year = $currentYear; $year >= $currentYear - 30; $year--) {
-                            echo "<option value=\"$year\">$year</option>";
-                        }
-                    @endphp
+                    <!-- Las opciones se cargarán dinámicamente con JavaScript -->
                 </select>
             </div>
         </div>
@@ -532,6 +527,90 @@ document.addEventListener('DOMContentLoaded', function() {
     let materias = [];
     let calificacionesData = {};
     
+    // Variables para el modo de visualización
+    let currentMode = 'read'; // Por defecto en modo lectura
+    
+    // Función para verificar si hay notas
+    function hayNotas() {
+        const notaInputs = document.querySelectorAll('.nota-input');
+        for (let input of notaInputs) {
+            if (input.value.trim() !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Función para activar/desactivar el modo de solo lectura
+    function setReadOnlyMode(isReadOnly) {
+        // Actualizar tooltips y cursor de las celdas de situación final
+        document.querySelectorAll('.situacion-final').forEach(cell => {
+            if (isReadOnly) {
+                cell.setAttribute('title', 'Ver observación (si existe)');
+                cell.style.cursor = 'default';
+            } else {
+                cell.setAttribute('title', 'Haga clic para agregar o editar observación');
+                cell.style.cursor = 'pointer';
+            }
+        });
+
+        // Hacer todos los inputs de notas readonly o editables
+        document.querySelectorAll('.nota-input').forEach(input => {
+            const row = input.closest('tr');
+            const situacionCell = row.querySelector('.situacion-final');
+            const situacion = situacionCell ? situacionCell.textContent.trim() : '';
+            
+            // Si el estudiante está retirado o trasladado, siempre hacer readonly
+            if (situacion === 'RET' || situacion === 'TRA') {
+                input.readOnly = true;
+                input.classList.add('readonly-input');
+                input.value = ''; // Limpiar la nota
+            } else {
+                input.readOnly = isReadOnly;
+                if (isReadOnly) {
+                    input.classList.add('readonly-input');
+                } else {
+                    input.classList.remove('readonly-input');
+                }
+            }
+        });
+        
+        // Hacer los inputs de comportamiento readonly o editables
+        document.querySelectorAll('.comportamiento-input').forEach(input => {
+            const row = input.closest('tr');
+            const situacionCell = row.querySelector('.situacion-final');
+            const situacion = situacionCell ? situacionCell.textContent.trim() : '';
+            
+            // Si el estudiante está retirado o trasladado, siempre hacer readonly
+            if (situacion === 'RET' || situacion === 'TRA') {
+                input.readOnly = true;
+                input.classList.add('readonly-input');
+                input.value = ''; // Limpiar el comportamiento
+            } else {
+                input.readOnly = isReadOnly;
+                if (isReadOnly) {
+                    input.classList.add('readonly-input');
+                } else {
+                    input.classList.remove('readonly-input');
+                }
+            }
+        });
+        
+        // Si estamos en modo lectura, desactivar el drag and drop
+        if (isReadOnly) {
+            document.querySelectorAll('.materia-column').forEach(col => {
+                col.removeEventListener('mousedown', handleDragStart);
+                col.classList.remove('draggable');
+            });
+        } else {
+            // Si estamos en modo edición, activar el drag and drop
+            document.querySelectorAll('.materia-column').forEach((col, index) => {
+                col.addEventListener('mousedown', handleDragStart);
+                col.classList.add('draggable');
+            });
+        }
+    }
+    
     // Función para cargar las calificaciones cuando se seleccionan los filtros
     function cargarCalificaciones() {
         const año = añoSelect.value;
@@ -570,7 +649,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 materias = data.materias || [];
                 calificacionesData = data.calificaciones || {};
                 
-                // Mostrar los datos
                 // Cargar el orden guardado de materias antes de mostrarlas
                 cargarOrdenMaterias();
                 mostrarCalificaciones();
@@ -585,6 +663,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('export-trimestre').value = idTrimestre;
                 document.getElementById('export-pdf-año').value = año;
                 document.getElementById('export-pdf-trimestre').value = idTrimestre;
+
+                // Determinar el modo inicial basado en si hay notas
+                setTimeout(() => {
+                    if (hayNotas()) {
+                        currentMode = 'read';
+                        modeRead.checked = true;
+                        modeEdit.checked = false;
+                        editModeControls.classList.add('d-none');
+                        setReadOnlyMode(true);
+                    } else {
+                        currentMode = 'edit';
+                        modeRead.checked = false;
+                        modeEdit.checked = true;
+                        editModeControls.classList.remove('d-none');
+                        setReadOnlyMode(false);
+                    }
+                }, 100);
             } else {
                 loadingMessage.textContent = 'Error: ' + data.message;
                 calificacionesContainer.classList.add('d-none');
@@ -918,16 +1013,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Si hay una conclusión guardada, verificar si es un caso especial
                     if (calificacionesData[calificacionKey].conclusion) {
                         const conclusion = calificacionesData[calificacionKey].conclusion;
-                        // Solo usar casos especiales de la base de datos (Retirado o Trasladado)
-                        // Para Promovido, Aplazado o Reprobado, usar el cálculo basado en asignaturas desaprobadas
+                        // Priorizar los casos especiales (Retirado o Trasladado) sobre el cálculo basado en asignaturas
                         if (conclusion === 'Retirado') {
                             situacionGuardada = 'RET';
                         } else if (conclusion === 'Trasladado') {
                             situacionGuardada = 'TRA';
-                        } else {
-                            // Para los demás casos, priorizar el cálculo basado en asignaturas desaprobadas
+                        } else if (['Promovido', 'Aplazado', 'Reprobado'].includes(conclusion)) {
+                            // Solo para estos casos usamos el cálculo basado en asignaturas desaprobadas
                             situacionGuardada = situacion;
                         }
+                        // Si hay otra conclusión personalizada, respetarla
                     }
                 }
             }
@@ -1045,9 +1140,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Variables para el modo de visualización
-    let currentMode = 'edit'; // Por defecto en modo edición
-    
     // Variables para el sistema moderno de arrastrar y soltar
     let isDragging = false;
     let draggedColumn = null;
@@ -1077,53 +1169,6 @@ document.addEventListener('DOMContentLoaded', function() {
             setReadOnlyMode(false);
         }
     });
-    
-    // Función para activar/desactivar el modo de solo lectura
-    function setReadOnlyMode(isReadOnly) {
-        // Actualizar tooltips y cursor de las celdas de situación final
-        document.querySelectorAll('.situacion-final').forEach(cell => {
-            if (isReadOnly) {
-                cell.setAttribute('title', 'Ver observación (si existe)');
-                cell.style.cursor = 'default';
-            } else {
-                cell.setAttribute('title', 'Haga clic para agregar o editar observación');
-                cell.style.cursor = 'pointer';
-            }
-        });
-        // Hacer todos los inputs de notas readonly o editables
-        document.querySelectorAll('.nota-input').forEach(input => {
-            input.readOnly = isReadOnly;
-            if (isReadOnly) {
-                input.classList.add('readonly-input');
-            } else {
-                input.classList.remove('readonly-input');
-            }
-        });
-        
-        // Hacer los inputs de comportamiento readonly o editables
-        document.querySelectorAll('.comportamiento-input').forEach(input => {
-            input.readOnly = isReadOnly;
-            if (isReadOnly) {
-                input.classList.add('readonly-input');
-            } else {
-                input.classList.remove('readonly-input');
-            }
-        });
-        
-        // Si estamos en modo lectura, desactivar el drag and drop
-        if (isReadOnly) {
-            document.querySelectorAll('.materia-column').forEach(col => {
-                col.removeEventListener('mousedown', handleDragStart);
-                col.classList.remove('draggable');
-            });
-        } else {
-            // Si estamos en modo edición, activar el drag and drop
-            document.querySelectorAll('.materia-column').forEach((col, index) => {
-                col.addEventListener('mousedown', handleDragStart);
-                col.classList.add('draggable');
-            });
-        }
-    }
     
     // Inicializar el sistema de arrastrar y soltar
     function initDragAndDrop() {
@@ -1371,6 +1416,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = input.closest('tr');
         const idEstudiante = row.getAttribute('data-id-estudiante');
         
+        // Obtener la situación actual del estudiante
+        const tdSituacion = row.querySelector('.situacion-final');
+        const situacionActual = tdSituacion.textContent;
+        
+        // Si el estudiante está retirado o trasladado, establecer asignaturas desaprobadas a 0
+        if (situacionActual === 'RET' || situacionActual === 'TRA') {
+            const tdDesaprobadas = row.querySelector('.asignaturas-desaprobadas');
+            tdDesaprobadas.textContent = '0';
+            return;
+        }
+        
         // Contar asignaturas desaprobadas
         let asignaturasDesaprobadas = 0;
         const notaInputs = row.querySelectorAll('.nota-input');
@@ -1387,35 +1443,29 @@ document.addEventListener('DOMContentLoaded', function() {
         tdDesaprobadas.textContent = asignaturasDesaprobadas;
         
         // Actualizar la situación final
-        const tdSituacion = row.querySelector('.situacion-final');
-        const situacionActual = tdSituacion.textContent;
+        let nuevaSituacion;
         
-        // Solo actualizar si no es un caso especial (RET o TRA)
-        if (situacionActual !== 'RET' && situacionActual !== 'TRA') {
-            let nuevaSituacion;
-            
-            if (asignaturasDesaprobadas === 0) {
-                nuevaSituacion = 'P'; // Siempre promovido si no hay asignaturas desaprobadas
-            } else if (asignaturasDesaprobadas >= 1 && asignaturasDesaprobadas <= 3) {
-                nuevaSituacion = 'A';
-            } else {
-                nuevaSituacion = 'R';
-            }
-            
-            // Actualizar el texto y las clases
-            tdSituacion.textContent = nuevaSituacion;
-            
-            // Limpiar clases de color
-            tdSituacion.classList.remove('text-success', 'text-danger', 'text-warning', 'text-info', 'text-secondary');
-            
-            // Aplicar clase según situación
-            if (nuevaSituacion === 'P') {
-                tdSituacion.classList.add('text-success');
-            } else if (nuevaSituacion === 'A') {
-                tdSituacion.classList.add('text-warning');
-            } else {
-                tdSituacion.classList.add('text-danger');
-            }
+        if (asignaturasDesaprobadas === 0) {
+            nuevaSituacion = 'P'; // Siempre promovido si no hay asignaturas desaprobadas
+        } else if (asignaturasDesaprobadas >= 1 && asignaturasDesaprobadas <= 3) {
+            nuevaSituacion = 'A';
+        } else {
+            nuevaSituacion = 'R';
+        }
+        
+        // Actualizar el texto y las clases
+        tdSituacion.textContent = nuevaSituacion;
+        
+        // Limpiar clases de color
+        tdSituacion.classList.remove('text-success', 'text-danger', 'text-warning', 'text-info', 'text-secondary');
+        
+        // Aplicar clase según situación
+        if (nuevaSituacion === 'P') {
+            tdSituacion.classList.add('text-success');
+        } else if (nuevaSituacion === 'A') {
+            tdSituacion.classList.add('text-warning');
+        } else {
+            tdSituacion.classList.add('text-danger');
         }
     }
     
@@ -2144,10 +2194,42 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Función para actualizar las opciones de Año Académico basado en Promoción
+    function actualizarAñoAcademico() {
+        const promocion = promocionSelect.value;
+        añoSelect.innerHTML = '<option value="">Seleccione un año</option>';
+        
+        if (promocion) {
+            // Mostrar solo 8 años a partir del año de promoción seleccionado
+            const añoPromocion = parseInt(promocion);
+            for (let year = añoPromocion; year <= añoPromocion + 7; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                añoSelect.appendChild(option);
+            }
+        } else {
+            // Si no hay promoción seleccionada, mostrar años normalmente (desde actual hasta 30 años atrás)
+            const currentYear = new Date().getFullYear();
+            for (let year = currentYear; year >= currentYear - 30; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                añoSelect.appendChild(option);
+            }
+        }
+    }
+    
     // Eventos para cargar datos cuando cambien los filtros
     añoSelect.addEventListener('change', cargarCalificaciones);
     trimestreSelect.addEventListener('change', cargarCalificaciones);
-    promocionSelect.addEventListener('change', cargarCalificaciones);
+    promocionSelect.addEventListener('change', function() {
+        actualizarAñoAcademico(); // Actualizar años académicos primero
+        cargarCalificaciones(); // Luego cargar calificaciones
+    });
+    
+    // Inicializar el selector de años académicos
+    actualizarAñoAcademico();
     
     // Inicializar el sistema moderno de arrastrar y soltar
     setTimeout(initDragAndDrop, 500); // Pequeño retraso para asegurar que todo esté cargado

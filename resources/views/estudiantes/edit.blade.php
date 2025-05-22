@@ -104,11 +104,16 @@
                     </div>
                     <div class="col-md-2">
                         <label for="estado" class="form-label">Estado</label>
-                        <select class="form-select" id="estado" name="estado" required>
-                            <option value="Activo" {{ old('estado', $estudiante->estado) == 'Activo' ? 'selected' : '' }}>Activo</option>
-                            <option value="Retirado" {{ old('estado', $estudiante->estado) == 'Retirado' ? 'selected' : '' }}>Retirado</option>
-                            <option value="Egresado" {{ old('estado', $estudiante->estado) == 'Egresado' ? 'selected' : '' }}>Egresado</option>
+                        <select class="form-control" id="estado" name="estado" required>
+                            <option value="Activo" {{ old('estado', $estudiante->estado_real) == 'Activo' ? 'selected' : '' }}>Activo</option>
+                            <option value="Retirado" {{ old('estado', $estudiante->estado_real) == 'Retirado' ? 'selected' : '' }}>Retirado</option>
+                            <option value="Egresado" {{ old('estado', $estudiante->estado_real) == 'Egresado' ? 'selected' : '' }}>Egresado</option>
                         </select>
+                        @if($estudiante->estado != $estudiante->estado_real)
+                            <small class="form-text text-muted">
+                                <i class="bi bi-info-circle"></i> Estado actualizado automáticamente por años desde ingreso.
+                            </small>
+                        @endif
                     </div>
                 </div>
                 

@@ -134,16 +134,44 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <p>¿Está seguro de que desea eliminar al docente <strong>{{ $docente->nombre }} {{ $docente->apellido }}</strong>?</p>
-                                                    <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+                                                    @if($docente->asignaciones->count() > 0)
+                                                        <div class="alert alert-warning">
+                                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                                            <strong>¡Advertencia!</strong> Este docente tiene asignaciones activas:
+                                                            <ul class="mt-2">
+                                                                @foreach($docente->asignaciones->take(5) as $asignacion)
+                                                                    <li>
+                                                                        <strong>{{ $asignacion->materia->nombre ?? 'Sin materia' }}</strong> - 
+                                                                        {{ $asignacion->aula->nombre_completo ?? 'Aula no especificada' }}
+                                                                        @if($asignacion->anioAcademico)
+                                                                            ({{ $asignacion->anioAcademico->nombre }})
+                                                                        @endif
+                                                                    </li>
+                                                                @endforeach
+                                                                @if($docente->asignaciones->count() > 5)
+                                                                    <li class="text-muted">Y {{ $docente->asignaciones->count() - 5 }} más...</li>
+                                                                @endif
+                                                            </ul>
+                                                            <p class="mt-2 mb-0">No se puede eliminar un docente con asignaciones activas. <br>Debe eliminar primero las asignaciones asociadas.</p>
+                                                        </div>
+                                                    @else
+                                                        <p>¿Está seguro de que desea eliminar al docente <strong>{{ $docente->nombre }} {{ $docente->apellido }}</strong>?</p>
+                                                        <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+                                                    @endif
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                    <form action="{{ route('docentes.destroy', $docente) }}" method="POST">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger">Eliminar</button>
-                                                    </form>
+                                                    @if($docente->asignaciones->count() == 0)
+                                                        <form action="{{ route('docentes.destroy', $docente) }}" method="POST">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                        </form>
+                                                    @else
+                                                        <a href="{{ route('asignaciones.index', ['docente' => $docente->id_docente]) }}" class="btn btn-primary">
+                                                            <i class="bi bi-list-check me-1"></i> Ver asignaciones
+                                                        </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>

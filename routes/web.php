@@ -33,6 +33,20 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 Route::resource('estudiantes', \App\Http\Controllers\EstudianteController::class);
 Route::get('/get-aulas-por-nivel/{nivelId}', [EstudianteController::class, 'getAulasPorNivel']);
 Route::post('/estudiantes/consultar-dni', [EstudianteController::class, 'consultarDni'])->name('estudiantes.consultar-dni');
+
+// Rutas para creación masiva de estudiantes
+Route::get('/estudiantes-bulk', [EstudianteController::class, 'bulkCreate'])->name('estudiantes.bulk-create');
+Route::post('/estudiantes-bulk', [EstudianteController::class, 'storeBulk'])->name('estudiantes.store-bulk');
+
+// Rutas para importación de estudiantes
+Route::get('/estudiantes-import', [EstudianteController::class, 'importForm'])->name('estudiantes.import');
+Route::post('/estudiantes-import', [EstudianteController::class, 'importar'])->name('estudiantes.importar');
+Route::post('/estudiantes-preview', [EstudianteController::class, 'preview'])->name('estudiantes.preview');
+Route::get('/estudiantes-plantilla', [EstudianteController::class, 'descargarPlantilla'])->name('estudiantes.descargar-plantilla');
+
+// Rutas para eliminación masiva de estudiantes
+Route::get('/estudiantes-bulk-delete', [EstudianteController::class, 'bulkDeleteForm'])->name('estudiantes.bulk-delete-form');
+Route::post('/estudiantes-bulk-delete', [EstudianteController::class, 'bulkDelete'])->name('estudiantes.bulk-delete');
     
 // Rutas de Docentes
 Route::resource('docentes', \App\Http\Controllers\DocenteController::class);

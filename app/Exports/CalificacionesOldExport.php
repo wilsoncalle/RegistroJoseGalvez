@@ -267,17 +267,17 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 
                 // No incluimos título para evitar problemas
                 
-                // Definir encabezados verticales combinando celdas A13 y A14
+                // Definir encabezados verticales con las nuevas combinaciones de celdas
                 $verticalHeaders = [
-                    'A' => 'N° Orden',
-                    'B' => 'N° Matrícula',
-                    'C' => 'Condición',
-                    'D' => 'Apellidos y Nombres'
+                    'A' => 'N° Orden',     // A13:B25
+                    'C' => 'N° Matrícula', // C13:D25
+                    'E' => 'Condición',    // E13:F25
+                    'G' => 'Apellidos y Nombres' // G13:N25
                 ];
                 
                 // Establecer un solo encabezado "Asignaturas" que cubra todas las columnas de asignaturas
-                $asignaturasStartCol = 'E';
-                $asignaturasEndCol = Coordinate::stringFromColumnIndex(4 + count($this->asignaturas));
+                $asignaturasStartCol = 'O';
+                $asignaturasEndCol = Coordinate::stringFromColumnIndex(14 + count($this->asignaturas));
                 
                 // Usar mergeCells para crear un solo encabezado que cubra todas las asignaturas
                 try {
@@ -300,7 +300,7 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                     ]);
                 } catch (\Exception $e) {
                     // Si falla la combinación, aplicar el encabezado a cada columna individualmente
-                    for ($col = 5; $col <= 4 + count($this->asignaturas); $col++) {
+                    for ($col = 15; $col <= 14 + count($this->asignaturas); $col++) {
                         $colLetter = Coordinate::stringFromColumnIndex($col);
                         $sheet->setCellValue($colLetter . '13', 'Asignaturas');
                         $sheet->getStyle($colLetter . '13')->applyFromArray([
@@ -323,7 +323,7 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 // El encabezado "Apellidos y Nombres" ya está incluido en $verticalHeaders
                 
                 // Calcular posiciones para columnas finales
-                $materiasEndIndex = 4 + $materiasCount;
+                $materiasEndIndex = 14 + $materiasCount;
                 $comportamientoCol = Coordinate::stringFromColumnIndex($materiasEndIndex + 1);
                 $desaprobadasCol = Coordinate::stringFromColumnIndex($materiasEndIndex + 2);
                 $situacionCol = Coordinate::stringFromColumnIndex($materiasEndIndex + 3);
@@ -333,20 +333,30 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $verticalHeaders[$desaprobadasCol] = 'N° asignaturas desaprobadas';
                 $verticalHeaders[$situacionCol] = 'Situación Final';
                 
-                // Aplicar estilos a los encabezados verticales y combinar celdas A11:A12
+                // Aplicar estilos a los encabezados verticales y combinar celdas según las especificaciones
+                // Combinaciones especiales para los encabezados principales
+                try {
+                    $sheet->mergeCells('A13:B25'); // N° Orden
+                    $sheet->mergeCells('C13:D25'); // N° Matrícula
+                    $sheet->mergeCells('E13:F25'); // Condición
+                    $sheet->mergeCells('G13:N25'); // Apellidos y Nombres
+                    
+                    // Combinar celdas para los encabezados finales
+                    $sheet->mergeCells($comportamientoCol . '13:' . $comportamientoCol . '25');
+                    $sheet->mergeCells($desaprobadasCol . '13:' . $desaprobadasCol . '25');
+                    $sheet->mergeCells($situacionCol . '13:' . $situacionCol . '25');
+                } catch (\Exception $e) {
+                    // Si falla la combinación, continuamos sin combinar
+                }
+                
+                // Procesar cada encabezado
                 foreach ($verticalHeaders as $col => $text) {
-                    // Combinar celdas para cada encabezado (excepto asignaturas)
-                    try {
-                        $sheet->mergeCells($col . '13:' . $col . '14');
-                    } catch (\Exception $e) {
-                        // Si falla la combinación, continuamos sin combinar
-                    }
                     
                     // Establecer el texto del encabezado
                     $sheet->setCellValue($col . '13', $text);
                     
                     // Aplicar rotación vertical (excepto para Apellidos y Nombres)
-                    if ($col != 'D') {
+                    if ($col != 'G') {
                         $sheet->getStyle($col . '13')->getAlignment()->setTextRotation(90);
                     }
                     
@@ -378,10 +388,17 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 // Establecer una altura fija más alta para los encabezados
                 $sheet->getRowDimension(14)->setRowHeight(170); // Altura suficiente para textos largos en vertical
                 
-                // Agregar nombres de materias en la fila 12 (en vertical)
-                $colIndex = 5; // Empezamos en la columna E
+                // Agregar nombres de materias en la fila 14 (en vertical)
+                $colIndex = 15; // Empezamos en la columna O
                 foreach ($this->asignaturas as $asignacion) {
                     $colLetter = Coordinate::stringFromColumnIndex($colIndex);
+                    
+                    // Combinar celdas para cada asignatura (fila 14 a 25)
+                    try {
+                        $sheet->mergeCells($colLetter . '14:' . $colLetter . '25');
+                    } catch (\Exception $e) {
+                        // Si falla la combinación, continuamos sin combinar
+                    }
                     
                     // Establecer el nombre de la materia
                     $sheet->setCellValue($colLetter . '14', $asignacion->materia->nombre);
@@ -407,24 +424,32 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                     // Aplicar rotación vertical a los encabezados de asignaturas
                     $sheet->getStyle($colLetter . '14')->getAlignment()->setTextRotation(90);
                     
-                    // Ajustar el ancho de las columnas de asignaturas 
+                    // Ajustar el ancho de las columnas de asignaturas a un tamaño base de 5
                     $sheet->getColumnDimension($colLetter)->setWidth(5);
                     
                     // Aplicar tamaño de letra 12 a todas las celdas de la columna
-                    $sheet->getStyle($colLetter . '15:' . $colLetter . $sheet->getHighestRow())->getFont()->setSize(12);
+                    $sheet->getStyle($colLetter . '26:' . $colLetter . $sheet->getHighestRow())->getFont()->setSize(12);
                     
                     $colIndex++;
                 }
                 
-                // Ajustar el ancho de las columnas - Forzar ancho fijo solo para las tres primeras columnas
-                $sheet->getColumnDimension('A')->setWidth(9)->setAutoSize(false); // N° Orden
-                $sheet->getColumnDimension('B')->setWidth(9)->setAutoSize(false); // N° Matrícula
-                $sheet->getColumnDimension('C')->setWidth(9)->setAutoSize(false); // Condición
-                // Las demás columnas se autoajustarán
+                // Ajustar el ancho de las columnas según la nueva estructura
+                $sheet->getColumnDimension('A')->setWidth(5)->setAutoSize(false); // N° Orden (parte 1)
+                $sheet->getColumnDimension('B')->setWidth(5)->setAutoSize(false); // N° Orden (parte 2)
+                $sheet->getColumnDimension('C')->setWidth(5)->setAutoSize(false); // N° Matrícula (parte 1)
+                $sheet->getColumnDimension('D')->setWidth(5)->setAutoSize(false); // N° Matrícula (parte 2)
+                $sheet->getColumnDimension('E')->setWidth(5)->setAutoSize(false); // Condición (parte 1)
+                $sheet->getColumnDimension('F')->setWidth(5)->setAutoSize(false); // Condición (parte 2)
+                
+                // Ajustar el ancho para Apellidos y Nombres (G-N)
+                for ($i = 'G'; $i <= 'N'; $i++) {
+                    $sheet->getColumnDimension($i)->setWidth(5)->setAutoSize(false);
+                }
+                // Las columnas de asignaturas ya se ajustan en el bucle anterior
                 
                 // Agregar título general en la fila 12 que cubra todas las columnas
-                $sheet->mergeCells('A12:' . $lastColumn . '12');
-                $sheet->setCellValue('A12', 'ACTA CONSOLIDAD DE EVALUACIÓN INTEGRAL');
+                $sheet->mergeCells('A12:V12');
+                $sheet->setCellValue('A12', 'ACTA CONSOLIDADA DE EVALUACIÓN INTEGRAL');
                 $sheet->getStyle('A12')->applyFromArray([
                     'font' => [
                         'bold' => true,
@@ -439,8 +464,8 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 ]);
                 
                 // Formato para las filas 1-10
-                // Fila 1-4: Imagen y Ministerio de Educación
-                $sheet->mergeCells('A1:C4'); // Espacio para la imagen
+                // Bloque superior para la imagen (A1:E4)
+                $sheet->mergeCells('A1:E4'); // Espacio para la imagen
                 
                 // Insertar la imagen del Gran Sello de la República del Perú
                 $drawing = new Drawing();
@@ -453,17 +478,19 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $drawing->setWidth(75);   // Ajustar ancho de la imagen
                 $drawing->setHeight(75);  // Ajustar altura de la imagen
                 $drawing->setWorksheet($sheet);
-                $sheet->mergeCells('D1:Q2');
-                $sheet->setCellValue('D1', 'MINISTERIO DE EDUCACIÓN');
-                $sheet->getStyle('D1')->applyFromArray([
+                
+                // Ministerio de Educación (F1:V2)
+                $sheet->mergeCells('F1:V2');
+                $sheet->setCellValue('F1', 'MINISTERIO DE EDUCACIÓN');
+                $sheet->getStyle('F1')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 14, 'name' => 'Times New Roman'],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_BOTTOM],
                 ]);
                 
-                // Fila 3-4: Educación Secundaria
-                $sheet->mergeCells('D3:Q4');
-                $sheet->setCellValue('D3', 'EDUCACIÓN SECUNDARIA');
-                $sheet->getStyle('D3')->applyFromArray([
+                // Educación Secundaria (F3:V4)
+                $sheet->mergeCells('F3:V4');
+                $sheet->setCellValue('F3', 'EDUCACIÓN SECUNDARIA');
+                $sheet->getStyle('F3')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 14, 'name' => 'Times New Roman'],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_TOP],
                 ]);
@@ -475,24 +502,29 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $sheet->getRowDimension(4)->setRowHeight(16);
                 
                 // Fila 5: Centro Educativo
-                $sheet->mergeCells('A5:C5');
+                $sheet->mergeCells('A5:E5');
                 $sheet->setCellValue('A5', 'CENTRO EDUCATIVO:');
-                $sheet->setCellValue('D5', 'C.E. Nº 15510 AMPLIACIÓN SECUNDARIA');
-                $sheet->mergeCells('E5:Q5');
-                $sheet->setCellValue('E5', 'DIRECCIÓN DEPARTAMENTAL ZONAL: PIURA');
+                $sheet->mergeCells('F5:L5');
+                $sheet->setCellValue('F5', 'Nº 15510 AMPLIACIÓN SECUNDARIA');
+                $sheet->mergeCells('M5:V5');
+                $sheet->setCellValue('M5', 'PIURA');
                 
                 // Aplicar estilo a las etiquetas (Times New Roman, 12, alineado a la izquierda)
                 $sheet->getStyle('A5')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 12, 'name' => 'Times New Roman'],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
                 ]);
-                $sheet->getStyle('E5')->applyFromArray([
-                    'font' => ['bold' => true, 'size' => 12, 'name' => 'Times New Roman'],
+                $sheet->getStyle('F5')->applyFromArray([
+                    'font' => ['size' => 12, 'name' => 'Times New Roman'],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                ]);
+                $sheet->getStyle('M5')->applyFromArray([
+                    'font' => ['size' => 12, 'name' => 'Times New Roman'],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
                 ]);
                 
                 // Fila 6: Departamento, Distrito, Año, Sección
-                $sheet->mergeCells('A6:C6');
+                $sheet->mergeCells('A6:E6');
                 
                 // Aplicamos formato de texto enriquecido a A6 (DEPARTAMENTO)
                 $richTextA6 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
@@ -503,34 +535,43 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $normalA6->getFont()->setName('Times New Roman');
                 $sheet->setCellValue('A6', $richTextA6);
                 
-                // Aplicamos formato de texto enriquecido a D6 (DISTRITO)
-                $richTextD6 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
-                $boldD6 = $richTextD6->createTextRun('DISTRITO: ');
-                $boldD6->getFont()->setBold(true);
-                $boldD6->getFont()->setName('Times New Roman');
-                $normalD6 = $richTextD6->createTextRun('PARIÑAS'); // Este texto no tendrá negrita
-                $normalD6->getFont()->setName('Times New Roman');
-                $sheet->setCellValue('D6', $richTextD6);
+                $sheet->mergeCells('F6:G6');
+                $sheet->setCellValue('F6', 'PIURA');
+                $sheet->getStyle('F6')->getFont()->setName('Times New Roman');
                 
-                $sheet->mergeCells('E6:J6');
-                // Aplicamos formato de texto enriquecido a E6 (AÑO ESCOLAR)
-                $richTextE6 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
-                $boldE6 = $richTextE6->createTextRun('AÑO ESCOLAR: ');
-                $boldE6->getFont()->setBold(true);
-                $boldE6->getFont()->setName('Times New Roman');
-                $normalE6 = $richTextE6->createTextRun($this->año); // Este texto no tendrá negrita
-                $normalE6->getFont()->setName('Times New Roman');
-                $sheet->setCellValue('E6', $richTextE6);
+                $sheet->mergeCells('H6:I6');
+                $sheet->setCellValue('H6', 'DISTRITO:');
+                $sheet->getStyle('H6')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 12, 'name' => 'Times New Roman'],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                ]);
                 
-                $sheet->mergeCells('K6:Q6');
-                // Aplicamos formato de texto enriquecido a K6 (SECCIÓN)
-                $richTextK6 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
-                $boldK6 = $richTextK6->createTextRun('SECCIÓN: ');
-                $boldK6->getFont()->setBold(true);
-                $boldK6->getFont()->setName('Times New Roman');
-                $normalK6 = $richTextK6->createTextRun($this->aula->seccion->nombre); // Este texto no tendrá negrita
-                $normalK6->getFont()->setName('Times New Roman');
-                $sheet->setCellValue('K6', $richTextK6);
+                $sheet->mergeCells('J6:L6');
+                $sheet->setCellValue('J6', 'PARIÑAS');
+                $sheet->getStyle('J6')->getFont()->setName('Times New Roman');
+                
+                $sheet->mergeCells('M6:O6');
+                // Aplicamos formato de texto enriquecido a M6 (AÑO ESCOLAR)
+                $richTextM6 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
+                $boldM6 = $richTextM6->createTextRun('AÑO ESCOLAR: ');
+                $boldM6->getFont()->setBold(true);
+                $boldM6->getFont()->setName('Times New Roman');
+                $sheet->setCellValue('M6', $richTextM6);
+                
+                $sheet->mergeCells('P6:Q6');
+                $sheet->setCellValue('P6', $this->año);
+                $sheet->getStyle('P6')->getFont()->setName('Times New Roman');
+                
+                $sheet->mergeCells('R6:S6');
+                $sheet->setCellValue('R6', 'SECCION:');
+                $sheet->getStyle('R6')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 12, 'name' => 'Times New Roman'],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                ]);
+                
+                $sheet->mergeCells('T6:V6');
+                $sheet->setCellValue('T6', $this->aula->seccion->nombre);
+                $sheet->getStyle('T6')->getFont()->setName('Times New Roman');
                 
                 // Aplicar estilo a las etiquetas
                 $sheet->getStyle('A6')->applyFromArray([
@@ -551,43 +592,51 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 ]);
                 
                 // Fila 7: Provincia, Lugar, Turno, Grado
-                $sheet->mergeCells('A7:C7');
+                $sheet->mergeCells('A7:E7');
                 // Usamos formato de texto enriquecido para la celda A7
                 $richText = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
                 $bold = $richText->createTextRun('PROVINCIA: ');
                 $bold->getFont()->setBold(true);
                 $bold->getFont()->setName('Times New Roman');
-                $normal = $richText->createTextRun('TALARA'); // Este texto no tendrá negrita
-                $normal->getFont()->setName('Times New Roman');
                 $sheet->setCellValue('A7', $richText);
-                // Aplicamos formato de texto enriquecido a D7 (LUGAR)
-                $richTextD7 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
-                $boldD7 = $richTextD7->createTextRun('LUGAR: ');
-                $boldD7->getFont()->setBold(true);
-                $boldD7->getFont()->setName('Times New Roman');
-                $normalD7 = $richTextD7->createTextRun('TALARA'); // Este texto no tendrá negrita
-                $normalD7->getFont()->setName('Times New Roman');
-                $sheet->setCellValue('D7', $richTextD7);
                 
-                $sheet->mergeCells('E7:J7');
-                // Aplicamos formato de texto enriquecido a E7 (TURNO)
-                $richTextE7 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
-                $boldE7 = $richTextE7->createTextRun('TURNO: ');
-                $boldE7->getFont()->setBold(true);
-                $boldE7->getFont()->setName('Times New Roman');
-                $normalE7 = $richTextE7->createTextRun('DIURNO'); // Este texto no tendrá negrita
-                $normalE7->getFont()->setName('Times New Roman');
-                $sheet->setCellValue('E7', $richTextE7);
+                $sheet->mergeCells('F7:G7');
+                $sheet->setCellValue('F7', 'TALARA');
+                $sheet->getStyle('F7')->getFont()->setName('Times New Roman');
                 
-                $sheet->mergeCells('K7:Q7');
-                // Aplicamos formato de texto enriquecido a K7 (GRADO)
-                $richTextK7 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
-                $boldK7 = $richTextK7->createTextRun('GRADO: ');
-                $boldK7->getFont()->setBold(true);
-                $boldK7->getFont()->setName('Times New Roman');
-                $normalK7 = $richTextK7->createTextRun(strtoupper($this->aula->grado->nombre)); // Este texto no tendrá negrita
-                $normalK7->getFont()->setName('Times New Roman');
-                $sheet->setCellValue('K7', $richTextK7);
+                $sheet->mergeCells('H7:I7');
+                $sheet->setCellValue('H7', 'LUGAR:');
+                $sheet->getStyle('H7')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 12, 'name' => 'Times New Roman'],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                ]);
+                
+                $sheet->mergeCells('J7:L7');
+                $sheet->setCellValue('J7', 'TALARA');
+                $sheet->getStyle('J7')->getFont()->setName('Times New Roman');
+                
+                $sheet->mergeCells('M7:O7');
+                // Aplicamos formato de texto enriquecido a M7 (TURNO)
+                $richTextM7 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
+                $boldM7 = $richTextM7->createTextRun('TURNO: ');
+                $boldM7->getFont()->setBold(true);
+                $boldM7->getFont()->setName('Times New Roman');
+                $sheet->setCellValue('M7', $richTextM7);
+                
+                $sheet->mergeCells('P7:Q7');
+                $sheet->setCellValue('P7', 'DIURNO');
+                $sheet->getStyle('P7')->getFont()->setName('Times New Roman');
+                
+                $sheet->mergeCells('R7:S7');
+                $sheet->setCellValue('R7', 'GRADO:');
+                $sheet->getStyle('R7')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 12, 'name' => 'Times New Roman'],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                ]);
+                
+                $sheet->mergeCells('T7:V7');
+                $sheet->setCellValue('T7', strtoupper($this->aula->grado->nombre));
+                $sheet->getStyle('T7')->getFont()->setName('Times New Roman');
                 
                 // Aplicar estilo a las etiquetas (solo la etiqueta en negrita, no el valor)
                 // Primero aplicamos el estilo base a toda la celda
@@ -603,26 +652,29 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $sheet->getStyle('K7')->getFont()->setBold(true);
                 
                 // Fila 8: Subregión, Evaluación
-                $sheet->mergeCells('A8:D8');
+                $sheet->mergeCells('A8:E8');
                 // Aplicamos formato de texto enriquecido a A8 (SUBREGIÓN)
                 $richTextA8 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
                 $boldA8 = $richTextA8->createTextRun('SUBREGIÓN: ');
                 $boldA8->getFont()->setBold(true);
                 $boldA8->getFont()->setName('Times New Roman');
-                $normalA8 = $richTextA8->createTextRun('LUCIANO CASTILLO COLONNA'); // Este texto no tendrá negrita
-                $normalA8->getFont()->setName('Times New Roman');
                 $sheet->setCellValue('A8', $richTextA8);
                 
-                $sheet->mergeCells('E8:J8');
-                // Aplicamos formato de texto enriquecido a E8 (EVALUACIÓN)
-                $richTextE8 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
-                $boldE8 = $richTextE8->createTextRun('EVALUACIÓN: ');
-                $boldE8->getFont()->setBold(true);
-                $boldE8->getFont()->setName('Times New Roman');
-                $normalE8 = $richTextE8->createTextRun('FINAL'); // Este texto no tendrá negrita
-                $normalE8->getFont()->setName('Times New Roman');
-                $sheet->setCellValue('E8', $richTextE8);
-                $sheet->mergeCells('K8:Q8');
+                $sheet->mergeCells('F8:L8');
+                $sheet->setCellValue('F8', 'LUCIANO CASTILLO COLONNA');
+                $sheet->getStyle('F8')->getFont()->setName('Times New Roman');
+                
+                $sheet->mergeCells('M8:O8');
+                // Aplicamos formato de texto enriquecido a M8 (EVALUACIÓN)
+                $richTextM8 = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
+                $boldM8 = $richTextM8->createTextRun('EVALUACIÓN: ');
+                $boldM8->getFont()->setBold(true);
+                $boldM8->getFont()->setName('Times New Roman');
+                $sheet->setCellValue('M8', $richTextM8);
+                
+                $sheet->mergeCells('P8:V8');
+                $sheet->setCellValue('P8', 'FINAL');
+                $sheet->getStyle('P8')->getFont()->setName('Times New Roman');
                 
                 // Aplicar estilo a las etiquetas
                 $sheet->getStyle('A8')->applyFromArray([
@@ -634,24 +686,19 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
                 ]);
                 
-                // Combinar celdas en la fila 9
-                $sheet->mergeCells('A9:C9');
-                $sheet->mergeCells('E9:J9');
-                $sheet->mergeCells('K9:Q9');
-                
-                // Combinar celdas en la fila 10
-                $sheet->mergeCells('A10:C10');
-                
-                // Combinar celdas en la fila 11
-                $sheet->mergeCells('A11:Q11');
-                
-                // Fila 10: Tipo de evaluación
-                $sheet->mergeCells('E10:Q10');
-                $sheet->setCellValue('E10', '(FINAL - DE APLAZADOS - DE COMPLEMENTACIÓN)');
-                $sheet->getStyle('E10')->applyFromArray([
+                // Combinar celdas en la fila 9 para la etiqueta de evaluación
+                $sheet->mergeCells('A9:V9');
+                $sheet->setCellValue('A9', '(FINAL - DE APLAZADOS - DE COMPLEMENTACIÓN)');
+                $sheet->getStyle('A9')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 12, 'name' => 'Times New Roman'],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                 ]);
+                
+                // Combinar celdas en la fila 10 (vacía para separación)
+                $sheet->mergeCells('A10:V10');
+                
+                // Combinar celdas en la fila 11 (vacía para separación)
+                $sheet->mergeCells('A11:V11');
                 
                 // Asegurar que todas las celdas usen Times New Roman
                 $highestRow = $sheet->getHighestRow();
@@ -659,7 +706,7 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $sheet->getStyle('A1:' . $highestColumn . $highestRow)->getFont()->setName('Times New Roman');
                 
                 // Procesar estudiantes con observaciones
-                $dataStartRow = 15; // La fila donde comienzan los datos
+                $dataStartRow = 26; // La fila donde comienzan los datos (ajustada a la nueva estructura)
                 
                 // Recorrer los estudiantes con observaciones
                 foreach ($this->estudiantesConObservaciones as $estudianteData) {
@@ -667,11 +714,21 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                     $observacion = $estudianteData['observacion'];
                     $excelRowIndex = $rowIndex + $dataStartRow;
                     
-                    // Calcular el rango de columnas a combinar
-                    $startCol = 'E'; // Columna donde comienzan las asignaturas
+                    // Combinar celdas para los datos de cada estudiante en la fila
+                    try {
+                        $sheet->mergeCells('A' . $excelRowIndex . ':B' . $excelRowIndex); // N° Orden
+                        $sheet->mergeCells('C' . $excelRowIndex . ':D' . $excelRowIndex); // N° Matrícula
+                        $sheet->mergeCells('E' . $excelRowIndex . ':F' . $excelRowIndex); // Condición
+                        $sheet->mergeCells('G' . $excelRowIndex . ':N' . $excelRowIndex); // Apellidos y Nombres
+                    } catch (\Exception $e) {
+                        // Si falla la combinación, continuamos sin combinar
+                    }
+                    
+                    // Calcular el rango de columnas a combinar para observaciones
+                    $startCol = 'O'; // Nueva columna donde comienzan las asignaturas
                     $endCol = $highestColumn; // Última columna (situación final)
                     
-                    // Combinar las celdas
+                    // Combinar las celdas para la observación
                     $sheet->mergeCells($startCol . $excelRowIndex . ':' . $endCol . $excelRowIndex);
                     
                     // Establecer el texto de la observación

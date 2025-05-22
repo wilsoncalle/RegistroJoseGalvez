@@ -31,10 +31,10 @@
 
                 <div class="row mb-3">
                     <!-- Campo Nivel -->
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
                         <select name="nivel" id="nivel" class="form-select" required>
-                            <option value="">Seleccione un nivel</option>
+                            <option value="">Seleccionar nivel</option>
                             @foreach($niveles as $nivel)
                                 <option value="{{ $nivel->id_nivel }}">{{ $nivel->nombre }}</option>
                             @endforeach
@@ -53,6 +53,11 @@
                         <select name="id_materia" id="id_materia" class="form-select" required disabled>
                             <option value="">Seleccione un nivel primero</option>
                         </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="button" id="agregar-materia" class="btn btn-success mb-2" disabled>
+                            <i class="bi bi-plus-circle me-1"></i> Agregar Materia
+                        </button>
                     </div>
                 </div>
 
@@ -86,6 +91,9 @@
                 <!-- Contenedor para aulas adicionales -->
                 <div id="aulas-adicionales"></div>
 
+                <!-- Contenedor para materias adicionales -->
+                <div id="materias-adicionales"></div>
+
                 @push('scripts')
                 <script>
                     // URLs base para cargar aulas, materias y docentes según el nivel seleccionado
@@ -99,8 +107,11 @@
                         const materiaSelect = document.getElementById('id_materia');
                         const aulaSelect = document.getElementById('id_aula');
                         const agregarAulaBtn = document.getElementById('agregar-aula');
+                        const agregarMateriaBtn = document.getElementById('agregar-materia');
                         const aulasAdicionalesContainer = document.getElementById('aulas-adicionales');
-                        let contadorAulas = 1; // Contador para identificar las aulas adicionales
+                        const materiasAdicionalesContainer = document.getElementById('materias-adicionales');
+                        let contadorAulas = 1;
+                        let contadorMaterias = 1;
 
                         // Al cambiar el nivel, se actualizan docentes, aulas y materias
                         nivelSelect.addEventListener('change', function() {
@@ -213,8 +224,10 @@
                                                 materiaSelect.appendChild(option);
                                             });
                                             materiaSelect.disabled = false;
+                                            agregarMateriaBtn.disabled = false;
                                         } else {
                                             materiaSelect.innerHTML = '<option value="">No hay materias disponibles para este nivel</option>';
+                                            agregarMateriaBtn.disabled = true;
                                         }
                                     })
                                     .catch(error => {
@@ -224,6 +237,10 @@
                             } else {
                                 materiaSelect.innerHTML = '<option value="">Seleccione un nivel primero</option>';
                                 materiaSelect.disabled = true;
+                                agregarMateriaBtn.disabled = true;
+                                // Limpiar materias adicionales cuando se cambia el nivel
+                                materiasAdicionalesContainer.innerHTML = '';
+                                contadorMaterias = 1;
                             }
                         });
 
@@ -291,6 +308,73 @@
                                 const aulaId = this.getAttribute('data-id');
                                 const aulaRow = document.getElementById(`aula-row-${aulaId}`);
                                 aulaRow.remove();
+                            });
+                        });
+
+                        // Función para agregar una nueva materia
+                        agregarMateriaBtn.addEventListener('click', function() {
+                            const nivelId = nivelSelect.value;
+                            if (!nivelId) return;
+
+                            contadorMaterias++;
+                            const materiaId = `id_materia_${contadorMaterias}`;
+                            const divRow = document.createElement('div');
+                            divRow.className = 'row mb-3';
+                            divRow.id = `materia-row-${contadorMaterias}`;
+                            
+                            divRow.innerHTML = `
+                                <div class="col-md-3">
+                                    <label for="${materiaId}" class="form-label">Materia ${contadorMaterias} <span class="text-danger">*</span></label>
+                                    <select name="materias_adicionales[]" id="${materiaId}" class="form-select" required>
+                                        <option value="">Cargando materias...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger mb-2 eliminar-materia" data-id="${contadorMaterias}">
+                                        <i class="bi bi-trash me-1"></i> Eliminar
+                                    </button>
+                                </div>
+                            `;
+                            
+                            materiasAdicionalesContainer.appendChild(divRow);
+                            
+                            const nuevaMateriaSelect = document.getElementById(materiaId);
+                            
+                            // Cargar las materias para el nuevo select
+                            fetch(`${urlMaterias}/${nivelId}`)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Error en la red');
+                                    }
+                                    return response.json();
+                                })
+                                .then(materias => {
+                                    nuevaMateriaSelect.innerHTML = '';
+                                    if(materias.length > 0) {
+                                        const defaultOption = document.createElement('option');
+                                        defaultOption.value = '';
+                                        defaultOption.textContent = 'Seleccione una materia';
+                                        nuevaMateriaSelect.appendChild(defaultOption);
+                                        materias.forEach(materia => {
+                                            const option = document.createElement('option');
+                                            option.value = materia.id_materia;
+                                            option.textContent = materia.nombre;
+                                            nuevaMateriaSelect.appendChild(option);
+                                        });
+                                    } else {
+                                        nuevaMateriaSelect.innerHTML = '<option value="">No hay materias disponibles para este nivel</option>';
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    nuevaMateriaSelect.innerHTML = '<option value="">Error al cargar materias</option>';
+                                });
+                            
+                            // Agregar evento para eliminar la materia
+                            divRow.querySelector('.eliminar-materia').addEventListener('click', function() {
+                                const materiaId = this.getAttribute('data-id');
+                                const materiaRow = document.getElementById(`materia-row-${materiaId}`);
+                                materiaRow.remove();
                             });
                         });
                     });

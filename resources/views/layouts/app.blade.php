@@ -349,318 +349,125 @@
     });
     </script>
     <script>
-        // Agregar este script al final del archivo, justo antes de cerrar el body
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar la navegación AJAX para los enlaces del sidebar
-    initAjaxNavigation();
-    
-    // Actualizar el historial inicial para la página actual
-    const currentPath = window.location.pathname;
-    history.replaceState({url: currentPath}, document.title, currentPath);
-    
-    // Inicializar los manejadores de eventos para formularios después de cargar la página
-    initDynamicForms();
-});
-
-function initAjaxNavigation() {
-    // Seleccionar todos los enlaces del sidebar
-    const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
-    
-    sidebarLinks.forEach(link => {
-        link.addEventListener('click', function(event) {
-            // No aplicar AJAX a enlaces externos o con modificadores (Ctrl+click, etc.)
-            if (link.getAttribute('target') || event.ctrlKey || event.metaKey || event.shiftKey) {
-                return; // Permitir comportamiento normal para nuevas pestañas
-            }
-            
-            const url = link.getAttribute('href');
-            
-            // Ignorar enlaces # o javascript:void(0)
-            if (!url || url === '#' || url.startsWith('javascript:')) {
-                return;
-            }
-            
-            event.preventDefault();
-            
-            // Guardar la posición del scroll del sidebar
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar) {
-                localStorage.setItem('sidebarScrollPosition', sidebar.scrollTop);
-            }
-            
-            // Mostrar un indicador de carga
-            document.body.classList.add('loading');
-            
-            // Agregar efecto de fade-out al contenido
-            const mainContent = document.querySelector('.main-content');
-            if (mainContent) {
-                mainContent.style.opacity = '0.6';
-            }
-            
-            // Cargar la página solicitada mediante AJAX
-            fetchPage(url);
-            
-            // Actualizar la clase active en el menú de navegación
-            sidebarLinks.forEach(navLink => {
-                navLink.classList.remove('active');
-            });
-            link.classList.add('active');
-        });
-    });
-    
-    // Manejar la navegación hacia atrás/adelante del navegador
-    window.addEventListener('popstate', function(event) {
-        if (event.state && event.state.url) {
-            fetchPage(event.state.url, false); // No actualizar historial en navegación hacia atrás/adelante
-        }
-    });
-}
-
-function initDynamicForms() {
-    // Inicializar eventos para formularios cargados dinámicamente
-    document.querySelectorAll('form').forEach(form => {
-        // No reinicializar formularios ya procesados
-        if (form.dataset.ajaxInitialized) return;
-        
-        // Marcar como inicializado
-        form.dataset.ajaxInitialized = 'true';
-        
-        // No aplicar a formularios de logout o que tengan data-no-ajax
-        if (form.action.includes('logout') || form.dataset.noAjax) return;
-        
-        // Agregar manejador de submit para interceptar envíos normales
-        form.addEventListener('submit', function(event) {
-            // Si el formulario tiene archivos o data-no-ajax, dejar el comportamiento normal
-            if (form.getAttribute('enctype') === 'multipart/form-data' || form.dataset.noAjax) {
-                return;
-            }
-            
-            event.preventDefault();
-            
+        function fetchPage(url, updateHistory = true) {
             // Mostrar indicador de carga
             document.body.classList.add('loading');
             
-            // Efecto fade-out en el contenido
-            const mainContent = document.querySelector('.main-content');
-            if (mainContent) {
-                mainContent.style.opacity = '0.7';
-            }
-            
-            // Enviar formulario con fetch
-            const formData = new FormData(form);
-            const method = form.getAttribute('method') || 'POST';
-            
-            fetch(form.action, {
-                method: method,
+            // Realizar la petición
+            fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'text/html, application/xhtml+xml',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: formData
-            })
-            .then(response => {
-                // Para redirecciones, seguir la URL indicada
-                if (response.redirected) {
-                    fetchPage(response.url);
-                    return null;
+                    'Accept': 'text/html, application/xhtml+xml'
                 }
-                return response.text();
             })
+            .then(response => response.text())
             .then(html => {
-                if (!html) return; // Si hubo redirección
-                
-                // Parsear respuesta HTML
+                // Parsear la respuesta HTML
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                // Extraer contenido principal
-                const newContent = doc.querySelector('.main-content .container-fluid')?.innerHTML;
+                // Extraer el contenido principal
+                const newContent = doc.querySelector('.main-content');
                 if (newContent) {
-                    document.querySelector('.main-content .container-fluid').innerHTML = newContent;
+                    // Actualizar el contenido con una transición suave
+                    const currentContent = document.querySelector('.main-content');
+                    currentContent.style.opacity = '0';
                     
-                    // Actualizar título
-                    const pageTitle = doc.querySelector('title')?.textContent;
-                    if (pageTitle) {
-                        document.title = pageTitle;
-                    }
-                    
-                    // Ejecutar scripts nuevos
-                    executeScripts(doc);
-                    
-                    // Restaurar opacidad
                     setTimeout(() => {
-                        mainContent.style.opacity = '1';
-                    }, 10);
-                    
-                    // Mostrar notificaciones si hay alguna
-                    showNotificationsIfAny(doc);
+                        currentContent.innerHTML = newContent.innerHTML;
+                        currentContent.style.opacity = '1';
+                        
+                        // Actualizar el título
+                        document.title = doc.title;
+                        
+                        // Actualizar el historial si es necesario
+                        if (updateHistory) {
+                            history.pushState({url: url}, doc.title, url);
+                        }
+                        
+                        // Ejecutar scripts nuevos
+                        executeScripts(doc);
+                        
+                        // Quitar indicador de carga
+                        document.body.classList.remove('loading');
+                    }, 300);
                 }
             })
             .catch(error => {
-                console.error('Error en el envío del formulario:', error);
-                // En caso de error, enviar el formulario tradicionalmente
-                form.submit();
-            })
-            .finally(() => {
-                // Quitar indicador de carga
+                console.error('Error al cargar la página:', error);
                 document.body.classList.remove('loading');
+                window.location.href = url;
             });
-        });
-    });
-    
-    // Inicializar también los elementos de paginación
-    initPagination();
-}
+        }
 
-function showNotificationsIfAny(doc) {
-    // Buscar mensajes de éxito o error en la respuesta
-    const successMsg = doc.querySelector('.alert-success')?.innerHTML;
-    const errorMsg = doc.querySelector('.alert-danger')?.innerHTML;
-    
-    // Crear y mostrar notificaciones temporales si es necesario
-    if (successMsg) {
-        showTemporaryNotification(successMsg, 'success');
-    }
-    if (errorMsg) {
-        showTemporaryNotification(errorMsg, 'danger');
-    }
-}
-
-function showTemporaryNotification(message, type = 'success') {
-    // Crear elemento de notificación
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type} notification-toast`;
-    notification.innerHTML = message;
-    notification.style.position = 'fixed';
-    notification.style.top = '70px';
-    notification.style.right = '20px';
-    notification.style.zIndex = '9999';
-    notification.style.maxWidth = '350px';
-    notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateY(-20px)';
-    notification.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-    
-    // Agregar al DOM
-    document.body.appendChild(notification);
-    
-    // Animar entrada
-    setTimeout(() => {
-        notification.style.opacity = '1';
-        notification.style.transform = 'translateY(0)';
-    }, 10);
-    
-    // Auto-cerrar después de 5 segundos
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateY(-20px)';
-        
-        // Remover del DOM después de la animación
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 5000);
-}
-
-function initPagination() {
-    // Manejar eventos de clic en enlaces de paginación
-    document.querySelectorAll('.pagination .page-link').forEach(link => {
-        // No reinicializar
-        if (link.dataset.ajaxInitialized) return;
-        link.dataset.ajaxInitialized = 'true';
-        
-        link.addEventListener('click', function(event) {
-            // Permitir clic normal con modificadores
-            if (event.ctrlKey || event.metaKey || event.shiftKey) return;
-            
-            event.preventDefault();
-            const url = link.getAttribute('href');
-            
-            if (url) {
-                // Indicador de carga
-                document.body.classList.add('loading');
-                
-                // Efecto fade-out
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent) {
-                    mainContent.style.opacity = '0.7';
-                }
-                
-                // Cargar la página de paginación
-                fetchPage(url, true);
+        // Manejar la navegación hacia atrás/adelante
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.url) {
+                fetchPage(event.state.url, false);
             }
         });
-    });
-}
 
-function executeScripts(doc) {
-    // Obtener scripts en el nuevo contenido
-    const scripts = doc.querySelectorAll('.main-content script');
-    
-    scripts.forEach(script => {
-        // Crear un nuevo elemento script
-        const newScript = document.createElement('script');
-        
-        // Copiar atributos
-        Array.from(script.attributes).forEach(attr => {
-            newScript.setAttribute(attr.name, attr.value);
+        // Inicializar la navegación AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            initAjaxNavigation();
+            initDynamicForms();
         });
-        
-        // Copiar contenido del script
-        newScript.textContent = script.textContent;
-        
-        // Agregar el script al documento
-        document.body.appendChild(newScript);
-    });
-}
     </script>
     <style>
+        /* Mejorar el rendimiento del scroll */
         .sidebar {
-            /* Mejorar el rendimiento del scroll */
             will-change: scroll-position;
             -webkit-overflow-scrolling: touch;
             overflow-y: auto;
-            
-            /* Prevenir los parpadeos con hardware acceleration */
             transform: translateZ(0);
             backface-visibility: hidden;
             perspective: 1000px;
-            
-            /* Transición suave para cambios visuales */
             transition: transform 0.2s ease-out;
         }
 
-        .sidebar .nav-link {
-            /* Asegurar que los enlaces tengan una transición suave */
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-
-        .sidebar .nav-link.active {
-            /* Mejorar la visibilidad del ítem activo sin causar reflows */
-            position: relative;
-            z-index: 1;
-        }
-
-        .fade-transition {
-            /* Añadir transición suave al contenido principal */
+        /* Transiciones más suaves */
+        .main-content {
             opacity: 1;
-            transition: opacity 0.2s ease-in-out;
+            transition: opacity 0.3s ease-in-out;
+            background-color: var(--bg-light);
         }
 
-        .loading .fade-transition {
-            opacity: 0.7;
+        /* Prevenir el fundido negro */
+        body {
+            background-color: var(--bg-light);
+            transition: background-color 0.3s ease-in-out;
         }
-        /* Estilos para la barra de navegación con efecto blur y fecha reposicionada */
 
-        /* Efecto blur moderno para la barra de navegación */
+        /* Mejorar el indicador de carga */
+        .loading {
+            position: relative;
+        }
+
+        .loading::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .loading.loading::after {
+            opacity: 1;
+        }
+
+        /* Optimizar las transiciones de la barra de navegación */
         .navbar-blur {
             background-color: rgba(255, 255, 255, 0.7) !important;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            transition: background-color 0.3s ease-in-out;
         }
 
         /* Contenedor para el título y la fecha */

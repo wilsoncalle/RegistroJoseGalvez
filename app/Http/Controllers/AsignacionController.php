@@ -118,6 +118,8 @@ class AsignacionController extends Controller
             'aulas' => 'required|array',
             'aulas.*' => 'required|exists:aulas,id_aula',
             'id_anio' => 'required|exists:anios_academicos,id_anio',
+            'materias_adicionales' => 'sometimes|array',
+            'materias_adicionales.*' => 'exists:materias,id_materia',
         ]);
 
         try {
@@ -126,35 +128,41 @@ class AsignacionController extends Controller
             $asignacionesCreadas = 0;
             $aulasConAsignaciones = [];
             
-            // Procesar cada aula seleccionada
-            foreach ($request->aulas as $idAula) {
-                // Verificar si ya existe una asignación con los mismos datos
-                $asignacionExistente = Asignacion::where('id_docente', $request->id_docente)
-                    ->where('id_materia', $request->id_materia)
-                    ->where('id_aula', $idAula)
-                    ->where('id_anio', $request->id_anio)
-                    ->first();
+            // Procesar la materia principal y las materias adicionales
+            $materias = array_merge([$request->id_materia], $request->materias_adicionales ?? []);
+            
+            // Procesar cada materia para cada aula seleccionada
+            foreach ($materias as $idMateria) {
+                foreach ($request->aulas as $idAula) {
+                    // Verificar si ya existe una asignación con los mismos datos
+                    $asignacionExistente = Asignacion::where('id_docente', $request->id_docente)
+                        ->where('id_materia', $idMateria)
+                        ->where('id_aula', $idAula)
+                        ->where('id_anio', $request->id_anio)
+                        ->first();
 
-                if ($asignacionExistente) {
-                    // Registrar aulas con asignaciones existentes
-                    $aula = Aula::find($idAula);
-                    if ($aula) {
-                        $aulasConAsignaciones[] = $aula->nombre;
-                    } else {
-                        $aulasConAsignaciones[] = 'ID: ' . $idAula;
+                    if ($asignacionExistente) {
+                        // Registrar aulas con asignaciones existentes
+                        $aula = Aula::find($idAula);
+                        $materia = Materia::find($idMateria);
+                        if ($aula && $materia) {
+                            $aulasConAsignaciones[] = $aula->nombre . ' (' . $materia->nombre . ')';
+                        } else {
+                            $aulasConAsignaciones[] = 'ID: ' . $idAula;
+                        }
+                        continue; // Continuar con la siguiente combinación
                     }
-                    continue; // Continuar con la siguiente aula
-                }
 
-                // Crear nueva asignación para esta aula
-                Asignacion::create([
-                    'id_docente' => $request->id_docente,
-                    'id_materia' => $request->id_materia,
-                    'id_aula' => $idAula,
-                    'id_anio' => $request->id_anio
-                ]);
-                
-                $asignacionesCreadas++;
+                    // Crear nueva asignación para esta combinación de materia y aula
+                    Asignacion::create([
+                        'id_docente' => $request->id_docente,
+                        'id_materia' => $idMateria,
+                        'id_aula' => $idAula,
+                        'id_anio' => $request->id_anio
+                    ]);
+                    
+                    $asignacionesCreadas++;
+                }
             }
             
             DB::commit();
@@ -168,14 +176,14 @@ class AsignacionController extends Controller
                 $tipoMensaje = 'success';
                 
                 if (!empty($aulasConAsignaciones)) {
-                    $mensaje .= ' No se crearon asignaciones para las siguientes aulas porque ya existían: ' . implode(', ', $aulasConAsignaciones);
+                    $mensaje .= ' No se crearon asignaciones para las siguientes combinaciones porque ya existían: ' . implode(', ', $aulasConAsignaciones);
                     $tipoMensaje = 'warning';
                 }
                 
                 return redirect()->route('asignaciones.index')->with($tipoMensaje, $mensaje);
             } else {
                 return back()->withInput()
-                    ->with('error', 'No se crearon asignaciones. ' . (!empty($aulasConAsignaciones) ? 'Ya existen asignaciones para las aulas seleccionadas: ' . implode(', ', $aulasConAsignaciones) : ''));
+                    ->with('error', 'No se crearon asignaciones. ' . (!empty($aulasConAsignaciones) ? 'Ya existen asignaciones para las combinaciones seleccionadas: ' . implode(', ', $aulasConAsignaciones) : ''));
             }
         } catch (\Exception $e) {
             DB::rollBack();
@@ -229,86 +237,80 @@ class AsignacionController extends Controller
             'id_anio' => 'required|exists:anios_academicos,id_anio',
             'aulas_adicionales' => 'sometimes|array',
             'aulas_adicionales.*' => 'sometimes|exists:aulas,id_aula',
+            'materias_adicionales' => 'sometimes|array',
+            'materias_adicionales.*' => 'exists:materias,id_materia',
         ]);
 
         try {
             DB::beginTransaction();
             
             $asignacion = Asignacion::findOrFail($id);
+            $asignacionesCreadas = 0;
+            $combinacionesExistentes = [];
 
-            // Verificar si ya existe una asignación con los mismos datos (excluyendo la actual)
-            $asignacionExistente = Asignacion::where('id_docente', $request->id_docente)
-                ->where('id_materia', $request->id_materia)
-                ->where('id_aula', $request->id_aula)
-                ->where('id_anio', $request->id_anio)
-                ->where('id_asignacion', '!=', $id)
-                ->first();
-
-            if ($asignacionExistente) {
-                DB::rollBack();
-                return back()->withInput()
-                    ->with('error', 'Ya existe una asignación con estos datos. Por favor, verifique los datos ingresados.');
-            }
+            // Procesar la materia principal y las materias adicionales
+            $materias = array_merge([$request->id_materia], $request->materias_adicionales ?? []);
             
-            // Actualizar la asignación principal
-            $asignacion->update($request->all());
+            // Procesar cada materia para cada aula
+            $aulas = array_merge([$request->id_aula], $request->aulas_adicionales ?? []);
             
-            // Procesar aulas adicionales si existen
-            $aulasAdicionalesCreadas = 0;
-            $aulasConAsignaciones = [];
-            
-            if ($request->has('aulas_adicionales') && is_array($request->aulas_adicionales)) {
-                foreach ($request->aulas_adicionales as $idAula) {
-                    // Verificar si ya existe una asignación con los mismos datos
+            foreach ($materias as $idMateria) {
+                foreach ($aulas as $idAula) {
+                    // Verificar si ya existe una asignación con los mismos datos (excluyendo la actual)
                     $asignacionExistente = Asignacion::where('id_docente', $request->id_docente)
-                        ->where('id_materia', $request->id_materia)
+                        ->where('id_materia', $idMateria)
                         ->where('id_aula', $idAula)
                         ->where('id_anio', $request->id_anio)
+                        ->where('id_asignacion', '!=', $id)
                         ->first();
 
                     if ($asignacionExistente) {
-                        // Registrar aulas con asignaciones existentes
                         $aula = Aula::find($idAula);
-                        if ($aula) {
-                            $aulasConAsignaciones[] = $aula->nombre;
-                        } else {
-                            $aulasConAsignaciones[] = 'ID: ' . $idAula;
+                        $materia = Materia::find($idMateria);
+                        if ($aula && $materia) {
+                            $combinacionesExistentes[] = $aula->nombre . ' (' . $materia->nombre . ')';
                         }
-                        continue; // Continuar con la siguiente aula
+                        continue;
                     }
 
-                    // Crear nueva asignación para esta aula adicional
-                    Asignacion::create([
-                        'id_docente' => $request->id_docente,
-                        'id_materia' => $request->id_materia,
-                        'id_aula' => $idAula,
-                        'id_anio' => $request->id_anio
-                    ]);
+                    // Si es la asignación principal, actualizarla
+                    if ($idMateria == $request->id_materia && $idAula == $request->id_aula) {
+                        $asignacion->update([
+                            'id_docente' => $request->id_docente,
+                            'id_materia' => $idMateria,
+                            'id_aula' => $idAula,
+                            'id_anio' => $request->id_anio
+                        ]);
+                    } else {
+                        // Crear nueva asignación para las combinaciones adicionales
+                        Asignacion::create([
+                            'id_docente' => $request->id_docente,
+                            'id_materia' => $idMateria,
+                            'id_aula' => $idAula,
+                            'id_anio' => $request->id_anio
+                        ]);
+                    }
                     
-                    $aulasAdicionalesCreadas++;
+                    $asignacionesCreadas++;
                 }
             }
             
             DB::commit();
             
-            // Preparar el mensaje según el resultado
-            $mensaje = 'Asignación actualizada correctamente.';
-            $tipoMensaje = 'success';
-            
-            if ($aulasAdicionalesCreadas > 0) {
-                $mensaje .= ' Además, se ' . ($aulasAdicionalesCreadas == 1 ? 'ha' : 'han') . ' creado ' . $aulasAdicionalesCreadas . ' asignación' . ($aulasAdicionalesCreadas == 1 ? '' : 'es') . ' adicional' . ($aulasAdicionalesCreadas == 1 ? '' : 'es') . '.';
+            if ($asignacionesCreadas > 0) {
+                $mensaje = 'Se ' . ($asignacionesCreadas == 1 ? 'ha' : 'han') . ' actualizado ' . $asignacionesCreadas . ' asignación' . ($asignacionesCreadas == 1 ? '' : 'es') . ' correctamente.';
+                $tipoMensaje = 'success';
+                
+                if (!empty($combinacionesExistentes)) {
+                    $mensaje .= ' No se crearon asignaciones para las siguientes combinaciones porque ya existían: ' . implode(', ', $combinacionesExistentes);
+                    $tipoMensaje = 'warning';
+                }
+                
+                return redirect()->route('asignaciones.index')->with($tipoMensaje, $mensaje);
+            } else {
+                return back()->withInput()
+                    ->with('error', 'No se actualizaron asignaciones. ' . (!empty($combinacionesExistentes) ? 'Ya existen asignaciones para las combinaciones seleccionadas: ' . implode(', ', $combinacionesExistentes) : ''));
             }
-            
-            if (!empty($aulasConAsignaciones)) {
-                $mensaje .= ' No se crearon asignaciones para las siguientes aulas porque ya existían: ' . implode(', ', $aulasConAsignaciones);
-                $tipoMensaje = 'warning';
-            }
-            
-            // Limpiar cualquier mensaje de sesión anterior para evitar duplicación
-            session()->forget(['success', 'error', 'warning']);
-            
-            // Usar un único mensaje flash
-            return redirect()->route('asignaciones.index')->with($tipoMensaje, $mensaje);
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()

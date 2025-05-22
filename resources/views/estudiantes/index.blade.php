@@ -25,9 +25,28 @@
                     </li>
                 </ul>
             </div>
-            <a href="{{ route('estudiantes.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Nuevo Estudiante
-            </a>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="addDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-plus-circle me-1"></i> Agregar Estudiantes
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="addDropdown">
+                    <li>
+                        <a class="dropdown-item" href="{{ route('estudiantes.create') }}">
+                            <i class="bi bi-person-plus me-1"></i> Agregar Individual
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('estudiantes.bulk-create') }}">
+                            <i class="bi bi-people-fill me-1"></i> Agregar Múltiples
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('estudiantes.import') }}">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Importar desde Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -69,6 +88,16 @@
                         <option value="Activo" {{ $filtroEstado == 'Activo' ? 'selected' : '' }}>Activo</option>
                         <option value="Retirado" {{ $filtroEstado == 'Retirado' ? 'selected' : '' }}>Retirado</option>
                         <option value="Egresado" {{ $filtroEstado == 'Egresado' ? 'selected' : '' }}>Egresado</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="anio_ingreso" class="form-label">Año de Ingreso</label>
+                    <select class="form-select" id="anio_ingreso" name="anio_ingreso">
+                        <option value="">Todos los años</option>
+                        @foreach($aniosIngreso as $anio)
+                            <option value="{{ $anio }}" {{ $filtroAnioIngreso == $anio ? 'selected' : '' }}>{{ $anio }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-md-6 d-flex align-items-end gap-2">
@@ -145,9 +174,9 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($estudiante->estado == 'Activo')
+                                    @if($estudiante->estado_real == 'Activo')
                                         <span class="badge bg-success">Activo</span>
-                                    @elseif($estudiante->estado == 'Retirado')
+                                    @elseif($estudiante->estado_real == 'Retirado')
                                         <span class="badge bg-danger">Retirado</span>
                                     @else
                                         <span class="badge bg-secondary">Egresado</span>

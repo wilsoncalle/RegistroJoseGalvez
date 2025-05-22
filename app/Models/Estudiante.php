@@ -94,4 +94,71 @@ class Estudiante extends Model
         }
         return 'Sin aula asignada';
     }
+
+    /**
+     * Determina el estado real del estudiante basado en el tiempo transcurrido
+     * desde su ingreso. Si han pasado más de 8 años, debe estar egresado.
+     *
+     * @return string
+     */
+    public function getEstadoRealAttribute()
+    {
+        // Verificar si tiene fecha de ingreso
+        if (!$this->fecha_ingreso) {
+            return $this->estado;
+        }
+        
+        // Si ya está marcado como Egresado o Retirado, mantenerlo así
+        if ($this->estado === 'Egresado' || $this->estado === 'Retirado') {
+            return $this->estado;
+        }
+        
+        // Calcular años desde el ingreso
+        $aniosTranscurridos = $this->fecha_ingreso->diffInYears(now());
+        
+        // Si han pasado 8 años o más, debería estar egresado
+        if ($aniosTranscurridos >= 8) {
+            return 'Egresado';
+        }
+        
+        return $this->estado;
+    }
+
+    /**
+     * Scope para filtrar por el estado real (considerando años desde ingreso)
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $estado
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeEstadoReal($query, $estado = null)
+    {
+        if (!$estado) {
+            return $query;
+        }
+        
+        // Si buscan Activos, excluir los que llevan 8+ años 
+        if ($estado === 'Activo') {
+            return $query->where('estado', 'Activo')
+                ->where(function($q) {
+                    $q->whereNull('fecha_ingreso')
+                      ->orWhereRaw('TIMESTAMPDIFF(YEAR, fecha_ingreso, CURDATE()) < 8');
+                });
+        }
+        
+        // Si buscan Egresados, incluir los marcados como egresados más los que llevan 8+ años
+        if ($estado === 'Egresado') {
+            return $query->where(function($q) {
+                $q->where('estado', 'Egresado')
+                  ->orWhere(function($q2) {
+                      $q2->where('estado', 'Activo')
+                        ->whereNotNull('fecha_ingreso')
+                        ->whereRaw('TIMESTAMPDIFF(YEAR, fecha_ingreso, CURDATE()) >= 8');
+                  });
+            });
+        }
+        
+        // Para otros estados (Retirado, etc.) usar el valor guardado
+        return $query->where('estado', $estado);
+    }
 }
