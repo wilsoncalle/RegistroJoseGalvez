@@ -21,6 +21,7 @@ class ImportacionHistorial extends Model
         'fecha_importacion',
         'total_importados',
         'usuario',
+        'id_usuario',
     ];
     
     protected $casts = [
@@ -56,6 +57,8 @@ class ImportacionHistorial extends Model
             $aula = Aula::find($idAula);
         }
         
+        $user = Auth::user();
+        
         return self::create([
             'nombre_archivo' => $nombreArchivo,
             'anio_academico' => $anioAcademico,
@@ -65,7 +68,8 @@ class ImportacionHistorial extends Model
             'aula_nombre' => $aula ? $aula->nombre_completo : null,
             'fecha_importacion' => now(),
             'total_importados' => $totalImportados,
-            'usuario' => Auth::user() ? Auth::user()->name : null,
+            'usuario' => $user ? $user->nombre : null,
+            'id_usuario' => $user ? $user->id_usuario : null,
         ]);
     }
     
@@ -83,6 +87,14 @@ class ImportacionHistorial extends Model
     public function aula(): BelongsTo
     {
         return $this->belongsTo(Aula::class, 'id_aula', 'id_aula');
+    }
+    
+    /**
+     * Obtiene el usuario que realizó la importación
+     */
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'id_usuario', 'id_usuario');
     }
     
     /**

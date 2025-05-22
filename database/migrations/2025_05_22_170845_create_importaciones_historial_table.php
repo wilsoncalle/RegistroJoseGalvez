@@ -21,13 +21,16 @@ return new class extends Migration
             $table->string('aula_nombre', 255)->nullable()->comment('Nombre completo del aula incluyendo grado y sección');
             $table->date('fecha_importacion')->comment('Fecha en que se realizó la importación');
             $table->integer('total_importados')->default(0)->comment('Cantidad de estudiantes importados');
-            $table->string('usuario', 100)->nullable()->comment('Usuario que realizó la importación');
+            $table->string('usuario', 100)->nullable()->comment('Nombre del usuario que realizó la importación');
+            $table->unsignedBigInteger('id_usuario')->nullable()->comment('ID del usuario que realizó la importación');
             $table->timestamps();
             
             // Restricciones de clave foránea
             $table->foreign('id_nivel')->references('id_nivel')->on('niveles')
                   ->onDelete('set null')->onUpdate('cascade');
             $table->foreign('id_aula')->references('id_aula')->on('aulas')
+                  ->onDelete('set null')->onUpdate('cascade');
+            $table->foreign('id_usuario')->references('id_usuario')->on('usuarios')
                   ->onDelete('set null')->onUpdate('cascade');
         });
     }

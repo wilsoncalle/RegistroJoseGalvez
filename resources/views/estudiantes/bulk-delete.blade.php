@@ -61,7 +61,7 @@
                                             data-usuario="{{ $importacion['usuario'] }}"
                                             data-aula-nombre="{{ $importacion['aula_nombre'] }}"
                                             data-nivel-nombre="{{ $importacion['nivel_nombre'] }}">
-                                            {{ $importacion['descripcion'] }}
+                                            Fecha de importación {{ date('d/m/Y', strtotime($importacion['fecha'])) }}, {{ $importacion['nivel_nombre'] }} {{ $importacion['aula_nombre'] }}, Año académico {{ $importacion['anio_academico'] }}, Total {{ $importacion['total'] }} estudiantes
                                         </option>
                                     @endforeach
                                 </select>
@@ -76,17 +76,21 @@
                         
                         <div id="detallesImportacion" class="card mb-3" style="display: none;">
                             <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0"><i></i>Detalles de la importación seleccionada</h6>
+                                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Detalles de la importación seleccionada</h6>
                             </div>
                             <div class="card-body">
                                 <div class="row">
+                                    <div class="col-md-12">
+                                    <p><strong><i class="bi bi-file-earmark me-1"></i>Archivo:</strong> <span id="infoArchivo">-</span></p>
+                                    </div>
+                                </div>
+                                <div class="row">
                                     <div class="col-md-6">
-                                        <p><strong><i class="bi bi-file-earmark me-1"></i>Archivo:</strong> <span id="infoArchivo">-</span></p>
                                         <p><strong><i class="bi bi-people me-1"></i>Total importados:</strong> <span id="infoTotal">-</span> estudiantes</p>
                                         <p><strong><i class="bi bi-calendar me-1"></i>Año académico:</strong> <span id="infoAnio">-</span></p>
+                                        <p><strong><i class="bi bi-layers me-1"></i>Nivel:</strong> <span id="infoNivel">-</span></p>
                                     </div>
                                     <div class="col-md-6">
-                                        <p><strong><i class="bi bi-layers me-1"></i>Nivel:</strong> <span id="infoNivel">-</span></p>
                                         <p><strong><i class="bi bi-door-open me-1"></i>Aula:</strong> <span id="infoAula">-</span></p>
                                         <p><strong><i class="bi bi-person me-1"></i>Importado por:</strong> <span id="infoUsuario">-</span></p>
                                     </div>
@@ -131,6 +135,40 @@ foreach ($niveles as $nivel) {
     $nivelesJson[$nivel->id_nivel] = $nivel->nombre;
 }
 @endphp
+
+@push('styles')
+<style>
+    /* Estilos para el select de importaciones */
+    #id_importacion {
+        width: 50% !important;
+        max-width: 50% !important;
+        white-space: normal;
+    }
+    
+    #id_importacion option {
+        white-space: normal;
+        word-wrap: break-word;
+        padding: 5px;
+        line-height: 1.4;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Para navegadores específicos que necesitan esto */
+    @-moz-document url-prefix() {
+        #id_importacion {
+            width: 50% !important;
+        }
+    }
+    
+    @media screen and (-webkit-min-device-pixel-ratio:0) {
+        #id_importacion {
+            width: 50% !important;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>

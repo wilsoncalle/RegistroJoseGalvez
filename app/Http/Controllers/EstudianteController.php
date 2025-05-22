@@ -651,9 +651,19 @@ class EstudianteController extends Controller
      */
     private function getHistorialImportaciones(): array
     {
-        return \App\Models\ImportacionHistorial::orderBy('created_at', 'desc')
+        return \App\Models\ImportacionHistorial::with('usuario')
+            ->orderBy('created_at', 'desc')
             ->get()
             ->map(function($importacion) {
+                // Obtener nombre de usuario desde la relación si está disponible
+                if ($importacion->usuario instanceof \App\Models\User) {
+                    // Si es un objeto User, obtener su nombre
+                    $nombreUsuario = $importacion->usuario->nombre;
+                } else {
+                    // Si es un string o null, usar el valor almacenado en el campo usuario
+                    $nombreUsuario = $importacion->usuario ?: 'Sistema';
+                }
+                
                 return [
                     'id' => $importacion->id_importacion,
                     'descripcion' => $importacion->descripcion_completa,
@@ -665,7 +675,8 @@ class EstudianteController extends Controller
                     'nombre_archivo' => $importacion->nombre_archivo,
                     'total' => $importacion->total_importados,
                     'anio_academico' => $importacion->anio_academico,
-                    'usuario' => $importacion->usuario ?: 'Sistema'
+                    'usuario' => $nombreUsuario,
+                    'id_usuario' => $importacion->id_usuario
                 ];
             })
             ->toArray();
