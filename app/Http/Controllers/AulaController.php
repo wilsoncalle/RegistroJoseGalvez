@@ -14,58 +14,46 @@ use Illuminate\Http\Request;
 class AulaController extends Controller
 {
     public function index(Request $request)
-{
-    $niveles = Nivel::all();
-    $filtroNivel = $request->input('nivel');
-    $busqueda = $request->input('busqueda');
+    {
+        $niveles = Nivel::all();
+        $filtroNivel = $request->input('nivel');
+        $busqueda = $request->input('busqueda');
 
-    // Iniciar la consulta con joins
-    $query = Aula::query()
-        ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
-        ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
-        ->join('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
-        ->join('asignaciones', 'aulas.id_aula', '=', 'asignaciones.id_aula') // Relación con asignaciones
-        ->join('docentes', 'asignaciones.id_docente', '=', 'docentes.id_docente') // Relación con docentes
-        ->select([
-            'aulas.*',
-            'niveles.nombre as nivel_nombre',
-            'grados.nombre as grado_nombre',
-            'secciones.nombre as seccion_nombre',
-            'docentes.apellido as docente_apellido',
-            'docentes.nombre as docente_nombre'
-        ]);
+        // Iniciar la consulta base
+        $query = Aula::query()
+            ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
+            ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
+            ->join('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
+            ->select([
+                'aulas.*',
+                'niveles.nombre as nivel_nombre',
+                'grados.nombre as grado_nombre',
+                'secciones.nombre as seccion_nombre'
+            ]);
 
-    // Aplicar filtro por nivel
-    if ($filtroNivel) {
-        $query->where('aulas.id_nivel', $filtroNivel);
+        // Aplicar filtro por nivel
+        if ($filtroNivel) {
+            $query->where('aulas.id_nivel', $filtroNivel);
+        }
+
+        // Aplicar búsqueda si se proporciona
+        if ($busqueda) {
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('niveles.nombre', 'like', "%$busqueda%")
+                  ->orWhere('grados.nombre', 'like', "%$busqueda%")
+                  ->orWhere('secciones.nombre', 'like', "%$busqueda%");
+            });
+        }
+
+        // Aplicar ordenamiento
+        $query->orderBy('niveles.nombre')
+              ->orderBy('grados.nombre')
+              ->orderBy('secciones.nombre');
+
+        $aulas = $query->paginate(10);
+
+        return view('aulas.index', compact('aulas', 'niveles', 'filtroNivel'));
     }
-
-    // Aplicar búsqueda si se proporciona
-    if ($busqueda) {
-        $query->where(function ($q) use ($busqueda) {
-            $q->where('niveles.nombre', 'like', "%$busqueda%")
-              ->orWhere('grados.nombre', 'like', "%$busqueda%")
-              ->orWhere('secciones.nombre', 'like', "%$busqueda%")
-              ->orWhere('docentes.apellido', 'like', "%$busqueda%")
-              ->orWhere('docentes.nombre', 'like', "%$busqueda%");
-        });
-    }
-
-    // Aplicar ordenamiento
-    $query->orderBy('niveles.nombre')  // Primero por nivel
-          ->orderBy('grados.nombre')   // Luego por grado
-          ->orderByRaw("CAST(secciones.nombre AS CHAR) ASC") // Después por sección
-          ->orderBy('docentes.apellido') // Finalmente, ordenar docentes por apellido
-          ->orderBy('docentes.nombre'); // En caso de apellidos iguales, ordenar por nombre
-
-    // Ejecutar la consulta con paginación
-    $aulas = $query->paginate(10);
-
-    return view('aulas.index', compact('aulas', 'busqueda', 'niveles', 'filtroNivel'));
-}
-
-
-
 
     public function create()
     {
@@ -76,50 +64,47 @@ class AulaController extends Controller
         return view('aulas.create', compact('niveles', 'grados', 'secciones'));
     }
     // Retorna los grados asociados a un nivel dado
-public function getGrados($id_nivel)
-{
-    $grados = Grado::where('id_nivel', $id_nivel)->get();
-    return response()->json($grados);
-}
-
-// Retorna las secciones asociadas a un grado dado
-public function getSecciones($id_grado)
-{
-    $secciones = Seccion::where('id_grado', $id_grado)
-                        ->orderBy('nombre', 'asc') // Asegura el orden alfabético
-                        ->get();
-    return response()->json($secciones);
-}
-
-
-
-public function store(Request $request)
-{
-    $request->validate([
-        'id_nivel' => 'required|exists:niveles,id_nivel',
-        'id_grado' => 'required|exists:grados,id_grado',
-        'id_seccion' => 'required|exists:secciones,id_seccion',
-    ]);
-
-    // Verificar si ya existe un aula con la misma combinación de nivel, grado y sección
-    $aulaExistente = Aula::where('id_nivel', $request->id_nivel)
-                        ->where('id_grado', $request->id_grado)
-                        ->where('id_seccion', $request->id_seccion)
-                        ->first();
-
-    if ($aulaExistente) {
-        // Si el aula ya existe, redirigir con mensaje de error y sin conservar el valor del nivel
-        return back()->withInput($request->except('id_nivel'))
-                     ->with('error', 'Aula ya registrada: ' . $aulaExistente->nombre_completo);
+    public function getGrados($id_nivel)
+    {
+        $grados = Grado::where('id_nivel', $id_nivel)->get();
+        return response()->json($grados);
     }
 
-    // Si no existe, crear el aula
-    $aula = Aula::create($request->only(['id_nivel', 'id_grado', 'id_seccion']));
+    // Retorna las secciones asociadas a un grado dado
+    public function getSecciones($id_grado)
+    {
+        $secciones = Seccion::where('id_grado', $id_grado)
+                            ->orderBy('nombre', 'asc') // Asegura el orden alfabético
+                            ->get();
+        return response()->json($secciones);
+    }
 
-    return redirect()->route('aulas.show', $aula)
-        ->with('success', 'Aula "' . $aula->nombre_completo . '" creada exitosamente.');
-}
+    public function store(Request $request)
+    {
+        $request->validate([
+            'id_nivel' => 'required|exists:niveles,id_nivel',
+            'id_grado' => 'required|exists:grados,id_grado',
+            'id_seccion' => 'required|exists:secciones,id_seccion',
+        ]);
 
+        // Verificar si ya existe un aula con la misma combinación de nivel, grado y sección
+        $aulaExistente = Aula::where('id_nivel', $request->id_nivel)
+                            ->where('id_grado', $request->id_grado)
+                            ->where('id_seccion', $request->id_seccion)
+                            ->first();
+
+        if ($aulaExistente) {
+            // Si el aula ya existe, redirigir con mensaje de error y sin conservar el valor del nivel
+            return back()->withInput($request->except('id_nivel'))
+                         ->with('error', 'Aula ya registrada: ' . $aulaExistente->nombre_completo);
+        }
+
+        // Si no existe, crear el aula
+        $aula = Aula::create($request->only(['id_nivel', 'id_grado', 'id_seccion']));
+
+        return redirect()->route('aulas.show', $aula)
+            ->with('success', 'Aula "' . $aula->nombre_completo . '" creada exitosamente.');
+    }
 
     public function show(Aula $aula)
     {
