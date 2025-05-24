@@ -71,13 +71,13 @@
                 </div>
 
                 <!-- Botón para descargar plantilla -->
-                <div class="row mb-3">
+              <!--  <div class="row mb-3">
                     <div class="col-12">
                         <button type="button" id="btn-descargar-plantilla" class="btn btn-outline-success">
                             <i class="bi bi-download me-1"></i> Descargar Plantilla
                         </button>
                     </div>
-                </div>
+                </div> -->
 
                 <!-- Estudiantes Dinámicos -->
                 <div class="row mb-3">

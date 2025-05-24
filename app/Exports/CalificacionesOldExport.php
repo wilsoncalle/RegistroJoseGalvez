@@ -20,7 +20,7 @@ use App\Models\Estudiante;
 use App\Models\CalificacionOld;
 use App\Models\Asignacion;
 use App\Models\Trimestre;
-use App\Models\AnioAcademico;
+use App\Models\AnioAcademico; 
 
 class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize, WithStyles, WithCustomStartCell, WithEvents
 {
