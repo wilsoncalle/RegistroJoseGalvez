@@ -93,6 +93,7 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
         // Obtener calificaciones y observaciones
         $calificaciones = CalificacionOld::where('id_trimestre', $this->trimestreId)
             ->whereIn('id_estudiante', $estudiantes->pluck('id_estudiante'))
+            ->whereIn('id_asignacion', $asignaciones->pluck('id_asignacion'))
             ->get();
             
         // Preparar estructura de datos que coincida con la combinación de celdas
@@ -176,7 +177,10 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 
                 // Si no hay situación especial, aplicar la lógica normal
                 if (empty($situacion)) {
-                    if ($desaprobadas === 0) {
+                    // Verificar si el estudiante está trasladado
+                    if ($estudiante->estado === 'Trasladado') {
+                        $situacion = 'TRA';
+                    } else if ($desaprobadas === 0) {
                         $situacion = 'P'; // Promovido (0 cursos desaprobados)
                     } else if ($desaprobadas >= 1 && $desaprobadas <= 3) {
                         $situacion = 'A'; // Aplazado (1 a 3 cursos desaprobados)
@@ -285,17 +289,17 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $sheet->mergeCells('A12:' . $lastColumn . '12');
                 $sheet->setCellValue('A12', 'ACTA CONSOLIDADA DE EVALUACIÓN INTEGRAL');
                 $sheet->getStyle('A12')->applyFromArray([
-                    'font' => [
-                        'bold' => true,
+                        'font' => [
+                            'bold' => true,
                         'size' => 12,
-                        'name' => 'Times New Roman',
+                            'name' => 'Times New Roman',
                         'color' => ['rgb' => '000000'],
-                    ],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
                         'vertical' => Alignment::VERTICAL_CENTER,
-                    ],
-                ]);
+                        ],
+                    ]);
                 
                 // ========== ENCABEZADOS DE LA TABLA ==========
                 
@@ -314,16 +318,16 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 
                 // Aplicar estilos generales a toda la hoja
                 $sheet->getStyle('A1:' . $lastColumn . $lastDataRow)->applyFromArray([
-                    'font' => [
-                        'name' => 'Times New Roman',
+                            'font' => [
+                                'name' => 'Times New Roman',
                         'size' => 12,
                     ],
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
                         ],
-                    ],
-                ]);
+                            ],
+                        ]);
                 
                 // Centrar columnas específicas
                 $sheet->getStyle('A26:B' . $lastDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -360,6 +364,446 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $sheet->getRowDimension(23)->setRowHeight(15);
                 $sheet->getRowDimension(24)->setRowHeight(15);
                 $sheet->getRowDimension(25)->setRowHeight(15);
+
+                // Agregar encabezados del resumen estadístico (fila 85)
+                $sheet->mergeCells('A85:G85');
+                $sheet->setCellValue('A85', 'RESUMEN ESTADISTICO');
+                $sheet->getStyle('A85')->applyFromArray([
+                        'font' => [
+                            'bold' => true,
+                        'size' => 12,
+                            'name' => 'Times New Roman',
+                        ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F6F5F0'],
+                    ],
+                ]);
+
+                $sheet->setCellValue('H85', 'Total');
+                $sheet->getStyle('H85')->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'size' => 12,
+                        'name' => 'Times New Roman',
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        ],
+                        'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F6F5F0'],
+                    ],
+                    ]);
+                    
+                $sheet->setCellValue('I85', '%');
+                $sheet->getStyle('I85')->applyFromArray([
+                        'font' => [
+                            'bold' => true,
+                        'size' => 12,
+                            'name' => 'Times New Roman',
+                        ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F6F5F0'],
+                    ],
+                ]);
+
+                $sheet->mergeCells('K85:P86');
+                $sheet->setCellValue('K85', 'ASIGNATURA O LÍNEA DE ACCIÓN EDUCATIVA');
+                $sheet->getStyle('K85')->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                            'size' => 12,
+                        'name' => 'Times New Roman',
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
+                        ],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'F6F5F0'],
+                        ],
+                    ]);
+                    
+                $sheet->mergeCells('Q85:W86');
+                $sheet->setCellValue('Q85', 'NOMBRE DEL PROFESOR');
+                $sheet->getStyle('Q85')->applyFromArray([
+                        'font' => [
+                            'bold' => true,
+                        'size' => 12,
+                            'name' => 'Times New Roman',
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
+                        ],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'F6F5F0'],
+                        ],
+                    ]);
+                    
+                $sheet->mergeCells('X85:AA86');
+                $sheet->setCellValue('X85', 'FIRMA');
+                $sheet->getStyle('X85')->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                            'size' => 12,
+                        'name' => 'Times New Roman',
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F6F5F0'],
+                    ],
+                ]);
+                
+                // Agregar datos de las asignaturas
+                $row = 87;
+                foreach ($this->asignaturas as $asignacion) {
+                    $sheet->mergeCells('K' . $row . ':P' . $row);
+                    $sheet->setCellValue('K' . $row, $asignacion->materia->nombre);
+                    $sheet->getStyle('K' . $row)->applyFromArray([
+                        'font' => [
+                                'size' => 12,
+                            'name' => 'Times New Roman',
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_LEFT,
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                            'wrapText' => true,
+                        ],
+                    ]);
+
+                    $sheet->mergeCells('Q' . $row . ':W' . $row);
+                    $sheet->setCellValue('Q' . $row, $asignacion->docente ? $asignacion->docente->nombre . ' ' . $asignacion->docente->apellido : 'Sin asignar');
+                    $sheet->getStyle('Q' . $row)->applyFromArray([
+                        'font' => [
+                                'size' => 12,
+                            'name' => 'Times New Roman',
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_LEFT,
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                            'wrapText' => true,
+                        ],
+                    ]);
+
+                    $sheet->mergeCells('X' . $row . ':AA' . $row);
+                    $sheet->getStyle('X' . $row)->applyFromArray([
+                        'font' => [
+                                'size' => 12,
+                            'name' => 'Times New Roman',
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_LEFT,
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                            'wrapText' => true,
+                        ],
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => Border::BORDER_THIN,
+                            ],
+                        ],
+                    ]);
+                    
+                    $row++;
+                }
+
+                // Agregar datos del resumen estadístico
+                $resumenData = [
+                    ['Total Matriculados', 'total-matriculados'],
+                    ['Retirados', 'total-retirados'],
+                    ['Trasladados', 'total-trasladados'],
+                    ['Promovidos', 'total-promovidos'],
+                    ['Requiere Complementación Eval. Aplazados', 'total-aplazados'],
+                    ['Permanecerán en el Grado. Repiten de Año', 'total-repitentes']
+                ];
+
+                $row = 86;
+                foreach ($resumenData as $data) {
+                    // Combinar celdas A:G para cada fila
+                    $sheet->mergeCells('A' . $row . ':G' . $row);
+                    $sheet->setCellValue('A' . $row, $data[0]);
+                    $sheet->getStyle('A' . $row)->applyFromArray([
+                        'font' => [
+                            'size' => 12,
+                            'name' => 'Times New Roman',
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_LEFT,
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                            'wrapText' => true,
+                        ],
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => Border::BORDER_THIN,
+                            ],
+                        ],
+                    ]);
+                    
+                    // Establecer valores en columnas H e I
+                    $total = 0;
+                    $porcentaje = 0;
+
+                    // Obtener el total de estudiantes
+                    $totalEstudiantes = count($this->data);
+
+                    // Calcular totales según el tipo de dato
+                    switch($data[1]) {
+                        case 'total-matriculados':
+                            $total = $totalEstudiantes;
+                            $porcentaje = 100;
+                            break;
+                        case 'total-retirados':
+                            // Contar estudiantes con observaciones que contengan palabras clave de "retirado"
+                            $total = collect($this->estudiantesConObservaciones)->filter(function($estudianteData) {
+                                $observacion = strtolower($estudianteData['observacion']);
+                                return strpos($observacion, 'retirad') !== false || 
+                                    strpos($observacion, 'retir') !== false ||
+                                    strpos($observacion, 'abandono') !== false ||
+                                    strpos($observacion, 'dej') !== false;
+                            })->count();
+                            
+                            // También verificar en la situación final por si acaso
+                            $totalSituacion = collect($this->data)->filter(function($row) {
+                                return end($row) === 'RET';
+                            })->count();
+                            
+                            $total = max($total, $totalSituacion); // Tomar el mayor
+                            $porcentaje = $totalEstudiantes > 0 ? ($total / $totalEstudiantes) * 100 : 0;
+                            break;
+                            
+                        case 'total-trasladados':
+                            // Contar estudiantes con observaciones que contengan palabras clave de "trasladado"
+                            $total = collect($this->estudiantesConObservaciones)->filter(function($estudianteData) {
+                                $observacion = strtolower($estudianteData['observacion']);
+                                return strpos($observacion, 'traslad') !== false || 
+                                    strpos($observacion, 'cambio') !== false ||
+                                    strpos($observacion, 'otra instituci') !== false ||
+                                    strpos($observacion, 'otro colegio') !== false;
+                            })->count();
+                            
+                            // También verificar en la situación final y estado del estudiante
+                            $totalSituacion = collect($this->data)->filter(function($row) {
+                                return end($row) === 'TRA';
+                            })->count();
+                            
+                            // Verificar estudiantes con estado "Trasladado" directamente
+                            $estudiantesTrasladados = Estudiante::where('id_aula', $this->aulaId)
+                                ->where('estado', 'Trasladado')
+                                ->whereIn('id_estudiante', collect($this->data)->map(function($row, $index) {
+                                    // Obtener el ID del estudiante basado en el índice de la fila
+                                    return Estudiante::where('id_aula', $this->aulaId)
+                                        ->orderBy('apellido')
+                                        ->skip($index)
+                                        ->first()
+                                        ->id_estudiante ?? null;
+                                })->filter())
+                                ->count();
+                            
+                            $total = max($total, $totalSituacion, $estudiantesTrasladados); // Tomar el mayor
+                            $porcentaje = $totalEstudiantes > 0 ? ($total / $totalEstudiantes) * 100 : 0;
+                            break;
+                            
+                        case 'total-promovidos':
+                            $total = collect($this->data)->filter(function($row) {
+                                return end($row) === 'P';
+                            })->count();
+                            $porcentaje = $totalEstudiantes > 0 ? ($total / $totalEstudiantes) * 100 : 0;
+                            break;
+                            
+                        case 'total-aplazados':
+                            $total = collect($this->data)->filter(function($row) {
+                                return end($row) === 'A';
+                            })->count();
+                            $porcentaje = $totalEstudiantes > 0 ? ($total / $totalEstudiantes) * 100 : 0;
+                            break;
+                            
+                        case 'total-repitentes':
+                            $total = collect($this->data)->filter(function($row) {
+                                return end($row) === 'R';
+                            })->count();
+                            $porcentaje = $totalEstudiantes > 0 ? ($total / $totalEstudiantes) * 100 : 0;
+                            break;
+                    }
+
+                    $sheet->setCellValue('H' . $row, $total);
+                    $sheet->setCellValue('I' . $row, number_format($porcentaje, 1));
+                    
+                    // Aplicar estilos a las celdas de total y porcentaje
+                    $sheet->getStyle('H' . $row . ':I' . $row)->applyFromArray([
+                        'font' => [
+                            'name' => 'Times New Roman',
+                            'size' => 12,
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                        ],
+                    ]);
+
+                    // Aplicar bordes a las celdas
+                    $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => Border::BORDER_THIN,
+                            ],
+                        ],
+                    ]);
+
+                    $row++;
+                }
+
+                // Aplicar bordes a la fila de encabezados (85)
+                $sheet->getStyle('A85:I85')->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+                $sheet->getStyle('k85:AA96')->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+                $sheet->getStyle('A93:I93')->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+                $sheet->getStyle('A98:I98')->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+                $sheet->getStyle('A102:I102')->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+
+                // Agregar sección de fecha y firmas
+                $row = 93;
+                
+                // Fecha
+                $sheet->mergeCells('A' . $row . ':B' . $row);
+                $sheet->setCellValue('A' . $row, 'FECHA');
+                $sheet->getStyle('A' . $row)->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'size' => 12,
+                        'name' => 'Times New Roman',
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F6F5F0'],
+                    ],
+                ]);
+                
+                $sheet->mergeCells('C' . $row . ':I' . $row);
+                $sheet->setCellValue('C' . $row, 'Talara, ' . date('d') . ' de ' . date('F') . ' del ' . $this->año);
+                $sheet->getStyle('C' . $row)->applyFromArray([
+                    'font' => [
+                            'size' => 12,
+                        'name' => 'Times New Roman',
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_LEFT,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
+                    ],
+                ]);
+
+                // Espacio para firma del director
+                $sheet->mergeCells('A' . ($row + 3) . ':I' . ($row + 4));
+                $sheet->mergeCells('A' . ($row + 5) . ':I' . ($row + 5));
+                $sheet->setCellValue('A' . ($row + 5), 'DIRECTOR DEL CENTRO EDUCATIVO');
+                $sheet->getStyle('A' . ($row + 5))->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                    'size' => 12,
+                        'name' => 'Times New Roman',
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F6F5F0'],
+                    ],
+                ]);
+             
+
+                // Espacio para firma del subdirector
+                $sheet->mergeCells('A' . ($row + 7) . ':I' . ($row + 8));
+                $sheet->mergeCells('A' . ($row + 9) . ':I' . ($row + 9));
+                $sheet->setCellValue('A' . ($row + 9), 'SUB - DIRECTOR');
+                $sheet->getStyle('A' . ($row + 9))->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                    'size' => 12,
+                        'name' => 'Times New Roman',
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F6F5F0'],
+                    ],
+                ]);
+
+                // Aplicar bordes a las celdas de firma
+                $sheet->getStyle('A' . ($row + 3) . ':I' . ($row + 4))->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+
+                $sheet->getStyle('A' . ($row + 7) . ':I' . ($row + 8))->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
             },
         ];
     }
@@ -729,7 +1173,7 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
             
             try {
                 $sheet->mergeCells($colLetter . '14:' . $colLetter . '25');
-            } catch (\Exception $e) {
+                    } catch (\Exception $e) {
                 // Continuar si falla
             }
             
