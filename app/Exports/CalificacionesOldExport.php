@@ -250,10 +250,10 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 $drawing->setName('Gran Sello');
                 $drawing->setDescription('Gran Sello de la República del Perú');
                 $drawing->setPath(public_path('img/Gran_Sello_de_la_República_del_Perú.png'));
-                $drawing->setCoordinates('A1');
-                $drawing->setOffsetX(60);
-                $drawing->setOffsetY(05);
-                $drawing->setWidth(75);
+                $drawing->setCoordinates('B1');
+                $drawing->setOffsetX(20);
+                $drawing->setOffsetY(5);
+                $drawing->setWidth(200);
                 $drawing->setHeight(75);
                 $drawing->setWorksheet($sheet);
                 
@@ -345,6 +345,21 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                     $colLetter = Coordinate::stringFromColumnIndex($i);
                     $sheet->getColumnDimension($colLetter)->setWidth(5.7)->setAutoSize(false);
                 }
+
+                // Configurar altura de encabezados
+                $sheet->getRowDimension(13)->setRowHeight(15);
+                $sheet->getRowDimension(14)->setRowHeight(15);
+                $sheet->getRowDimension(15)->setRowHeight(15);
+                $sheet->getRowDimension(16)->setRowHeight(15);
+                $sheet->getRowDimension(17)->setRowHeight(15);
+                $sheet->getRowDimension(18)->setRowHeight(15);
+                $sheet->getRowDimension(19)->setRowHeight(15);
+                $sheet->getRowDimension(20)->setRowHeight(15);
+                $sheet->getRowDimension(21)->setRowHeight(15);
+                $sheet->getRowDimension(22)->setRowHeight(15);
+                $sheet->getRowDimension(23)->setRowHeight(15);
+                $sheet->getRowDimension(24)->setRowHeight(15);
+                $sheet->getRowDimension(25)->setRowHeight(15);
             },
         ];
     }
@@ -554,23 +569,38 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 ]);
                 
         // Filas 10 y 11 sin bordes
-                $sheet->mergeCells('A10:V10');
-                $sheet->mergeCells('A11:V11');
+                $sheet->mergeCells('A10:' . $lastColumn . '10');
+                $sheet->mergeCells('A11:' . $lastColumn . '11');
                 
-        // Eliminar bordes de las filas 10 y 11
-        $noBorderStyle = [
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_NONE,
-                ],
-            ],
-        ];
-        
-        $sheet->getStyle('A10:V10')->applyFromArray($noBorderStyle);
-        $sheet->getStyle('A11:V11')->applyFromArray($noBorderStyle);
+                // Eliminar bordes de las filas 10 y 11
+                $noBorderStyle = [
+                    'borders' => [
+                        'outline' => [
+                            'borderStyle' => Border::BORDER_NONE,
+                        ],
+                        'inside' => [
+                            'borderStyle' => Border::BORDER_NONE,
+                        ],
+                        'left' => [
+                            'borderStyle' => Border::BORDER_NONE,
+                        ],
+                        'right' => [
+                            'borderStyle' => Border::BORDER_NONE,
+                        ],
+                        'top' => [
+                            'borderStyle' => Border::BORDER_NONE,
+                        ],
+                        'bottom' => [
+                            'borderStyle' => Border::BORDER_NONE,
+                        ],
+                    ],
+                ];
+                
+                $sheet->getStyle('A10:' . $lastColumn . '10')->applyFromArray($noBorderStyle);
+                $sheet->getStyle('A11:' . $lastColumn . '11')->applyFromArray($noBorderStyle);
 
-        // Fila 12 con bordes
-        $sheet->getStyle('A12:V12')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                // Fila 12 con bordes
+                $sheet->getStyle('A12:' . $lastColumn . '12')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
     }
     
     private function setupTableHeaders($sheet, $lastColumn, $materiasCount)
@@ -719,6 +749,7 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
                     'vertical' => Alignment::VERTICAL_BOTTOM,
                     'textRotation' => 90,
+                    'wrapText' => true,
                 ],
             ]);
             
