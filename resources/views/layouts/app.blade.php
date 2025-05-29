@@ -133,14 +133,14 @@
             Control y Evaluación
         </div>
         <ul class="nav flex-column">
-            <li class="nav-item">
+            <!--<li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('calificaciones.*') ? 'active' : '' }}" href="{{ route('calificaciones.index') }}">
                     <i class="bi bi-journal-check me-2"></i> Calificaciones
                 </a>
-            </li>
+            </li> -->
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('calificaciones-old.*') ? 'active' : '' }}" href="{{ route('calificaciones-old.index') }}">
-                    <i class="bi bi-journal-check me-2"></i> Calificaciones Viejas
+                    <i class="bi bi-journal-check me-2"></i> Calificaciones Egresados
                 </a>
             </li>
             <li class="nav-item">
@@ -148,11 +148,11 @@
                     <i class="bi bi-calendar-check me-2"></i> Asistencia
                 </a>
             </li>
-            <li class="nav-item">
+            <!--<li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('incidentes.*') ? 'active' : '' }}" href="{{ route('incidentes.index') }}">
                     <i class="bi bi-exclamation-triangle me-2"></i> Incidentes
                 </a>
-            </li>
+            </li> -->
         </ul>
 
         <div class="sidebar-heading">

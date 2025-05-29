@@ -1269,4 +1269,7 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
             $sheet->getColumnDimension($colLetter)->setWidth(7)->setAutoSize(false);
         }
     }
+    //Quien diria que esta mierda me iba a tomar mas tiempo del necesario, peru bueno por fin acabo este modulo
+    //Hoy debia ser un gran dia, pero no, mi chica decidio que el acuerdo que teniamos de vernos hoy al final no se va a hace
+    //No se que le sucede, pero bueno, supongo que dormire toda la tarde, mejor.
 }
