@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Config;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Validators\ValidationException;
+use Carbon\Carbon;
 
 class EstudianteController extends Controller
 {
@@ -60,13 +61,13 @@ class EstudianteController extends Controller
                 });
             })
             ->when($filtroAnioIngreso, function ($query) use ($filtroAnioIngreso) {
-                return $query->whereYear('estudiantes.fecha_ingreso', $filtroAnioIngreso);
+                return $query->whereRaw("strftime('%Y', fecha_ingreso) = ?", [$filtroAnioIngreso]);
             })
             ->join('aulas', 'estudiantes.id_aula', '=', 'aulas.id_aula')
             ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
             ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
             ->leftJoin('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
-            ->select('estudiantes.*', DB::raw("CONCAT(grados.nombre, ' - ', secciones.nombre) as aula_nombre"))
+            ->select('estudiantes.*', DB::raw("grados.nombre || ' - ' || secciones.nombre as aula_nombre"))
             ->orderBy('niveles.nombre', 'asc')
             ->orderBy('aula_nombre', 'asc')
             ->orderBy('estudiantes.apellido', 'asc')
@@ -74,7 +75,7 @@ class EstudianteController extends Controller
             ->paginate(15);
 
         // Obtener años disponibles para el filtro (extraídos de las fechas de ingreso)
-    $aniosIngreso = Estudiante::selectRaw('DISTINCT YEAR(fecha_ingreso) as anio')
+    $aniosIngreso = Estudiante::selectRaw('DISTINCT strftime(\'%Y\', fecha_ingreso) as anio')
         ->whereNotNull('fecha_ingreso')
         ->orderBy('anio', 'desc')
         ->pluck('anio');
@@ -154,7 +155,7 @@ class EstudianteController extends Controller
             ->orderBy('id_estudiante', 'asc')
             ->get();
 
-        $fechaActual = now()->format('d-m-Y');
+        $fechaActual = date('d-m-Y');
         $pdf = Pdf::loadView('pdf.estudiantes', compact('estudiantes', 'fechaActual'));
         // Configurar el PDF
         $pdf->setPaper('a4', 'landscape');
@@ -222,7 +223,7 @@ class EstudianteController extends Controller
             // Datos comunes para todos los estudiantes
             $datosComunes = [
                 'id_aula' => $request->id_aula,
-                'fecha_ingreso' => $request->fecha_ingreso ?? now()->format('Y-m-d'),
+                'fecha_ingreso' => $request->fecha_ingreso ?? Carbon::now()->format('Y-m-d'),
                 'estado' => $request->estado,
             ];
             
@@ -368,8 +369,8 @@ class EstudianteController extends Controller
             // Registrar la importación en el historial
             $nombreArchivo = $request->file('file')->getClientOriginalName();
             
-            // Obtener el año académico a partir de la fecha de ingreso
-            $anioAcademicoValue = date('Y', strtotime($request->fecha_ingreso));
+            // Obtener el año académico a partir de la fecha de ingreso usando Carbon
+            $anioAcademicoValue = Carbon::parse($request->fecha_ingreso)->format('Y');
             
             \App\Models\ImportacionHistorial::registrarImportacion(
                 $nombreArchivo,
@@ -417,13 +418,8 @@ class EstudianteController extends Controller
             }
         }
         
-        // Obtener la fecha de ingreso si existe
-        $fechaIngreso = $request->get('fecha_ingreso');
-        
-        // Si no hay fecha de ingreso, usar la fecha actual
-        if (empty($fechaIngreso)) {
-            $fechaIngreso = now()->format('Y-m-d');
-        }
+        // Obtener la fecha de ingreso usando Carbon
+        $fechaIngreso = Carbon::now()->format('Y-m-d');
         
         // Generar un nombre más descriptivo para el archivo
         $nombreArchivo = 'Plantilla_Estudiantes';
@@ -434,7 +430,7 @@ class EstudianteController extends Controller
             $nombreArchivo .= '_' . $aula->seccion->nombre;
         }
         
-        $nombreArchivo .= '_' . date('Y-m-d', strtotime($fechaIngreso));
+        $nombreArchivo .= '_' . $fechaIngreso;
         $nombreArchivo .= '.xlsx';
         
         // Pasar el ID del aula y la fecha de ingreso a la plantilla
@@ -571,7 +567,7 @@ class EstudianteController extends Controller
     {
         $estudiantes = Estudiante::with(['aula', 'aula.nivel', 'aula.grado', 'aula.seccion'])
             ->where('estado', 'Activo')
-            ->whereRaw('TIMESTAMPDIFF(YEAR, fecha_ingreso, CURDATE()) < 8 OR fecha_ingreso IS NULL')
+            ->whereRaw("(strftime('%Y', 'now') - strftime('%Y', fecha_ingreso)) < 8 OR fecha_ingreso IS NULL")
             ->get()
             ->map(function ($estudiante) {
                 return [
@@ -667,7 +663,7 @@ class EstudianteController extends Controller
                 return [
                     'id' => $importacion->id_importacion,
                     'descripcion' => $importacion->descripcion_completa,
-                    'fecha' => $importacion->fecha_importacion->format('Y-m-d'),
+                    'fecha' => Carbon::parse($importacion->fecha_importacion)->format('Y-m-d'),
                     'nivel_id' => $importacion->id_nivel,
                     'aula_id' => $importacion->id_aula,
                     'nivel_nombre' => $importacion->nivel_nombre,
@@ -719,9 +715,9 @@ class EstudianteController extends Controller
                 return back()->with('error', 'Esta importación no tiene un aula específica asociada.');
             }
             
-            // Obtenemos los estudiantes que cumplen con los criterios
+            // Obtenemos los estudiantes que cumplen con los criterios usando Carbon para el manejo de fechas
             $estudiantes = Estudiante::where('id_aula', $importacion->id_aula)
-                ->whereDate('fecha_ingreso', $importacion->fecha_importacion)
+                ->whereDate('fecha_ingreso', Carbon::parse($importacion->fecha_importacion)->format('Y-m-d'))
                 ->get();
                 
             $cantidadTotal = $estudiantes->count();
@@ -752,16 +748,13 @@ class EstudianteController extends Controller
             
             $mensaje = "Proceso completado: {$eliminados} estudiantes eliminados";
             if ($marcados > 0) {
-                $mensaje .= " y {$marcados} estudiantes marcados como retirados (tenían registros académicos).";
-            } else {
-                $mensaje .= ".";
+                $mensaje .= ", {$marcados} marcados como retirados";
             }
             
             return redirect()->route('estudiantes.index')->with('success', $mensaje);
-            
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Error al eliminar estudiantes: ' . $e->getMessage());
+            return back()->with('error', 'Error al procesar la eliminación: ' . $e->getMessage());
         }
     }
 }

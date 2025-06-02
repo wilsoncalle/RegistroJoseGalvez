@@ -18,7 +18,24 @@ class Incidente extends Model
         'id_aula',
         'fecha',
         'descripcion',
+        'tipo_incidente',
+        'accion_tomada',
+        'estado'
     ];
 
-    // Relación con el estudiante   
+    protected $casts = [
+        'fecha' => 'date'
+    ];
+
+    // Relación con el estudiante
+    public function estudiante()
+    {
+        return $this->belongsTo(Estudiante::class, 'id_estudiante', 'id_estudiante');
+    }
+
+    // Relación con el aula
+    public function aula()
+    {
+        return $this->belongsTo(Aula::class, 'id_aula', 'id_aula');
+    }
 }

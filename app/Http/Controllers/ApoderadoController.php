@@ -57,7 +57,7 @@ class ApoderadoController extends Controller
             ->leftJoin('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
             ->select(
                 'estudiantes.*',
-                \DB::raw("CONCAT(grados.nombre, ' - ', secciones.nombre) as aula_nombre")
+                \DB::raw("grados.nombre || ' - ' || secciones.nombre as aula_nombre")
             )
             ->orderBy('niveles.nombre', 'asc')
             ->orderBy('aula_nombre', 'asc')

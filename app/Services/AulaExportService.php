@@ -7,6 +7,8 @@ use App\Models\Nivel;
 use App\Exports\AulaExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AulaExportService
 {
@@ -57,7 +59,7 @@ class AulaExportService
         // Aplicar ordenamiento
         $query->orderBy('niveles.nombre')  // Primero por nivel
               ->orderBy('grados.nombre')   // Luego por grado
-              ->orderByRaw("CAST(secciones.nombre AS CHAR) ASC") // Después por sección
+              ->orderBy('secciones.nombre') // Después por sección
               ->orderBy('docentes.apellido') // Finalmente, ordenar docentes por apellido
               ->orderBy('docentes.nombre'); // En caso de apellidos iguales, ordenar por nombre
         
@@ -74,7 +76,7 @@ class AulaExportService
         }
         
         // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "aulas_{$nombreNivel}_{$fechaActual}.xlsx";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo
@@ -135,7 +137,7 @@ class AulaExportService
         // Aplicar ordenamiento
         $query->orderBy('niveles.nombre')  // Primero por nivel
               ->orderBy('grados.nombre')   // Luego por grado
-              ->orderByRaw("CAST(secciones.nombre AS CHAR) ASC") // Después por sección
+              ->orderBy('secciones.nombre') // Después por sección
               ->orderBy('docentes.apellido') // Finalmente, ordenar docentes por apellido
               ->orderBy('docentes.nombre'); // En caso de apellidos iguales, ordenar por nombre
         
@@ -155,7 +157,7 @@ class AulaExportService
         $counter = 1;
         
         // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "aulas_{$nombreNivel}_{$fechaActual}.pdf";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo
@@ -163,7 +165,7 @@ class AulaExportService
         $nombreArchivo = preg_replace('/[^A-Za-z0-9\-_.]/', '', $nombreArchivo);
         
         // Generar el PDF
-        $pdf = \PDF::loadView('pdf.aulas', [
+        $pdf = Pdf::loadView('pdf.aulas', [
             'aulas' => $aulas, 
             'counter' => $counter,
             'filtroNivel' => $filtroNivel,

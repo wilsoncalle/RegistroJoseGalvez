@@ -142,7 +142,7 @@ class Estudiante extends Model
             return $query->where('estado', 'Activo')
                 ->where(function($q) {
                     $q->whereNull('fecha_ingreso')
-                      ->orWhereRaw('TIMESTAMPDIFF(YEAR, fecha_ingreso, CURDATE()) < 8');
+                      ->orWhereRaw("strftime('%Y', 'now') - strftime('%Y', fecha_ingreso) < 8");
                 });
         }
         
@@ -153,7 +153,7 @@ class Estudiante extends Model
                   ->orWhere(function($q2) {
                       $q2->where('estado', 'Activo')
                         ->whereNotNull('fecha_ingreso')
-                        ->whereRaw('TIMESTAMPDIFF(YEAR, fecha_ingreso, CURDATE()) >= 8');
+                        ->whereRaw("strftime('%Y', 'now') - strftime('%Y', fecha_ingreso) >= 8");
                   });
             });
         }

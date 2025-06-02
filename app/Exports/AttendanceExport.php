@@ -24,9 +24,11 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
+use App\Traits\SpanishSorting;
 
 class AttendanceExport implements FromCollection, WithHeadings, WithTitle, WithStyles, WithCustomStartCell, ShouldAutoSize, WithColumnWidths, WithEvents
 {
+    use SpanishSorting;
     protected $aula;
     protected $materia;
     protected $docente;
@@ -150,10 +152,9 @@ class AttendanceExport implements FromCollection, WithHeadings, WithTitle, WithS
      */
     private function loadStudents()
     {
-        $this->students = Estudiante::where('id_aula', $this->aula->id_aula)
-            ->where('estado', 'Activo')
-            ->orderBy('apellido')
-            ->get();
+        // Usar el método del trait SpanishSorting para obtener estudiantes ordenados correctamente
+        // respetando acentos en el orden alfabético español (A, Á, B, C, Ç...)
+        $this->students = $this->getStudentsWithSpanishSorting($this->aula->id_aula, 'Activo');
     }
 
     /**
@@ -171,7 +172,10 @@ class AttendanceExport implements FromCollection, WithHeadings, WithTitle, WithS
         }
         
         $this->attendances = Asistencia::where('id_asignacion', $asignacion->id_asignacion)
-            ->whereBetween('fecha', [$this->firstDay, $this->lastDay])
+            ->whereRaw("strftime('%Y-%m-%d', fecha) BETWEEN ? AND ?", [
+                $this->firstDay->format('Y-m-d'),
+                $this->lastDay->format('Y-m-d')
+            ])
             ->get()
             ->groupBy('id_estudiante');
     }
@@ -182,11 +186,12 @@ class AttendanceExport implements FromCollection, WithHeadings, WithTitle, WithS
     public function collection()
     {
         $rows = [];
+        $orden = 1;
         
         // Agregar filas para cada estudiante
-        foreach ($this->students as $index => $estudiante) {
+        foreach ($this->students as $estudiante) {
             $row = [
-                $index + 1, // N° Orden
+                $orden++, // N° Orden incrementado secuencialmente
                 $estudiante->apellido . ' ' . $estudiante->nombre, // Apellidos y Nombres
             ];
             
@@ -355,7 +360,9 @@ class AttendanceExport implements FromCollection, WithHeadings, WithTitle, WithS
      */
     private function getStartRow(): int
     {
-        return Coordinate::coordinateFromString($this->startCell)[1];
+        // Extraer el componente numérico de la coordenada y convertirlo a int
+        $coordParts = Coordinate::coordinateFromString($this->startCell);
+        return (int)$coordParts[1]; // Convertir a entero para asegurar el tipo correcto
     }
 
     /**

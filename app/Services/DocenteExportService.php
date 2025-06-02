@@ -7,6 +7,7 @@ use App\Models\Nivel;
 use App\Exports\DocenteExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class DocenteExportService
 {
@@ -42,7 +43,7 @@ class DocenteExportService
         }
         
         // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "docentes_{$nombreNivel}_{$fechaActual}.xlsx";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo

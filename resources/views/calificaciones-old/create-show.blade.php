@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="container py-4">
+    {{-- Incluir el componente de notificación --}}
+    @include('components.export-notification')
     <div class="row mb-4"> 
         <div class="col">
             <!-- Sección de breadcrumb -->
@@ -23,22 +25,28 @@
 
                 <!-- Botón de exportar -->
                 <div class="d-flex align-items-center">
-                    <button class="btn btn-primary text-white me-2 shadow-sm" type="button" id="estadisticasBtn" disabled>
+                    <button class="btn btn-primary text-white me-2 shadow-sm" type="button" id="estadisticasBtn">
                         <i class="bi bi-bar-chart-fill me-1"></i> Estadísticas
                     </button>
                     <div class="dropdown">
                         <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown"
-                                data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                                data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-download me-1"></i> Exportar
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
                             <li>
-                                <a class="dropdown-item text-success" href="#" id="export-excel-btn">
+                                <a class="dropdown-item text-success" href="#" id="export-excel-btn"
+                                   data-export="excel" 
+                                   data-export-type="xlsx"
+                                   data-export-form="export-form">
                                     <i class="bi bi-file-earmark-excel me-2 text-success"></i> Exportar a Excel
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item text-danger" href="#" id="export-pdf-btn">
+                                <a class="dropdown-item text-danger" href="#" id="export-pdf-btn"
+                                   data-export="pdf"
+                                   data-export-type="pdf"
+                                   data-export-form="export-pdf-form">
                                     <i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Exportar a PDF
                                 </a>
                             </li>
@@ -468,7 +476,7 @@
 </div>
 
 @push('scripts')
-<!-- Incluir Chart.js para el gráfico de pastel (versión más ligera) -->
+<script src="{{ asset('js/export-notification.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -2338,6 +2346,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- Script para las notificaciones de exportación -->
+<script src="{{ asset('js/export-notification.js') }}"></script>
 @endpush
 
 <style>

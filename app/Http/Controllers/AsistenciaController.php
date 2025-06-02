@@ -17,10 +17,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use App\Services\ExportService;
 use Illuminate\Http\Response;
+use Carbon\Carbon;
+use App\Traits\SpanishSorting;
 
 
 class AsistenciaController extends Controller
 {
+    use SpanishSorting;
     public function index(): View
     {
         $niveles = Nivel::all();
@@ -34,7 +37,9 @@ class AsistenciaController extends Controller
         ->where('id_nivel', $nivelModel->id_nivel)
         ->get()
         ->sortBy(function($aula) {
-            return $aula->grado->nombre . ' ' . $aula->seccion->nombre;
+            $gradoNombre = $aula->grado ? $aula->grado->nombre : '';
+            $seccionNombre = $aula->seccion ? $aula->seccion->nombre : '';
+            return $gradoNombre . ' ' . $seccionNombre;
         });
 
     // Extraer los grados únicos de las aulas para el filtro
@@ -51,12 +56,15 @@ class AsistenciaController extends Controller
             $query->where('id_aula', $aula->id_aula);
         })->get();
 
-        $estudiantes = Estudiante::where('id_aula', $aula->id_aula)
-            ->where('estado', 'Activo')
-            ->orderBy('apellido')
-            ->get();
+        // Usar el método del trait SpanishSorting para obtener estudiantes ordenados correctamente
+        // respetando acentos en el orden alfabético español (A, Á, B, C, Ç...)
+        $estudiantes = $this->getStudentsWithSpanishSorting($aula->id_aula);
 
         return view('asistencias.create', compact('aula', 'materias', 'estudiantes'));
+    }
+
+    private function normalizeString($string) {
+        return iconv('UTF-8', 'ASCII//TRANSLIT', mb_strtolower($string, 'UTF-8'));
     }
 
     public function getDocentesPorMateria($materiaId, $aulaId) {
@@ -131,8 +139,8 @@ class AsistenciaController extends Controller
                 'id_asignacion' => $asignacion->id_asignacion,
                 'fecha' => $request->fecha,
                 'estado' => $this->mapEstadoToFullName($estado),
-                'created_at' => now(),
-                'updated_at' => now()
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
             ];
         }
 
@@ -173,10 +181,9 @@ public function show(Request $request, string $nivel, int $aulaId): View
         $query->where('id_aula', $aulaId);
     })->get();
 
-    $estudiantes = Estudiante::where('id_aula', $aulaId)
-        ->where('estado', 'Activo')
-        ->orderBy('apellido')
-        ->get();
+    // Usar el método del trait SpanishSorting para obtener estudiantes ordenados correctamente
+    // respetando acentos en el orden alfabético español (A, Á, B, C, Ç...)
+    $estudiantes = $this->getStudentsWithSpanishSorting($aulaId);
 
     return view('asistencias.show', compact('aula', 'nivel', 'materias', 'estudiantes'));
 }
@@ -240,9 +247,9 @@ public function getAttendanceDetails(Request $request): JsonResponse
     ]);
 
     try {
-        // Get the date range for the selected month and year
-        $primerDia = \Carbon\Carbon::create($request->año, $request->mes, 1);
-        $ultimoDia = $primerDia->copy()->endOfMonth();
+        // Get the date range for the selected month and year using Carbon
+        $primerDia = Carbon::create($request->año, $request->mes, 1)->startOfDay();
+        $ultimoDia = Carbon::create($request->año, $request->mes, 1)->endOfMonth();
 
         // Find the specific asignacion
         $asignacion = Asignacion::where('id_aula', $request->id_aula)
@@ -256,7 +263,10 @@ public function getAttendanceDetails(Request $request): JsonResponse
 
         // Get all attendance records for this assignment in the specified month
         $attendances = Asistencia::where('id_asignacion', $asignacion->id_asignacion)
-            ->whereBetween('fecha', [$primerDia, $ultimoDia])
+            ->whereRaw("strftime('%Y-%m-%d', fecha) BETWEEN ? AND ?", [
+                $primerDia->format('Y-m-d'),
+                $ultimoDia->format('Y-m-d')
+            ])
             ->get()
             ->groupBy('id_estudiante');
 
@@ -280,11 +290,10 @@ public function getAttendanceDetails(Request $request): JsonResponse
 
             $dailyAttendance = [];
             for ($day = 1; $day <= $ultimoDia->day; $day++) {
-                $currentDate = \Carbon\Carbon::create($request->año, $request->mes, $day);
+                $currentDate = Carbon::create($request->año, $request->mes, $day);
                 $attendanceRecord = $studentAttendance->first(function($record) use ($currentDate) {
-                    return \Carbon\Carbon::parse($record->fecha)->format('Y-m-d') === $currentDate->format('Y-m-d');
+                    return Carbon::parse($record->fecha)->format('Y-m-d') === $currentDate->format('Y-m-d');
                 });
-                
                 
                 $status = $attendanceRecord ? $this->mapFullNameToEstado($attendanceRecord->estado) : null;
                 $dailyAttendance[$day] = $status;
@@ -295,7 +304,7 @@ public function getAttendanceDetails(Request $request): JsonResponse
             }
 
             $studentStats[$estudiante->id_estudiante] = [
-                'nombre' => $estudiante->nombre . ' ' . $estudiante->apellido,
+                'nombre' => $estudiante->apellido . ' ' . $estudiante->nombre,
                 'daily_attendance' => $dailyAttendance,
                 'monthly_stats' => $monthlyStats
             ];
@@ -351,19 +360,19 @@ private function mapFullNameToEstado($estado)
             }
 
             // Obtener el rango de fechas para el mes y año seleccionados
-            $primerDia = \Carbon\Carbon::create($request->año, $request->mes, 1);
-            $ultimoDia = $primerDia->copy()->endOfMonth();
+            $primerDia = Carbon::create($request->año, $request->mes, 1)->startOfDay();
+            $ultimoDia = Carbon::create($request->año, $request->mes, 1)->endOfMonth();
 
             // Procesar cada modificación
             foreach ($request->modificaciones as $estudianteId => $fechas) {
                 foreach ($fechas as $dia => $estado) {
-                    // Crear la fecha completa
-                    $fecha = \Carbon\Carbon::create($request->año, $request->mes, $dia)->format('Y-m-d');
+                    // Crear la fecha completa usando Carbon
+                    $fecha = Carbon::create($request->año, $request->mes, $dia)->format('Y-m-d');
 
                     // Buscar si ya existe un registro para esta fecha, estudiante y asignación
                     $asistencia = Asistencia::where('id_estudiante', $estudianteId)
                         ->where('id_asignacion', $asignacion->id_asignacion)
-                        ->where('fecha', $fecha)
+                        ->whereRaw("strftime('%Y-%m-%d', fecha) = ?", [$fecha])
                         ->first();
 
                     // Mapear el estado corto al nombre completo

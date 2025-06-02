@@ -2,49 +2,58 @@
 
 @section('content')
 <div class="container py-4">
-<div class="row mb-4"> 
-    <div class="col">
-        <!-- Sección de breadcrumb mejorada -->
-        <nav aria-label="breadcrumb" class="mb-3">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ route('asistencia.index') }}"><i></i>Niveles</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}">{{ $aula->nivel->nombre }}</a></li>
-                <li class="breadcrumb-item active" aria-current="page">
-                    {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"
-                </li>
-            </ol>
-        </nav>
-        
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <!-- Título -->
-            <div>
-                <h2>Control de Asistencia - {{ $aula->nivel->nombre }} {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"</h2>
-            </div>
+    {{-- Incluir el componente de notificación --}}
+    <x-export-notification />
+    
+    <div class="row mb-4"> 
+        <div class="col">
+            <!-- Sección de breadcrumb mejorada -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ route('asistencia.index') }}"><i></i>Niveles</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('asistencias.index-niveles', $aula->nivel ? $aula->nivel->nombre : $nivel) }}">{{ $aula->nivel ? $aula->nivel->nombre : $nivel }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {{ $aula->grado ? $aula->grado->nombre : 'Sin grado' }} "{{ $aula->seccion ? $aula->seccion->nombre : 'Sin sección' }}"
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <!-- Título -->
+                <div>
+                    <h2>Control de Asistencia - {{ $aula->nivel ? $aula->nivel->nombre : $nivel }} {{ $aula->grado ? $aula->grado->nombre : 'Sin grado' }} "{{ $aula->seccion ? $aula->seccion->nombre : 'Sin sección' }}"</h2>
+                </div>
 
-            <!-- Botón de exportar -->
-            <div class="d-flex align-items-center">
-                <div class="dropdown">
-                    <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown"
-                            data-bs-toggle="dropdown" aria-expanded="false" disabled>
-                        <i class="bi bi-download me-1"></i> Exportar
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
-                        <li>
-                            <a class="dropdown-item text-success" href="#" id="export-excel-btn">
-                                <i class="bi bi-file-earmark-excel me-2 text-success"></i> Exportar a Excel
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item text-danger" href="#" id="export-pdf-btn">
-                                <i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Exportar a PDF
-                            </a>
-                        </li>
-                    </ul>
+                <!-- Botón de exportar -->
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <button class="btn btn-warning dropdown-toggle text-white" type="button" id="exportDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                            <li>
+                                <a class="dropdown-item text-success" href="#" id="export-excel-btn" 
+                                   data-export="excel" 
+                                   data-export-type="xlsx"
+                                   data-export-form="export-form">
+                                    <i class="bi bi-file-earmark-excel me-2 text-success"></i> Exportar a Excel
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" id="export-pdf-btn" 
+                                   data-export="pdf"
+                                   data-export-type="pdf"
+                                   data-export-form="export-pdf-form">
+                                    <i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Exportar a PDF
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
     <!-- Botones de modo -->
     <div class="row mb-3">
@@ -174,6 +183,7 @@
 
 
 @push('scripts')
+<script src="{{ asset('js/export-notification.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -233,24 +243,64 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Exportar a Excel
-    exportExcelBtn.addEventListener('click', function() {
+    exportExcelBtn.addEventListener('click', function(e) {
+        e.preventDefault();
         if (materiaSelect.value && docenteSelect.value && mesSelect.value && añoSelect.value) {
             exportExcelMateria.value = materiaSelect.value;
             exportExcelDocente.value = docenteSelect.value;
             exportExcelMes.value = mesSelect.value;
             exportExcelAño.value = añoSelect.value;
-            exportExcelForm.submit();
+            
+            // Construir nombre del archivo
+            const materiaNombre = materiaSelect.options[materiaSelect.selectedIndex].text;
+            const mesNombre = mesSelect.options[mesSelect.selectedIndex].text;
+            const año = añoSelect.value;
+            const fileName = `Asistencia_${materiaNombre}_${mesNombre}_${año}`;
+            
+            // Detectar si estamos en Electron
+            const isElectron = window.navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+            
+            // Usar el sistema de notificaciones con POST
+            const formData = new FormData(exportExcelForm);
+            window.handleExport(
+                exportExcelForm.action,
+                fileName,
+                'xlsx',
+                'POST',
+                formData,
+                isElectron
+            );
         }
     });
 
     // Exportar a PDF
-    exportPdfBtn.addEventListener('click', function() {
+    exportPdfBtn.addEventListener('click', function(e) {
+        e.preventDefault();
         if (materiaSelect.value && docenteSelect.value && mesSelect.value && añoSelect.value) {
             exportPdfMateria.value = materiaSelect.value;
             exportPdfDocente.value = docenteSelect.value;
             exportPdfMes.value = mesSelect.value;
             exportPdfAño.value = añoSelect.value;
-            exportPdfForm.submit();
+            
+            // Construir nombre del archivo
+            const materiaNombre = materiaSelect.options[materiaSelect.selectedIndex].text;
+            const mesNombre = mesSelect.options[mesSelect.selectedIndex].text;
+            const año = añoSelect.value;
+            const fileName = `Asistencia_${materiaNombre}_${mesNombre}_${año}`;
+            
+            // Detectar si estamos en Electron
+            const isElectron = window.navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+            
+            // Usar el sistema de notificaciones con POST
+            const formData = new FormData(exportPdfForm);
+            window.handleExport(
+                exportPdfForm.action,
+                fileName,
+                'pdf',
+                'POST',
+                formData,
+                isElectron
+            );
         }
     });
     
@@ -426,14 +476,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }));
 
         students.sort((a, b) => {
-            // Función para extraer el apellido, asumiendo que es la última palabra del string
-            const getApellido = nombreCompleto => {
-                const partes = nombreCompleto.split(' ');
-                return partes.length > 1 ? partes[partes.length - 1].trim() : partes[0].trim();
-            };
-            const apellidoA = getApellido(a.nombre);
-            const apellidoB = getApellido(b.nombre);
-            return apellidoA.localeCompare(apellidoB, 'es', { sensitivity: 'base' });
+            // Extraer apellido y nombre
+            const [apellidoA, ...nombreA] = a.nombre.split(' ');
+            const [apellidoB, ...nombreB] = b.nombre.split(' ');
+            
+            // Normalizar apellidos y nombres
+            const apellidoANormalizado = apellidoA.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const apellidoBNormalizado = apellidoB.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const nombreANormalizado = nombreA.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const nombreBNormalizado = nombreB.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            
+            // Primero comparar por apellido
+            const comparacionApellido = apellidoANormalizado.localeCompare(apellidoBNormalizado);
+            
+            // Si los apellidos son iguales, comparar por nombre
+            if (comparacionApellido === 0) {
+                return nombreANormalizado.localeCompare(nombreBNormalizado);
+            }
+            
+            return comparacionApellido;
         });
     
         // Construir la cabecera de la tabla

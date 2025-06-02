@@ -6,6 +6,7 @@ use App\Models\Trimestre;
 use App\Models\AnioAcademico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class TrimestreController extends Controller
 {
@@ -25,6 +26,7 @@ class TrimestreController extends Controller
             ->when($filtroAnio, function ($query) use ($filtroAnio) {
                 return $query->where('id_anio', $filtroAnio);
             })
+            ->orderBy('fecha_inicio', 'desc')
             ->paginate(10);
 
         return view('trimestres.index', compact('trimestres', 'busqueda', 'filtroAnio', 'anios'));

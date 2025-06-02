@@ -27,7 +27,7 @@ class SeccionController extends Controller
             })
             ->join('grados', 'secciones.id_grado', '=', 'grados.id_grado')
             ->join('niveles', 'grados.id_nivel', '=', 'niveles.id_nivel')
-            ->orderByRaw("FIELD(niveles.nombre, 'Inicial', 'Primaria', 'Secundaria')")
+            ->orderByRaw("CASE niveles.nombre WHEN 'Inicial' THEN 1 WHEN 'Primaria' THEN 2 WHEN 'Secundaria' THEN 3 ELSE 4 END")
             ->orderBy('grados.nombre')
             ->orderBy('secciones.nombre')
             ->select('secciones.*')

@@ -8,9 +8,9 @@
             <nav aria-label="breadcrumb" class="mb-3">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('asistencia.index') }}">Niveles</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}">{{ $aula->nivel->nombre }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('asistencias.index-niveles', $aula->nivel ? $aula->nivel->nombre : 'Nivel') }}">{{ $aula->nivel ? $aula->nivel->nombre : 'Nivel' }}</a></li>
                     <li class="breadcrumb-item active" aria-current="page">
-                        {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"
+                        {{ $aula->grado ? $aula->grado->nombre : 'Sin grado' }} "{{ $aula->seccion ? $aula->seccion->nombre : 'Sin sección' }}"
                     </li>
                 </ol>
             </nav>
@@ -18,7 +18,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <!-- Título -->
                 <div>
-                    <h2>Tomar Asistencia - {{ $aula->nivel->nombre }} {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"</h2>
+                    <h2>Tomar Asistencia - {{ $aula->nivel ? $aula->nivel->nombre : 'Nivel' }} {{ $aula->grado ? $aula->grado->nombre : 'Sin grado' }} "{{ $aula->seccion ? $aula->seccion->nombre : 'Sin sección' }}"</h2>
                 </div>
             </div>
         </div>
@@ -131,7 +131,7 @@
 
         <div class="row">
             <div class="col">
-                <a href="{{ route('asistencias.nivel', $aula->nivel->nombre) }}" class="btn btn-secondary">
+                <a href="{{ route('asistencias.nivel', $aula->nivel ? $aula->nivel->nombre : 'Nivel') }}" class="btn btn-secondary">
                     Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary">

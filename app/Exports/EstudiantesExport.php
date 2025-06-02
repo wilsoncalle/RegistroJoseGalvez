@@ -76,9 +76,9 @@ class EstudiantesExport implements FromCollection, WithHeadings, WithMapping, Wi
               ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
               ->leftJoin('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
               // Seleccionar datos de estudiantes y construir el nombre completo del aula
-              ->select('estudiantes.*', DB::raw("CONCAT(grados.nombre, ' - ', IFNULL(secciones.nombre, '')) as nombre_completo_aula"))
+              ->select('estudiantes.*', DB::raw("grados.nombre || ' - ' || IFNULL(secciones.nombre, '') as nombre_completo_aula"))
               // Ordenar resultados por nivel (orden específico), nombre del aula y apellido del estudiante
-              ->orderByRaw("FIELD(niveles.nombre, 'Inicial', 'Primaria', 'Secundaria')")
+              ->orderByRaw("CASE niveles.nombre WHEN 'Inicial' THEN 1 WHEN 'Primaria' THEN 2 WHEN 'Secundaria' THEN 3 ELSE 4 END")
               ->orderBy('nombre_completo_aula', 'asc')
               ->orderBy('estudiantes.apellido', 'asc');
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AnioAcademico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AnioAcademicoController extends Controller
 {
@@ -22,6 +23,7 @@ class AnioAcademicoController extends Controller
             ->when($filtroEstado, function ($query) use ($filtroEstado) {
                 return $query->where('estado', $filtroEstado);
             })
+            ->orderBy('anio', 'desc')
             ->paginate(10);
 
         return view('anios.index', compact('anios', 'busqueda', 'filtroEstado'));

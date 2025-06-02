@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\WithStartRow;
+use Carbon\Carbon;
 
 class EstudiantesImport implements ToCollection, WithStartRow
 {
@@ -23,7 +24,7 @@ class EstudiantesImport implements ToCollection, WithStartRow
     public function __construct($id_aula = null, $fecha_ingreso = null, $estado = 'Activo')
     {
         $this->id_aula = $id_aula;
-        $this->fecha_ingreso = $fecha_ingreso ?? now()->format('Y-m-d');
+        $this->fecha_ingreso = $fecha_ingreso ? Carbon::parse($fecha_ingreso)->format('Y-m-d') : Carbon::now()->format('Y-m-d');
         $this->estado = $estado;
     }
 
@@ -86,7 +87,7 @@ class EstudiantesImport implements ToCollection, WithStartRow
                     'nombre' => $row[1] ?? '', // Columna B - Nombre (índice 1)
                     'apellido' => $row[5] ?? '', // Columna F - Apellido (índice 5)
                     'dni' => $row[9] ?? '', // Columna J - DNI (índice 9)
-                    'fecha_nacimiento' => $row[11] ?? '', // Columna L - Fecha Nacimiento (índice 11)
+                    'fecha_nacimiento' => $row[11] ? Carbon::parse($row[11])->format('Y-m-d') : '',
                     'telefono' => $row[14] ?? '', // Columna O - Teléfono (índice 14)
                 ];
             })->toArray();
@@ -104,19 +105,19 @@ class EstudiantesImport implements ToCollection, WithStartRow
                 'nombre' => $row[1] ?? '',
                 'apellido' => $row[5] ?? '',
                 'dni' => $row[9] ?? '',
-                'fecha_nacimiento' => $row[11] ?? '',
+                'fecha_nacimiento' => $row[11] ? Carbon::parse($row[11])->format('Y-m-d') : null,
                 'telefono' => $row[14] ?? '',
             ], [
                 'nombre' => 'required|string|max:50',
                 'apellido' => 'required|string|max:50',
                 'dni' => 'nullable|string|max:20',
-                'fecha_nacimiento' => 'nullable|date',
+                'fecha_nacimiento' => 'nullable|date_format:Y-m-d',
                 'telefono' => 'nullable|string|max:20',
             ], [
                 'nombre.required' => 'El nombre es obligatorio',
                 'apellido.required' => 'El apellido es obligatorio',
                 'dni.max' => 'El DNI no debe exceder los 20 caracteres',
-                'fecha_nacimiento.date' => 'La fecha de nacimiento debe tener un formato válido',
+                'fecha_nacimiento.date_format' => 'La fecha de nacimiento debe tener el formato YYYY-MM-DD',
             ]);
 
             if ($validator->fails()) {
@@ -143,7 +144,7 @@ class EstudiantesImport implements ToCollection, WithStartRow
                 'nombre' => $row[1] ?? '', // Columna B - Nombre (índice 1)
                 'apellido' => $row[5] ?? '', // Columna F - Apellido (índice 5)
                 'dni' => $row[9] ?? null, // Columna J - DNI (índice 9)
-                'fecha_nacimiento' => !empty($row[11]) ? $row[11] : null, // Columna L - Fecha Nacimiento (índice 11)
+                'fecha_nacimiento' => $row[11] ? Carbon::parse($row[11])->format('Y-m-d') : null,
                 'telefono' => $row[14] ?? null, // Columna O - Teléfono (índice 14)
                 'id_aula' => $this->id_aula,
                 'fecha_ingreso' => $this->fecha_ingreso,

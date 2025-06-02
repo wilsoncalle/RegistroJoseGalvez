@@ -6,6 +6,8 @@ use App\Models\Apoderado;
 use App\Exports\ApoderadoExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ApoderadoExportService
 {
@@ -49,7 +51,7 @@ class ApoderadoExportService
         }
         
         // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "apoderados_{$nombreRelacion}_{$fechaActual}.xlsx";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo
@@ -106,7 +108,7 @@ class ApoderadoExportService
         $counter = 1;
         
         // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "apoderados_{$nombreRelacion}_{$fechaActual}.pdf";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo
@@ -114,7 +116,7 @@ class ApoderadoExportService
         $nombreArchivo = preg_replace('/[^A-Za-z0-9\-_.]/', '', $nombreArchivo);
         
         // Generar el PDF
-        $pdf = \PDF::loadView('pdf.apoderados', [
+        $pdf = Pdf::loadView('pdf.apoderados', [
             'apoderados' => $apoderados, 
             'counter' => $counter,
             'filtroRelacion' => $filtroRelacion,

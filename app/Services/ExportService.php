@@ -15,6 +15,7 @@ use App\Models\CalificacionOld;
 use App\Models\Materia;
 use App\Models\Asignacion;
 use App\Models\Trimestre;
+use App\Models\Docente;
 
 class ExportService
 {
@@ -24,8 +25,25 @@ class ExportService
     public function exportAttendanceToExcel(int $aulaId, int $materiaId, int $docenteId, int $mes, int $año)
     {
         $export = new AttendanceExport($aulaId, $materiaId, $docenteId, $mes, $año);
+        
+        // Obtener información para el nombre del archivo
+        $aula = Aula::with(['nivel', 'grado', 'seccion'])->find($aulaId);
+        $materia = Materia::find($materiaId);
+        $docente = Docente::find($docenteId);
         $mesNombre = Carbon::create($año, $mes, 1)->translatedFormat('F');
-        $fileName = "Asistencia_{$mesNombre}_{$año}.xlsx";
+        
+        // Construir nombre del archivo
+        $fileName = sprintf(
+            "Asistencia_%s_%s_%s_%s_%s.xlsx",
+            str_replace(' ', '_', $aula->nivel->nombre),
+            str_replace(' ', '_', $aula->grado->nombre),
+            str_replace(' ', '_', $aula->seccion->nombre),
+            str_replace(' ', '_', $materia->nombre),
+            str_replace(' ', '_', $mesNombre)
+        );
+        
+        // Limpiar caracteres no válidos del nombre del archivo
+        $fileName = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $fileName);
         
         return Excel::download($export, $fileName, ExcelType::XLSX);
     }
@@ -39,22 +57,39 @@ class ExportService
     public function exportAttendanceToPdf(int $aulaId, int $materiaId, int $docenteId, int $mes, int $año)
     {
         $export = new AttendanceExport($aulaId, $materiaId, $docenteId, $mes, $año);
+        
+        // Obtener información para el nombre del archivo
+        $aula = Aula::with(['nivel', 'grado', 'seccion'])->find($aulaId);
+        $materia = Materia::find($materiaId);
+        $docente = Docente::find($docenteId);
         $mesNombre = Carbon::create($año, $mes, 1)->translatedFormat('F');
+        
+        // Construir nombre del archivo
+        $fileName = sprintf(
+            "Asistencia_%s_%s_%s_%s_%s.pdf",
+            str_replace(' ', '_', $aula->nivel->nombre),
+            str_replace(' ', '_', $aula->grado->nombre),
+            str_replace(' ', '_', $aula->seccion->nombre),
+            str_replace(' ', '_', $materia->nombre),
+            str_replace(' ', '_', $mesNombre)
+        );
+        
+        // Limpiar caracteres no válidos del nombre del archivo
+        $fileName = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $fileName);
+        
         $tempFile = "temp/asistencia_{$aulaId}_{$materiaId}_{$docenteId}_{$mes}_{$año}.xlsx";
-        $fileName = "Asistencia_{$mesNombre}_{$año}.pdf";
         
         // Primero generamos el Excel en un archivo temporal
+        // El AttendanceExport ya implementa la ordenación alfabética respetando acentos
         Excel::store($export, $tempFile, 'local');
         
         // Luego generamos un HTML basado en los datos para convertirlo a PDF
-        $aula = $export->getAula();
-        $materia = $export->getMateria();
-        $docente = $export->getDocente();
+        // La colección ya viene ordenada correctamente desde el AttendanceExport
         $data = $export->collection();
         $weeks = $export->getWeeks();
         $schoolDays = $export->getSchoolDays();
-        $fechaActual = now()->format('d-m-Y');
-        $pdf = PDF::loadView('pdf.asistencias', compact(
+        $fechaActual = Carbon::now()->format('d-m-Y');
+        $pdf = Pdf::loadView('pdf.asistencias', compact(
             'aula', 'materia', 'docente', 'mes', 'año', 'mesNombre',
             'data', 'weeks', 'schoolDays'
         ));

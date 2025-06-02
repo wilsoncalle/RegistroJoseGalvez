@@ -3,6 +3,7 @@
 @section('title', 'Gestión de Apoderados - Sistema de Gestión Escolar')
 
 @section('content')
+<x-export-notification /> 
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Apoderados</h1>
@@ -188,4 +189,7 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script src="{{ asset('js/export-notification.js') }}"></script> 
+@endpush
 @endsection
