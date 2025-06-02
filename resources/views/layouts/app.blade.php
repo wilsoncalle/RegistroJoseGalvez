@@ -185,23 +185,41 @@
     @yield('scripts')
     @stack('scripts')
     <script>
-        // Función inmediata para restaurar la posición del scroll lo antes posible
+        // Función inmediata para restaurar la posición del scroll y estado del sidebar lo antes posible
         (function() {
             const sidebar = document.getElementById('sidebar');
             if (sidebar) {
+                // Aplicar el estado pinned guardado si existe (PRIMERO para evitar el parpadeo)
+                const isPinned = localStorage.getItem('sidebarPinned') === 'true';
+                if (isPinned) {
+                    // Aplicar las clases sin transición para evitar el parpadeo
+                    sidebar.style.transition = 'none';
+                    sidebar.classList.add('sidebar-pinned');
+                    
+                    const mainContent = document.getElementById('mainContent');
+                    if (mainContent) {
+                        mainContent.style.transition = 'none';
+                        mainContent.classList.add('content-shifted');
+                    }
+                    
+                    // Forzar reflow para aplicar los cambios inmediatamente
+                    void sidebar.offsetWidth;
+                }
+                
+                // Restaurar la posición del scroll
                 const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
                 if (savedScrollPosition) {
-                    // Desactivar temporalmente el comportamiento suave para la restauración inicial
                     sidebar.style.scrollBehavior = 'auto';
                     sidebar.scrollTop = parseInt(savedScrollPosition);
                 }
                 
-                // Aplicar el estado pinned guardado si existe
-                const isPinned = localStorage.getItem('sidebarPinned') === 'true';
-                if (isPinned) {
-                    sidebar.classList.add('sidebar-pinned');
-                    document.getElementById('mainContent').classList.add('content-shifted');
-                }
+                // Restaurar las transiciones después de un breve retraso
+                setTimeout(() => {
+                    sidebar.style.transition = '';
+                    if (document.getElementById('mainContent')) {
+                        document.getElementById('mainContent').style.transition = '';
+                    }
+                }, 50);
             }
         })();
         
@@ -299,27 +317,61 @@
             }
         });
         
-        // Prevenir parpadeos en la navegación mediante history API
+        // Manejar cualquier navegación (sea history, click de enlace o carga desde caché)
+        function handleNavigation() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            
+            if (!sidebar || !mainContent) return;
+            
+            // Desactivar todas las transiciones temporalmente
+            sidebar.style.transition = 'none';
+            mainContent.style.transition = 'none';
+            
+            // Aplicar el estado guardado del sidebar
+            const isPinned = localStorage.getItem('sidebarPinned') === 'true';
+            
+            if (isPinned) {
+                sidebar.classList.add('sidebar-pinned');
+                mainContent.classList.add('content-shifted');
+            } else {
+                sidebar.classList.remove('sidebar-pinned');
+                mainContent.classList.remove('content-shifted');
+            }
+            
+            // Restaurar la posición del scroll
+            const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
+            if (savedScrollPosition) {
+                sidebar.scrollTop = parseInt(savedScrollPosition);
+            }
+            
+            // Forzar un reflow para aplicar cambios inmediatamente
+            void sidebar.offsetWidth;
+            void mainContent.offsetWidth;
+            
+            // Reactivar transiciones después de un breve retraso
+            setTimeout(() => {
+                sidebar.style.transition = '';
+                mainContent.style.transition = '';
+                sidebar.style.scrollBehavior = 'smooth';
+            }, 50);
+        }
+        
+        // Ejecutar en carga completa de la página (para Dashboard->Estudiantes)
+        window.addEventListener('load', handleNavigation);
+        
+        // Ejecutar en navegaciones desde caché (atrás/adelante)
         window.addEventListener('pageshow', function(event) {
-            // Verificar si la página se cargó desde la caché (navegación hacia atrás/adelante)
             if (event.persisted) {
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar) {
-                    // Desactivar animaciones brevemente
-                    sidebar.style.transition = 'none';
-                    
-                    // Restaurar la posición del scroll
-                    const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
-                    if (savedScrollPosition) {
-                        sidebar.scrollTop = parseInt(savedScrollPosition);
-                    }
-                    
-                    // Reactivar animaciones
-                    setTimeout(() => {
-                        sidebar.style.transition = '';
-                        sidebar.style.scrollBehavior = 'smooth';
-                    }, 50);
-                }
+                handleNavigation();
+            }
+        });
+        
+        // Ejecutar antes de descarga de página para guardar estado
+        window.addEventListener('beforeunload', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                localStorage.setItem('sidebarScrollPosition', sidebar.scrollTop);
             }
         });
     </script>

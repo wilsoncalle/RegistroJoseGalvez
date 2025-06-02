@@ -42,8 +42,8 @@
 /* Main content adjustment based on sidebar state */
 .main-content-edge {
     margin-left: var(--sidebar-width-collapsed);
-    padding-top: var(--navbar-height);
-    transition: margin-left var(--transition-speed) ease;
+    padding-top: calc(var(--navbar-height) + 20px);
+    transition: margin-left var(--transition-speed) ease, padding-top var(--transition-speed) ease;
 }
 
 /* Adjust main content when sidebar is pinned */
