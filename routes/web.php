@@ -14,6 +14,7 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AulaController;
 use App\Http\Controllers\DocenteController;
 use App\Http\Controllers\CalificacionOldController;
+use App\Http\Controllers\BackupController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -28,6 +29,16 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Rutas protegidas (requieren autenticación)
 Route::middleware(['auth'])->group(function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Rutas para el sistema de respaldo y restauración
+    Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+    Route::post('/backup/create', [BackupController::class, 'createBackup'])->name('backup.create');
+    Route::post('/backup/restore', [BackupController::class, 'restoreBackup'])->name('backup.restore');
+    Route::post('/backup/import', [BackupController::class, 'importDatabase'])->name('backup.import');
+    Route::get('/backup/download/{filename}', [BackupController::class, 'downloadBackup'])->name('backup.download');
+    Route::delete('/backup/{filename}', [BackupController::class, 'deleteBackup'])->name('backup.delete');
+    Route::post('/backup/schedule', [BackupController::class, 'saveSchedule'])->name('backup.schedule');
+    Route::get('/backup/run-scheduled', [BackupController::class, 'runScheduledBackup'])->name('backup.run-scheduled');
     
 // Rutas de Estudiantes
 Route::resource('estudiantes', \App\Http\Controllers\EstudianteController::class);
