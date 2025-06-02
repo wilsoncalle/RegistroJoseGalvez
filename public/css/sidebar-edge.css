@@ -1,0 +1,203 @@
+/* Microsoft Edge Style Sidebar CSS */
+:root {
+    --sidebar-width-collapsed: 85px;
+    --sidebar-width-expanded: 270px;
+    --navbar-height: 64px;
+    --transition-speed: 0.25s;
+}
+
+/* Base sidebar styles */
+.sidebar-edge {
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    height: calc(100vh - var(--navbar-height));
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    z-index: 100;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: width var(--transition-speed) ease, box-shadow var(--transition-speed);
+    width: var(--sidebar-width-collapsed);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    /* Hardware acceleration */
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Expanded sidebar on hover - only when not pinned */
+.sidebar-edge:not(.sidebar-pinned):hover {
+    width: var(--sidebar-width-expanded);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Pinned sidebar state */
+.sidebar-edge.sidebar-pinned {
+    width: var(--sidebar-width-expanded);
+}
+
+/* Main content adjustment based on sidebar state */
+.main-content-edge {
+    margin-left: var(--sidebar-width-collapsed);
+    padding-top: var(--navbar-height);
+    transition: margin-left var(--transition-speed) ease;
+}
+
+/* Adjust main content when sidebar is pinned */
+.main-content-edge.content-shifted {
+    margin-left: var(--sidebar-width-expanded);
+}
+
+/* Sidebar header styles */
+.sidebar-edge .sidebar-heading {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 1.2px;
+    color: var(--primary-color);
+    padding: 16px 20px 8px;
+    margin-top: 8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity var(--transition-speed) ease;
+}
+
+/* Show sidebar heading when expanded */
+.sidebar-edge:hover .sidebar-heading,
+.sidebar-edge.sidebar-pinned .sidebar-heading {
+    opacity: 1;
+}
+
+/* Navigation item styles */
+.sidebar-edge .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 10px 10px;
+    margin: 4px 12px;
+    border-radius: 8px;
+    color: var(--text-dark);
+    transition: all var(--transition-speed) ease;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.sidebar-edge .nav-link:hover {
+    background-color: rgba(67, 97, 238, 0.08);
+    color: var(--primary-color);
+}
+
+.sidebar-edge .nav-link.active {
+    background-color: var(--primary-color);
+    color: white;
+    width: 45px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(67, 97, 238, 0.2);
+    transition: width var(--transition-speed) ease-in-out, background-color 0.2s, transform 0.2s;
+}
+
+/* Cuando el sidebar está expandido (hover o pinned), el elemento activo recupera su ancho normal */
+.sidebar-edge:hover .nav-link.active,
+.sidebar-edge.sidebar-pinned .nav-link.active {
+    width: calc(100% - 24px); /* Ajuste para los márgenes laterales */
+}
+
+/* Icon styles */
+.sidebar-edge .nav-link i {
+    font-size: 1.1rem;
+    min-width: 24px;
+    text-align: center;
+    margin-right: 12px;
+}
+
+/* Text inside nav-link */
+.sidebar-edge .nav-link .sidebar-text {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+}
+
+/* Show text when sidebar is expanded */
+.sidebar-edge:hover .nav-link .sidebar-text,
+.sidebar-edge.sidebar-pinned .nav-link .sidebar-text {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Pin button styles */
+.sidebar-pin-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--bg-sidebar);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-speed) ease, background-color 0.15s ease;
+    z-index: 101;
+}
+
+.sidebar-pin-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-edge:hover .sidebar-pin-button,
+.sidebar-edge.sidebar-pinned .sidebar-pin-button {
+    opacity: 1;
+}
+
+/* Style for the pin icon */
+.pin-icon {
+    font-size: 16px;
+    color: var(--text-muted);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-pinned .pin-icon {
+    transform: rotate(-45deg);
+    color: var(--primary-color);
+}
+
+/* For mobile: hide sidebar when screen is small */
+@media (max-width: 768px) {
+    .sidebar-edge {
+        transform: translateX(-100%);
+    }
+
+    .sidebar-edge.sidebar-mobile-visible {
+        transform: translateX(0);
+        width: var(--sidebar-width-expanded);
+    }
+
+    .main-content-edge {
+        margin-left: 0;
+    }
+    
+    .main-content-edge.content-shifted {
+        margin-left: 0;
+    }
+    
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 99;
+        display: none;
+    }
+    
+    .sidebar-overlay.visible {
+        display: block;
+    }
+}

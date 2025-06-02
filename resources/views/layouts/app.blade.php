@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="{{ asset('css/custom.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/sidebar-edge.css') }}" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
@@ -53,8 +54,13 @@
             </div>
         </div>
     </nav>
-    <!-- Menú lateral (sidebar) -->
-    <div class="sidebar">
+    <!-- Menú lateral (sidebar) estilo Edge -->
+    <div class="sidebar-edge" id="sidebar">
+        <!-- Botón para fijar el sidebar -->
+        <button class="sidebar-pin-button" id="sidebarPinButton" title="Fijar menú lateral">
+            <i class="bi bi-pin pin-icon"></i>
+        </button>
+        
         <div class="pt-4"></div>
         <div class="sidebar-heading">
             Académico
@@ -62,22 +68,22 @@
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                    <i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('estudiantes.*') ? 'active' : '' }}" href="{{ route('estudiantes.index') }}">
-                    <i class="bi bi-mortarboard me-2"></i> Estudiantes
+                    <i class="bi bi-mortarboard"></i> <span class="sidebar-text">Estudiantes</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('docentes.*') ? 'active' : '' }}" href="{{ route('docentes.index') }}">
-                    <i class="bi bi-person-badge me-2"></i> Docentes
+                    <i class="bi bi-person-badge"></i> <span class="sidebar-text">Docentes</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('apoderados.*') ? 'active' : '' }}" href="{{ route('apoderados.index') }}">
-                    <i class="bi bi-people me-2"></i> Apoderados
+                    <i class="bi bi-people"></i> <span class="sidebar-text">Apoderados</span>
                 </a>
             </li>
         </ul>
@@ -88,22 +94,22 @@
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('aulas.*') ? 'active' : '' }}" href="{{ route('aulas.index') }}">
-                    <i class="bi bi-layers me-2"></i> Aulas
+                    <i class="bi bi-layers"></i> <span class="sidebar-text">Aulas</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('grados.*') ? 'active' : '' }}" href="{{ route('grados.index') }}">
-                    <i class="bi bi-diagram-2 me-2"></i> Grados
+                    <i class="bi bi-diagram-2"></i> <span class="sidebar-text">Grados</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('secciones.*') ? 'active' : '' }}" href="{{ route('secciones.index') }}">
-                    <i class="bi bi-grid me-2"></i> Secciones
+                    <i class="bi bi-grid"></i> <span class="sidebar-text">Secciones</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('materias.*') ? 'active' : '' }}" href="{{ route('materias.index') }}">
-                    <i class="bi bi-book me-2"></i> Materias
+                    <i class="bi bi-book"></i> <span class="sidebar-text">Materias</span>
                 </a>
             </li>
         </ul>
@@ -114,17 +120,17 @@
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('anios.*') ? 'active' : '' }}" href="{{ route('anios.index') }}">
-                    <i class="bi bi-calendar-date"></i> Años Académicos
+                    <i class="bi bi-calendar-date"></i> <span class="sidebar-text">Años Académicos</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('trimestres.*') ? 'active' : '' }}" href="{{ route('trimestres.index') }}">
-                    <i class="bi bi-calendar3 me-2"></i> Trimestres
+                    <i class="bi bi-calendar3"></i> <span class="sidebar-text">Trimestres</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('asignaciones.*') ? 'active' : '' }}" href="{{ route('asignaciones.index') }}">
-                    <i class="bi bi-person-workspace me-2"></i> Asignaciones
+                    <i class="bi bi-person-workspace"></i> <span class="sidebar-text">Asignaciones</span>
                 </a>
             </li>
         </ul>
@@ -135,22 +141,22 @@
         <ul class="nav flex-column">
             <!--<li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('calificaciones.*') ? 'active' : '' }}" href="{{ route('calificaciones.index') }}">
-                    <i class="bi bi-journal-check me-2"></i> Calificaciones
+                    <i class="bi bi-journal-check"></i> <span class="sidebar-text">Calificaciones</span>
                 </a>
             </li> -->
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('calificaciones-old.*') ? 'active' : '' }}" href="{{ route('calificaciones-old.index') }}">
-                    <i class="bi bi-journal-check me-2"></i> Calificaciones Egresados
+                    <i class="bi bi-journal-check"></i> <span class="sidebar-text">Calificaciones Egresados</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('asistencia.*') ? 'active' : '' }}" href="{{ route('asistencia.index') }}">
-                    <i class="bi bi-calendar-check me-2"></i> Asistencia
+                <a class="nav-link {{ request()->routeIs('asistencias.*') ? 'active' : '' }}" href="{{ route('asistencias.index') }}" title="Asistencia">
+                    <i class="bi bi-calendar-check"></i> <span class="sidebar-text">Asistencia</span>
                 </a>
             </li>
             <!--<li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('incidentes.*') ? 'active' : '' }}" href="{{ route('incidentes.index') }}">
-                    <i class="bi bi-exclamation-triangle me-2"></i> Incidentes
+                    <i class="bi bi-exclamation-triangle"></i> <span class="sidebar-text">Incidentes</span>
                 </a>
             </li> -->
         </ul>
@@ -161,13 +167,16 @@
         <ul class="nav flex-column mb-5">
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}" href="{{ route('usuarios.index') }}">
-                    <i class="bi bi-person-gear me-2"></i> Usuarios
+                    <i class="bi bi-person-gear"></i> <span class="sidebar-text">Usuarios</span>
                 </a>
             </li>
         </ul>
     </div>
+    
+    <!-- Overlay para móviles cuando el sidebar está abierto -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <!-- Contenido principal -->
-    <div class="main-content mt-5 fade-transition">
+    <div class="main-content-edge fade-transition" id="mainContent">
         <div class="container-fluid">
             @yield('content')
         </div>
@@ -178,7 +187,7 @@
     <script>
         // Función inmediata para restaurar la posición del scroll lo antes posible
         (function() {
-            const sidebar = document.querySelector('.sidebar');
+            const sidebar = document.getElementById('sidebar');
             if (sidebar) {
                 const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
                 if (savedScrollPosition) {
@@ -186,34 +195,78 @@
                     sidebar.style.scrollBehavior = 'auto';
                     sidebar.scrollTop = parseInt(savedScrollPosition);
                 }
+                
+                // Aplicar el estado pinned guardado si existe
+                const isPinned = localStorage.getItem('sidebarPinned') === 'true';
+                if (isPinned) {
+                    sidebar.classList.add('sidebar-pinned');
+                    document.getElementById('mainContent').classList.add('content-shifted');
+                }
             }
         })();
         
         document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.querySelector('.sidebar');
-            
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const pinButton = document.getElementById('sidebarPinButton');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mobileToggle = document.querySelector('.navbar-toggler');
+
             if (sidebar) {
                 // Establecer comportamiento suave para futuros scrolls iniciados por el usuario
                 setTimeout(() => {
                     sidebar.style.scrollBehavior = 'smooth';
                 }, 100);
                 
-                // Aplicar la posición guardada nuevamente después de cualquier manipulación del DOM
-                const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
-                if (savedScrollPosition) {
-                    // Usar requestAnimationFrame para asegurar que ocurra en el próximo ciclo de pintado
-                    requestAnimationFrame(function() {
-                        sidebar.style.scrollBehavior = 'auto';
-                        sidebar.scrollTop = parseInt(savedScrollPosition);
-                        
-                        // Restaurar el comportamiento suave después de establecer la posición
-                        setTimeout(() => {
-                            sidebar.style.scrollBehavior = 'smooth';
-                        }, 50);
+                // Estado del sidebar
+                let isPinned = localStorage.getItem('sidebarPinned') === 'true';
+                
+                // Función para actualizar el estado del sidebar
+                function updateSidebarState() {
+                    if (isPinned) {
+                        sidebar.classList.add('sidebar-pinned');
+                        mainContent.classList.add('content-shifted');
+                        localStorage.setItem('sidebarPinned', 'true');
+                    } else {
+                        sidebar.classList.remove('sidebar-pinned');
+                        mainContent.classList.remove('content-shifted');
+                        localStorage.setItem('sidebarPinned', 'false');
+                    }
+                }
+                
+                // Evento click para el botón de pin
+                pinButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isPinned = !isPinned;
+                    updateSidebarState();
+                });
+                
+                // Toggle para móviles
+                if (mobileToggle) {
+                    mobileToggle.addEventListener('click', function() {
+                        if (window.innerWidth < 768) {
+                            sidebar.classList.toggle('sidebar-mobile-visible');
+                            overlay.classList.toggle('visible');
+                        }
                     });
                 }
                 
-                // Guardar la posición del scroll cuando cambia, pero con throttling
+                // Cerrar sidebar en móviles al hacer clic en el overlay
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('sidebar-mobile-visible');
+                    overlay.classList.remove('visible');
+                });
+                
+                // Ajustar sidebar en cambio de tamaño de ventana
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth >= 768) {
+                        sidebar.classList.remove('sidebar-mobile-visible');
+                        overlay.classList.remove('visible');
+                    }
+                });
+                
+                // Guardar la posición del scroll cuando cambia, con throttling
                 let scrollTimeoutId;
                 sidebar.addEventListener('scroll', function() {
                     clearTimeout(scrollTimeoutId);
@@ -223,7 +276,7 @@
                 });
                 
                 // Mejorar el manejo de clics en los enlaces
-                document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                document.querySelectorAll('#sidebar .nav-link').forEach(link => {
                     link.addEventListener('click', function(event) {
                         // Solo para enlaces que navegan a otra página (no tienen preventDefault)
                         if (link.getAttribute('href') && link.getAttribute('href') !== '#') {
@@ -250,7 +303,7 @@
         window.addEventListener('pageshow', function(event) {
             // Verificar si la página se cargó desde la caché (navegación hacia atrás/adelante)
             if (event.persisted) {
-                const sidebar = document.querySelector('.sidebar');
+                const sidebar = document.getElementById('sidebar');
                 if (sidebar) {
                     // Desactivar animaciones brevemente
                     sidebar.style.transition = 'none';

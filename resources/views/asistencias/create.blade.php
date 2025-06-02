@@ -43,7 +43,7 @@
         <input type="hidden" name="id_aula" value="{{ $aula->id_aula }}">
         
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="fecha">Fecha</label>
                     <input type="date" class="form-control" id="fecha" name="fecha" 
@@ -51,7 +51,7 @@
                 </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="id_materia">Materia</label>
                     <select class="form-control" id="id_materia" name="id_materia" required>
@@ -65,13 +65,20 @@
                 </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="id_docente">Docente</label>
                     <select class="form-control" id="id_docente" name="id_docente" required disabled>
                         <option value="">Seleccione una materia primero</option>
                     </select>
                 </div>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <!-- Botón Limpiar -->
+                <a href="javascript:void(0)" id="limpiar-filtros" class="btn btn-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
+                </a>
             </div>
         </div>
 
@@ -148,6 +155,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const materiaSelect = document.getElementById('id_materia');
     const docenteSelect = document.getElementById('id_docente');
     const aulaId = document.querySelector('input[name="id_aula"]').value;
+    const fechaInput = document.getElementById('fecha');
+    
+    // Agregar funcionalidad al botón limpiar
+    document.getElementById('limpiar-filtros').addEventListener('click', function() {
+        // Limpiar los filtros
+        materiaSelect.value = '';
+        docenteSelect.value = '';
+        docenteSelect.disabled = true;
+        
+        // Restablecer la fecha al día actual
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        fechaInput.value = formattedDate;
+    });
 
     materiaSelect.addEventListener('change', function() {
         const materiaId = this.value;

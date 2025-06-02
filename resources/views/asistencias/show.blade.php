@@ -78,7 +78,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label for="docente" class="form-label">Docente</label>
             <select id="docente" class="form-select" disabled required>
                 <option value="">Primero seleccione una materia</option>
@@ -103,6 +103,12 @@
                     </option>
                 @endforeach
             </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <!-- Botón Limpiar -->
+            <a href="javascript:void(0)" id="limpiar-filtros" class="btn btn-secondary">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
+            </a>
         </div>
     </div>
 
@@ -199,6 +205,39 @@ document.addEventListener('DOMContentLoaded', function() {
     const docenteSelect = document.getElementById('docente');
     const mesSelect = document.getElementById('mes');
     const añoSelect = document.getElementById('año');
+    
+    // Agregar funcionalidad al botón limpiar
+    document.getElementById('limpiar-filtros').addEventListener('click', function() {
+        // Limpiar los filtros
+        materiaSelect.value = '';
+        docenteSelect.value = '';
+        docenteSelect.disabled = true;
+        
+        // Restablecer mes y año a valores actuales
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        
+        // Encontrar la opción correspondiente al mes actual y seleccionarla
+        Array.from(mesSelect.options).forEach(option => {
+            if (parseInt(option.value) === currentMonth) {
+                option.selected = true;
+            }
+        });
+        
+        // Encontrar la opción correspondiente al año actual y seleccionarla
+        Array.from(añoSelect.options).forEach(option => {
+            if (parseInt(option.value) === currentYear) {
+                option.selected = true;
+            }
+        });
+        
+        // Ocultar el contenedor de asistencia y mostrar el mensaje de carga
+        document.getElementById('attendance-container').classList.add('d-none');
+        document.getElementById('loading-message').classList.remove('d-none');
+        
+        // Deshabilitar botones de exportación
+        document.getElementById('exportDropdown').disabled = true;
+    });
     const attendanceContainer = document.getElementById('attendance-container');
     const attendanceBody = document.getElementById('attendance-body');
     const loadingMessage = document.getElementById('loading-message');
