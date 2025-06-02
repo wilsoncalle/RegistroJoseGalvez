@@ -28,21 +28,21 @@
                 <div class="card-body">
                     <p class="card-text">Realice copias de seguridad de su base de datos, restaure desde un respaldo previo o importe datos.</p>
                     
-                    <div class="row mt-4">
+                    <div class="row mt-4 row-eq-height">
                         <!-- Sección de Respaldo Manual -->
-                        <div class="col-md-4">
-                            <div class="backup-section p-3 border rounded">
-                                <h5><i class="bi bi-download me-2"></i>Crear Respaldo</h5>
-                                <p>Genere una copia de seguridad completa de la base de datos actual.</p>
-                                <form action="{{ route('backup.create') }}" method="POST">
+                        <div class="col-md-4 d-flex">
+                            <div class="backup-section p-3 border rounded d-flex flex-column w-100" style="min-height: 280px;">
+                                <h5 class="mb-3"><i class="bi bi-download me-2"></i>Crear Respaldo</h5>
+                                <p class="flex-grow-1">Genere una copia de seguridad completa de la base de datos actual.</p>
+                                <form action="{{ route('backup.create') }}" method="POST" class="mt-auto">
                                     @csrf
-                                    <div class="form-check mb-3">
+                                    <!--<div class="form-check mb-3">
                                         <input class="form-check-input" type="checkbox" name="include_media" id="include_media">
                                         <label class="form-check-label" for="include_media">
                                             Incluir archivos multimedia
                                         </label>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
+                                    </div>-->
+                                    <button type="submit" class="btn btn-primary w-100">
                                         <i class="bi bi-download me-1"></i> Crear copia de seguridad
                                     </button>
                                 </form>
@@ -50,14 +50,14 @@
                         </div>
                         
                         <!-- Sección de Restauración -->
-                        <div class="col-md-4">
-                            <div class="backup-section p-3 border rounded">
-                                <h5><i class="bi bi-upload me-2"></i>Restaurar desde Respaldo</h5>
-                                <p>Restaure el sistema a un punto previo usando un respaldo existente.</p>
-                                <form action="{{ route('backup.restore') }}" method="POST">
+                        <div class="col-md-4 d-flex">
+                            <div class="backup-section p-3 border rounded d-flex flex-column w-100" style="min-height: 280px;">
+                                <h5 class="mb-3"><i class="bi bi-upload me-2"></i>Restaurar desde Respaldo</h5>
+                                <p class="flex-grow-1">Restaure el sistema a un punto previo usando un respaldo existente.</p>
+                                <form action="{{ route('backup.restore') }}" method="POST" class="mt-auto">
                                     @csrf
-                                    <div class="form-group">
-                                        <select name="backup_file" class="form-select mb-3" required>
+                                    <div class="form-group mb-3">
+                                        <select name="backup_file" class="form-select" required>
                                             <option value="">Seleccione un respaldo...</option>
                                             @foreach($backups as $backup)
                                                 <option value="{{ $backup['name'] }}">
@@ -67,7 +67,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <button type="submit" class="btn btn-warning" onclick="return confirm('¿Está seguro de restaurar la base de datos? Esta acción reemplazará todos los datos actuales.')">
+                                    <button type="submit" class="btn btn-warning w-100" onclick="return confirm('¿Está seguro de restaurar la base de datos? Esta acción reemplazará todos los datos actuales.')">
                                         <i class="bi bi-upload me-1"></i> Restaurar sistema
                                     </button>
                                 </form>
@@ -75,17 +75,17 @@
                         </div>
                         
                         <!-- Sección de Importación -->
-                        <div class="col-md-4">
-                            <div class="backup-section p-3 border rounded">
-                                <h5><i class="bi bi-file-earmark-arrow-up me-2"></i>Importar Base de Datos</h5>
-                                <p>Importe una base de datos desde un archivo SQLite, SQL o ZIP.</p>
-                                <form action="{{ route('backup.import') }}" method="POST" enctype="multipart/form-data">
+                        <div class="col-md-4 d-flex">
+                            <div class="backup-section p-3 border rounded d-flex flex-column w-100" style="min-height: 280px;">
+                                <h5 class="mb-3"><i class="bi bi-file-earmark-arrow-up me-2"></i>Importar Base de Datos</h5>
+                                <p class="flex-grow-1">Importe una base de datos desde un archivo SQLite, SQL o ZIP.</p>
+                                <form action="{{ route('backup.import') }}" method="POST" enctype="multipart/form-data" class="mt-auto">
                                     @csrf
                                     <div class="mb-3">
                                         <input type="file" class="form-control" name="database_file" accept=".sqlite,.db,.sql,.zip" required>
                                         <div class="form-text">Formatos soportados: SQLite, SQL, ZIP</div>
                                     </div>
-                                    <button type="submit" class="btn btn-info" onclick="return confirm('¿Está seguro de importar una nueva base de datos? Esta acción reemplazará todos los datos actuales.')">
+                                    <button type="submit" class="btn btn-info w-100" onclick="return confirm('¿Está seguro de importar una nueva base de datos? Esta acción reemplazará todos los datos actuales.')">
                                         <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar base de datos
                                     </button>
                                 </form>
@@ -262,9 +262,9 @@
         height: 100%;
         transition: all 0.3s ease;
     }
-    
     .backup-section:hover {
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
+    
 </style>
 @endpush

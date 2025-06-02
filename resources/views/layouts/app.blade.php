@@ -530,7 +530,15 @@
             perspective: 1000px;
             transition: transform 0.2s ease-out;
         }
-
+        
+        /* Asegurar que el dropdown tenga fondo blanco en todas las páginas */
+        .dropdown-menu {
+            background-color: #ffffff !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            opacity: 1 !important;
+        }
+        
         /* Transiciones más suaves */
         .main-content {
             opacity: 1;
