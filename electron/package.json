@@ -1,0 +1,31 @@
+{
+  "name": "gradel",
+  "version": "2.08.06",
+  "description": "Programa de gestión de calificaciones",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "keywords": [],
+  "author": "Wilson Calle Baca",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^36.3.0",
+    "electron-packager": "^17.1.2",
+    "electron-builder": "^24.15.1"
+  },
+  "build": {
+    "appId": "com.raccoon.gradel",
+    "productName": "Gradel",
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}
