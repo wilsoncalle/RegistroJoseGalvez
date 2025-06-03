@@ -50,17 +50,17 @@
     <!-- Contenedor de aulas -->
     <div class="row" id="aulasContainer">
         @foreach ($aulas as $aula)
-            <div class="col-md-4 mb-4 aula-card" data-grade="{{ $aula->grado->id_grado }}" data-section="{{ $aula->seccion->id_seccion }}">
+            <div class="col-md-4 mb-4 aula-card" data-grade="{{ $aula->grado ? $aula->grado->id_grado : '' }}" data-section="{{ $aula->seccion ? $aula->seccion->id_seccion : '' }}">
                 <div class="card h-100 shadow-sm hover-shadow">
                     <div class="card-body">
                         <h3 class="card-title h5 mb-3">
-                            {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"
+                            {{ $aula->grado ? $aula->grado->nombre : 'Sin grado' }} "{{ $aula->seccion ? $aula->seccion->nombre : 'Sin sección' }}"
                         </h3>
                         <p class="card-text text-muted">
                             Gestionar asistencias del aula
                         </p>
                         <div class="d-flex justify-content-between">
-                            <a href="{{ route('asistencias.show', ['nivel' => $aula->nivel->nombre, 'aulaId' => $aula->id_aula]) }}" 
+                            <a href="{{ route('asistencias.show', ['nivel' => $aula->nivel ? $aula->nivel->nombre : $nivel, 'aulaId' => $aula->id_aula]) }}" 
                                class="btn btn-success">
                                 Ver Asistencias
                             </a>

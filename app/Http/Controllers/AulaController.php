@@ -10,6 +10,7 @@ use App\Services\AulaExportService;
 use Maatwebsite\Excel\Facades\Excel;
 use PDF;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class AulaController extends Controller
 {
@@ -19,7 +20,6 @@ class AulaController extends Controller
         $filtroNivel = $request->input('nivel');
         $busqueda = $request->input('busqueda');
 
-        // Iniciar la consulta base
         $query = Aula::query()
             ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
             ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
@@ -31,12 +31,10 @@ class AulaController extends Controller
                 'secciones.nombre as seccion_nombre'
             ]);
 
-        // Aplicar filtro por nivel
         if ($filtroNivel) {
             $query->where('aulas.id_nivel', $filtroNivel);
         }
 
-        // Aplicar búsqueda si se proporciona
         if ($busqueda) {
             $query->where(function ($q) use ($busqueda) {
                 $q->where('niveles.nombre', 'like', "%$busqueda%")
@@ -45,7 +43,6 @@ class AulaController extends Controller
             });
         }
 
-        // Aplicar ordenamiento
         $query->orderBy('niveles.nombre')
               ->orderBy('grados.nombre')
               ->orderBy('secciones.nombre');

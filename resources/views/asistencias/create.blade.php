@@ -8,9 +8,9 @@
             <nav aria-label="breadcrumb" class="mb-3">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('asistencia.index') }}">Niveles</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('asistencias.index-niveles', $aula->nivel->nombre) }}">{{ $aula->nivel->nombre }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('asistencias.index-niveles', $aula->nivel ? $aula->nivel->nombre : 'Nivel') }}">{{ $aula->nivel ? $aula->nivel->nombre : 'Nivel' }}</a></li>
                     <li class="breadcrumb-item active" aria-current="page">
-                        {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"
+                        {{ $aula->grado ? $aula->grado->nombre : 'Sin grado' }} "{{ $aula->seccion ? $aula->seccion->nombre : 'Sin sección' }}"
                     </li>
                 </ol>
             </nav>
@@ -18,7 +18,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <!-- Título -->
                 <div>
-                    <h2>Tomar Asistencia - {{ $aula->nivel->nombre }} {{ $aula->grado->nombre }} "{{ $aula->seccion->nombre }}"</h2>
+                    <h2>Tomar Asistencia - {{ $aula->nivel ? $aula->nivel->nombre : 'Nivel' }} {{ $aula->grado ? $aula->grado->nombre : 'Sin grado' }} "{{ $aula->seccion ? $aula->seccion->nombre : 'Sin sección' }}"</h2>
                 </div>
             </div>
         </div>
@@ -43,7 +43,7 @@
         <input type="hidden" name="id_aula" value="{{ $aula->id_aula }}">
         
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="fecha">Fecha</label>
                     <input type="date" class="form-control" id="fecha" name="fecha" 
@@ -51,7 +51,7 @@
                 </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="id_materia">Materia</label>
                     <select class="form-control" id="id_materia" name="id_materia" required>
@@ -65,13 +65,20 @@
                 </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="id_docente">Docente</label>
                     <select class="form-control" id="id_docente" name="id_docente" required disabled>
                         <option value="">Seleccione una materia primero</option>
                     </select>
                 </div>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <!-- Botón Limpiar -->
+                <a href="javascript:void(0)" id="limpiar-filtros" class="btn btn-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
+                </a>
             </div>
         </div>
 
@@ -131,7 +138,7 @@
 
         <div class="row">
             <div class="col">
-                <a href="{{ route('asistencias.nivel', $aula->nivel->nombre) }}" class="btn btn-secondary">
+                <a href="{{ route('asistencias.nivel', $aula->nivel ? $aula->nivel->nombre : 'Nivel') }}" class="btn btn-secondary">
                     Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary">
@@ -148,6 +155,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const materiaSelect = document.getElementById('id_materia');
     const docenteSelect = document.getElementById('id_docente');
     const aulaId = document.querySelector('input[name="id_aula"]').value;
+    const fechaInput = document.getElementById('fecha');
+    
+    // Agregar funcionalidad al botón limpiar
+    document.getElementById('limpiar-filtros').addEventListener('click', function() {
+        // Limpiar los filtros
+        materiaSelect.value = '';
+        docenteSelect.value = '';
+        docenteSelect.disabled = true;
+        
+        // Restablecer la fecha al día actual
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        fechaInput.value = formattedDate;
+    });
 
     materiaSelect.addEventListener('change', function() {
         const materiaId = this.value;

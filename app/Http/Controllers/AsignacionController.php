@@ -15,6 +15,7 @@ use PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
+use Carbon\Carbon;
 
 class AsignacionController extends Controller
 {
@@ -47,22 +48,22 @@ class AsignacionController extends Controller
             })
             ->when($busqueda, function ($query) use ($busqueda) {
                 return $query->whereHas('docente', function ($query) use ($busqueda) {
-                    $query->whereRaw("LOWER(nombre) LIKE ?", ["%" . strtolower($busqueda) . "%"])
-                        ->orWhereRaw("LOWER(apellido) LIKE ?", ["%" . strtolower($busqueda) . "%"])
-                        ->orWhere('dni', 'LIKE', "%$busqueda%");
+                    $query->where(function($q) use ($busqueda) {
+                        $q->where('nombre', 'like', "%$busqueda%")
+                          ->orWhere('apellido', 'like', "%$busqueda%")
+                          ->orWhere('dni', 'like', "%$busqueda%");
+                    });
                 });
             })
-            // Agregar JOIN para poder ordenar por nivel, grado, sección y apellido del docente
             ->join('aulas', 'asignaciones.id_aula', '=', 'aulas.id_aula')
             ->join('niveles', 'aulas.id_nivel', '=', 'niveles.id_nivel')
             ->join('grados', 'aulas.id_grado', '=', 'grados.id_grado')
             ->join('secciones', 'aulas.id_seccion', '=', 'secciones.id_seccion')
             ->join('docentes', 'asignaciones.id_docente', '=', 'docentes.id_docente')
-            // Ordenar por nivel, grado, sección y apellido del docente
-            ->orderBy('niveles.nombre')  // Ordenar por nombre del nivel
-            ->orderBy('grados.nombre')   // Ordenar por grado
-            ->orderBy('secciones.nombre') // Ordenar por sección
-            ->orderBy('docentes.apellido') // Ordenar por apellido del docente
+            ->orderBy('niveles.nombre')
+            ->orderBy('grados.nombre')
+            ->orderBy('secciones.nombre')
+            ->orderBy('docentes.apellido')
             ->paginate(10);
 
         return view('asignaciones.index', compact('asignaciones', 'filtroNivel', 'filtroAula', 'filtroAnio', 'niveles', 'aulas', 'anios', 'busqueda'));

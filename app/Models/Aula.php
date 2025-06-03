@@ -68,7 +68,9 @@ class Aula extends Model
     }
     public function getNombreCompletoAttribute()
     {
-        return$this->grado->nombre . ' - ' . $this->seccion->nombre;
+        $gradoNombre = $this->grado ? $this->grado->nombre : 'N/A';
+        $seccionNombre = $this->seccion ? $this->seccion->nombre : 'N/A';
+        return $gradoNombre . ' - ' . $seccionNombre;
     }
 
 

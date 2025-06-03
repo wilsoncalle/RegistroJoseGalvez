@@ -22,8 +22,8 @@ class DashboardController extends Controller
         $docentes_count = Docente::count();
         $materias_count = Materia::count();
         
-        // Calcular el porcentaje de asistencia de hoy
-        $hoy = Carbon::today();
+        // Calcular el porcentaje de asistencia de hoy usando Carbon
+        $hoy = Carbon::now()->format('Y-m-d');
         $total_estudiantes = Estudiante::where('estado', 'Activo')->count();
         
         if ($total_estudiantes > 0) {

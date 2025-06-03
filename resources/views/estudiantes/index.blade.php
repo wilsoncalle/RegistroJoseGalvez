@@ -4,6 +4,9 @@
 
 @section('content')
 <div class="container">
+    {{-- Incluir el componente de notificación --}}
+    <x-export-notification />
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Estudiantes</h1>
         <div class="d-flex gap-2">
@@ -252,6 +255,7 @@
 </div>
 
 @push('scripts')
+<script src="{{ asset('js/export-notification.js') }}"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const nivelSelect = document.getElementById('nivel');

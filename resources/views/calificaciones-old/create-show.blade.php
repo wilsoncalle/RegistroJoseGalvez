@@ -2,6 +2,9 @@
 
 @section('content')
 <div class="container py-4">
+    {{-- Incluir el componente de notificación --}}
+    <x-export-notification />
+    
     <div class="row mb-4"> 
         <div class="col">
             <!-- Sección de breadcrumb -->
@@ -111,7 +114,7 @@
                 </select>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="form-group">
                 <label for="id_trimestre">Trimestre</label>
                 <select class="form-control" id="id_trimestre" name="id_trimestre" required>
@@ -123,6 +126,12 @@
                     @endforeach
                 </select>
             </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <!-- Botón Limpiar -->
+            <a href="javascript:void(0)" id="limpiar-filtros" class="btn btn-secondary">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
+            </a>
         </div>  
     </div>
 
@@ -468,13 +477,28 @@
 </div>
 
 @push('scripts')
-<!-- Incluir Chart.js para el gráfico de pastel (versión más ligera) -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+<script src="{{ asset('js/export-notification.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Datos de PHP que necesitamos en JavaScript
     const aulaId = "{{ $aula->id_aula }}";
     const nivelId = "{{ $aula->nivel->id_nivel }}";
+    
+    // Agregar funcionalidad al botón limpiar
+    document.getElementById('limpiar-filtros').addEventListener('click', function() {
+        // Limpiar los filtros
+        document.getElementById('promocion').value = '';
+        document.getElementById('año').value = '';
+        document.getElementById('id_trimestre').value = '';
+        
+        // Ocultar el contenedor de calificaciones y mostrar el mensaje de carga
+        document.getElementById('calificaciones-container').classList.add('d-none');
+        document.getElementById('loading-message').classList.remove('d-none');
+        
+        // Deshabilitar botones de exportación y estadísticas
+        document.getElementById('exportDropdown').disabled = true;
+        document.getElementById('estadisticasBtn').disabled = true;
+    });
     const getCalificacionesUrl = "{{ route('calificaciones-old.get-calificaciones') }}";
     
     // Función para mostrar mensajes de alerta
@@ -1567,12 +1591,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // Eventos para exportación
     exportExcelBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        document.getElementById('export-form').submit();
+        if (añoSelect.value && trimestreSelect.value) {
+            document.getElementById('export-año').value = añoSelect.value;
+            document.getElementById('export-trimestre').value = trimestreSelect.value;
+            
+            // Construir nombre del archivo
+            const año = añoSelect.value;
+            const trimestre = trimestreSelect.options[trimestreSelect.selectedIndex].text;
+            const fileName = `Calificaciones_${año}_${trimestre}`;
+            
+            // Detectar si estamos en Electron
+            const isElectron = window.navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+            
+            // Usar el sistema de notificaciones con POST
+            const formData = new FormData(document.getElementById('export-form'));
+            window.handleExport(
+                document.getElementById('export-form').action,
+                fileName,
+                'xlsx',
+                'POST',
+                formData,
+                isElectron
+            );
+        }
     });
     
     exportPdfBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        document.getElementById('export-pdf-form').submit();
+        if (añoSelect.value && trimestreSelect.value) {
+            document.getElementById('export-pdf-año').value = añoSelect.value;
+            document.getElementById('export-pdf-trimestre').value = trimestreSelect.value;
+            
+            // Construir nombre del archivo
+            const año = añoSelect.value;
+            const trimestre = trimestreSelect.options[trimestreSelect.selectedIndex].text;
+            const fileName = `Calificaciones_${año}_${trimestre}`;
+            
+            // Detectar si estamos en Electron
+            const isElectron = window.navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+            
+            // Usar el sistema de notificaciones con POST
+            const formData = new FormData(document.getElementById('export-pdf-form'));
+            window.handleExport(
+                document.getElementById('export-pdf-form').action,
+                fileName,
+                'pdf',
+                'POST',
+                formData,
+                isElectron
+            );
+        }
     });
     
     // Evento para mostrar estadísticas (optimizado)

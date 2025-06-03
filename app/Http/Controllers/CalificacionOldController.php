@@ -18,9 +18,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\ExportService;
+use Carbon\Carbon;
+use App\Traits\SpanishSorting;
 
 class CalificacionOldController extends Controller
 {
+    use SpanishSorting;
     /**
      * Mostrar listado de calificaciones
      */
@@ -40,7 +43,9 @@ class CalificacionOldController extends Controller
             ->where('id_nivel', $nivelModel->id_nivel)
             ->get()
             ->sortBy(function($aula) {
-                return $aula->grado->nombre . ' ' . $aula->seccion->nombre;
+                $gradoNombre = $aula->grado ? $aula->grado->nombre : '';
+                $seccionNombre = $aula->seccion ? $aula->seccion->nombre : '';
+                return $gradoNombre . ' ' . $seccionNombre;
             });
 
         // Extraer los grados únicos de las aulas para el filtro
@@ -356,7 +361,7 @@ class CalificacionOldController extends Controller
                 ];
             }
             
-            $fechaActual = now()->format('d-m-Y');
+            $fechaActual = Carbon::now()->format('d-m-Y');
             
             $pdf = Pdf::loadView('pdf.calificaciones-old', compact(
                 'datosEstudiantes', 
@@ -487,8 +492,8 @@ class CalificacionOldController extends Controller
             // Obtener estudiantes del aula seleccionada
             $estudiantes = Estudiante::where('id_aula', $request->id_aula)
                 ->when($request->promocion, function($query) use ($request) {
-                    // Si se proporciona un año de promoción, filtrar por ese año
-                    return $query->whereYear('fecha_ingreso', $request->promocion);
+                    // Si se proporciona un año de promoción, filtrar por ese año usando strftime
+                    return $query->whereRaw("strftime('%Y', fecha_ingreso) = ?", [$request->promocion]);
                 })
                 ->orderBy('apellido')
                 ->get();
@@ -498,7 +503,7 @@ class CalificacionOldController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'No hay estudiantes registrados en esta aula para el año ' . $request->año
-                ]);
+                ], 404);
             }
                 
             // Obtener materias y asignaciones relacionadas con este nivel y aula
@@ -555,7 +560,7 @@ class CalificacionOldController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cargar las calificaciones: ' . $e->getMessage()
+                'message' => $e->getMessage()
             ], 500);
         }
     }
@@ -659,12 +664,28 @@ class CalificacionOldController extends Controller
         ]);
         
         $aula = Aula::with(['nivel', 'grado', 'seccion'])->findOrFail($request->id_aula);
-        $nivel = $aula->nivel->nombre;
-        $fecha = date('Y-m-d');
+        $trimestre = Trimestre::findOrFail($request->id_trimestre);
+        
+        // Construir un nombre de archivo descriptivo
+        $nivelNombre = $aula->nivel ? $aula->nivel->nombre : 'Sin_Nivel';
+        $gradoNombre = $aula->grado ? $aula->grado->nombre : 'Sin_Grado';
+        $seccionNombre = $aula->seccion ? $aula->seccion->nombre : 'Sin_Seccion';
+        
+        // Construir nombre del archivo
+        $fileName = sprintf(
+            "Calificaciones_%s_%s_%s_%s_%s.xlsx",
+            str_replace(' ', '_', $nivelNombre),
+            str_replace(' ', '_', $gradoNombre),
+            str_replace(' ', '_', $seccionNombre),
+            str_replace(' ', '_', $trimestre->nombre),
+            $request->año
+        );
+        
+        // Limpiar solo caracteres no permitidos en nombres de archivos
+        // permitiendo mantener acentos y caracteres especiales
+        $fileName = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $fileName);
         
         $exportService = new ExportService();
-        
-        $fileName = "calificaciones_{$nivel}_{$fecha}.xlsx";
         
         return $exportService->exportCalificacionesOldToExcel(
             $request->id_aula,

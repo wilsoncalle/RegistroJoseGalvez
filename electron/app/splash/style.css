@@ -1,0 +1,85 @@
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #fff;
+  border-radius: 10px;
+}
+
+/* Contenedor principal ocupa toda la ventana */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  border-radius: 10px;
+}
+
+/* Header - centrado arriba */
+header {
+  height: 35px;
+    width: 75px;
+    margin: 10px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    color: rgb(255, 255, 255);
+    background: #9446f047;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.header-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6932da;
+}
+
+/* Main centrado */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  position: relative;
+}
+
+/* Logo centrado con proporción exacta */
+.splash-screen {
+  width: 35.07%;
+  aspect-ratio: 6.5 / 4;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+
+/* Texto debajo del logo */
+.secondary-text {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Footer simple con mensaje de carga */
+footer {
+  height: 40px;
+    display: flex;
+    padding: 20px;
+    align-items: center;
+    justify-content: left;
+    background: #fff;
+}
+
+.loading-text {
+  font-size: 0.9rem;
+  color: #636262;
+}

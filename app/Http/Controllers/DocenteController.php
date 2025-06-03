@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
 
 class DocenteController extends Controller
 {
@@ -70,8 +71,8 @@ class DocenteController extends Controller
             }
         }
         
-        // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        // Generar nombre del archivo usando Carbon
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "docentes_{$nombreNivel}_{$fechaActual}.xlsx";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo
@@ -112,8 +113,8 @@ class DocenteController extends Controller
         // Configurar la numeración
         $counter = 1;
         
-        // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        // Generar nombre del archivo usando Carbon
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "docentes_{$nombreNivel}_{$fechaActual}.pdf";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo

@@ -10,33 +10,32 @@ use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class MateriaController extends Controller
 {
     public function index(Request $request)
-{
-    $busqueda = $request->input('busqueda');
-    $filtroNivel = $request->input('nivel');
-    
-    $materias = Materia::with('nivel')
-        ->when($busqueda, function ($query, $busqueda) {
-            return $query->where('materias.nombre', 'LIKE', "%{$busqueda}%");
-        })
-        ->when($filtroNivel, function ($query, $nivel) {
-            return $query->where('materias.id_nivel', $nivel);
-        })
-        ->join('niveles', 'materias.id_nivel', '=', 'niveles.id_nivel')
-        ->orderByRaw("FIELD(niveles.nombre, 'Inicial', 'Primaria', 'Secundaria')")
-        ->orderBy('materias.nombre')  // Ordena las materias dentro del nivel
-        ->select('materias.*')
-  
-        ->paginate(10);
+    {
+        $busqueda = $request->input('busqueda');
+        $filtroNivel = $request->input('nivel');
+        
+        $materias = Materia::with('nivel')
+            ->when($busqueda, function ($query, $busqueda) {
+                return $query->where('materias.nombre', 'LIKE', "%{$busqueda}%");
+            })
+            ->when($filtroNivel, function ($query, $nivel) {
+                return $query->where('materias.id_nivel', $nivel);
+            })
+            ->join('niveles', 'materias.id_nivel', '=', 'niveles.id_nivel')
+            ->orderByRaw("CASE niveles.nombre WHEN 'Inicial' THEN 1 WHEN 'Primaria' THEN 2 WHEN 'Secundaria' THEN 3 ELSE 4 END")
+            ->orderBy('materias.nombre')
+            ->select('materias.*')
+            ->paginate(10);
 
-    $niveles = Nivel::all();
+        $niveles = Nivel::all();
 
-    return view('materias.index', compact('materias', 'busqueda', 'filtroNivel', 'niveles'));
-}
-
+        return view('materias.index', compact('materias', 'busqueda', 'filtroNivel', 'niveles'));
+    }
 
     public function create()
     {

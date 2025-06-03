@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="container">
+<x-export-notification />
     <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Docentes</h1>
         <div class="d-flex gap-2">
@@ -207,4 +208,7 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script src="{{ asset('js/export-notification.js') }}"></script> 
+@endpush
 @endsection

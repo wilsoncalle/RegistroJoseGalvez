@@ -7,6 +7,8 @@ use App\Models\Nivel;
 use App\Exports\MateriaExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class MateriaExportService
 {
@@ -31,7 +33,12 @@ class MateriaExportService
         
         // Ordenar los resultados
         $materias = $materias->join('niveles', 'materias.id_nivel', '=', 'niveles.id_nivel')
-            ->orderByRaw("FIELD(niveles.nombre, 'Inicial', 'Primaria', 'Secundaria')")
+            ->orderByRaw("CASE niveles.nombre 
+                WHEN 'Inicial' THEN 1 
+                WHEN 'Primaria' THEN 2 
+                WHEN 'Secundaria' THEN 3 
+                ELSE 4 
+            END")
             ->orderBy('materias.nombre')
             ->select('materias.*')
             ->get();
@@ -46,7 +53,7 @@ class MateriaExportService
         }
         
         // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "materias_{$nombreNivel}_{$fechaActual}.xlsx";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo
@@ -81,7 +88,12 @@ class MateriaExportService
         
         // Ordenar los resultados
         $materias = $materias->join('niveles', 'materias.id_nivel', '=', 'niveles.id_nivel')
-            ->orderByRaw("FIELD(niveles.nombre, 'Inicial', 'Primaria', 'Secundaria')")
+            ->orderByRaw("CASE niveles.nombre 
+                WHEN 'Inicial' THEN 1 
+                WHEN 'Primaria' THEN 2 
+                WHEN 'Secundaria' THEN 3 
+                ELSE 4 
+            END")
             ->orderBy('materias.nombre')
             ->select('materias.*')
             ->get();
@@ -96,7 +108,7 @@ class MateriaExportService
         }
         
         // Generar nombre del archivo
-        $fechaActual = now()->format('d-m-Y');
+        $fechaActual = Carbon::now()->format('d-m-Y');
         $nombreArchivo = "materias_{$nombreNivel}_{$fechaActual}.pdf";
         
         // Reemplazar espacios y caracteres especiales en el nombre del archivo
@@ -104,7 +116,7 @@ class MateriaExportService
         $nombreArchivo = preg_replace('/[^A-Za-z0-9\-_.]/', '', $nombreArchivo);
         
         // Generar el PDF
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.materias', [
+        $pdf = Pdf::loadView('pdf.materias', [
             'materias' => $materias,
             'filtroNivel' => $filtroNivel,
             'nombreNivel' => $nombreNivel,

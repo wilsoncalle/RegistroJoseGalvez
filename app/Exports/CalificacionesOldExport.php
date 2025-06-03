@@ -20,7 +20,9 @@ use App\Models\Estudiante;
 use App\Models\CalificacionOld;
 use App\Models\Asignacion;
 use App\Models\Trimestre;
-use App\Models\AnioAcademico; 
+use App\Models\AnioAcademico;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize, WithStyles, WithCustomStartCell, WithEvents
 {
@@ -51,8 +53,6 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
         $this->aula = Aula::with(['nivel', 'grado', 'seccion'])->findOrFail($this->aulaId);
         $this->trimestre = Trimestre::findOrFail($this->trimestreId);
         
-        // Identificar a los estudiantes que pertenecen al año académico seleccionado
-        
         // 1. Obtener asignaciones para este aula y año académico
         $asignaciones = Asignacion::with('materia')
             ->where('id_aula', $this->aulaId)
@@ -79,13 +79,10 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
             ->toArray();
             
         // 3. Obtener estudiantes del aula que corresponden al año académico seleccionado
-        // Incluimos tanto los que tienen calificaciones/observaciones como los que no
         $estudiantes = Estudiante::where('id_aula', $this->aulaId)
             ->where(function($query) use ($estudiantesIds) {
-                // Incluir estudiantes que tienen alguna calificación u observación en este año académico
                 $query->whereIn('id_estudiante', $estudiantesIds)
-                    // O estudiantes que se crearon en este año académico
-                    ->orWhereYear('created_at', $this->año);
+                    ->orWhereRaw("strftime('%Y', created_at) = ?", [$this->año]);
             })
             ->orderBy('apellido')
             ->get();
@@ -732,10 +729,10 @@ class CalificacionesOldExport implements FromArray, WithHeadings, ShouldAutoSize
                 ]);
                 
                 $sheet->mergeCells('C' . $row . ':I' . $row);
-                $sheet->setCellValue('C' . $row, 'Talara, ' . date('d') . ' de ' . date('F') . ' del ' . $this->año);
+                $sheet->setCellValue('C' . $row, 'Talara, ' . Carbon::now()->format('d') . ' de ' . Carbon::now()->locale('es')->format('F') . ' del ' . $this->año);
                 $sheet->getStyle('C' . $row)->applyFromArray([
                     'font' => [
-                            'size' => 12,
+                        'size' => 12,
                         'name' => 'Times New Roman',
                     ],
                     'alignment' => [

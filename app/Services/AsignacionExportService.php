@@ -52,7 +52,7 @@ class AsignacionExportService
                 'docentes.apellido as docente_apellido',
                 'materias.nombre as materia_nombre',
                 'niveles.nombre as nivel_nombre',
-                DB::raw("CONCAT(grados.nombre, ' ', secciones.nombre) as aula_nombre"),
+                DB::raw("grados.nombre || ' ' || secciones.nombre as aula_nombre"),
                 'anios_academicos.anio as anio_academico'
             );
 
@@ -71,9 +71,9 @@ class AsignacionExportService
 
         if ($busqueda) {
             $query->where(function ($q) use ($busqueda) {
-                $q->whereRaw("LOWER(docentes.nombre) LIKE ?", ['%' . strtolower($busqueda) . '%'])
-                  ->orWhereRaw("LOWER(docentes.apellido) LIKE ?", ['%' . strtolower($busqueda) . '%'])
-                  ->orWhereRaw("LOWER(materias.nombre) LIKE ?", ['%' . strtolower($busqueda) . '%']);
+                $q->where('docentes.nombre', 'like', '%' . strtolower($busqueda) . '%')
+                  ->orWhere('docentes.apellido', 'like', '%' . strtolower($busqueda) . '%')
+                  ->orWhere('materias.nombre', 'like', '%' . strtolower($busqueda) . '%');
             });
         }
 
@@ -98,7 +98,7 @@ class AsignacionExportService
                 $nombreArchivo .= '_' . $anio->anio;
             }
         }
-        $nombreArchivo .= '_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $nombreArchivo .= '_' . Carbon::now()->format('Y-m-d_H-i-s') . '.xlsx';
         
         // Descargar el archivo
         return Excel::download($export, $nombreArchivo);
@@ -142,7 +142,7 @@ class AsignacionExportService
                 'docentes.apellido as docente_apellido',
                 'materias.nombre as materia_nombre',
                 'niveles.nombre as nivel_nombre',
-                DB::raw("CONCAT(grados.nombre, ' ', secciones.nombre) as aula_nombre"),
+                DB::raw("grados.nombre || ' ' || secciones.nombre as aula_nombre"),
                 'anios_academicos.anio as anio_academico'
             );
 
@@ -161,9 +161,9 @@ class AsignacionExportService
 
         if ($busqueda) {
             $query->where(function ($q) use ($busqueda) {
-                $q->whereRaw("LOWER(docentes.nombre) LIKE ?", ['%' . strtolower($busqueda) . '%'])
-                  ->orWhereRaw("LOWER(docentes.apellido) LIKE ?", ['%' . strtolower($busqueda) . '%'])
-                  ->orWhereRaw("LOWER(materias.nombre) LIKE ?", ['%' . strtolower($busqueda) . '%']);
+                $q->where('docentes.nombre', 'like', '%' . strtolower($busqueda) . '%')
+                  ->orWhere('docentes.apellido', 'like', '%' . strtolower($busqueda) . '%')
+                  ->orWhere('materias.nombre', 'like', '%' . strtolower($busqueda) . '%');
             });
         }
 
@@ -198,7 +198,7 @@ class AsignacionExportService
                 $nombreArchivo .= '_' . $anio->anio;
             }
         }
-        $nombreArchivo .= '_' . date('Y-m-d_H-i-s') . '.pdf';
+        $nombreArchivo .= '_' . Carbon::now()->format('Y-m-d_H-i-s') . '.pdf';
         
         // Descargar el archivo
         return $pdf->download($nombreArchivo);

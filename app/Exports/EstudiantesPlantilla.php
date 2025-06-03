@@ -13,7 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Font;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Events\AfterSheet;
 use App\Models\Aula;
 use Illuminate\Support\Facades\Log;
@@ -38,11 +38,11 @@ class EstudiantesPlantilla implements FromArray, WithHeadings, WithStyles, WithC
             } catch (\Exception $e) {
                 // En caso de que no se encuentre el aula, dejamos el valor en null
                 // y registramos el error (opcional)
-                \Log::warning("No se pudo cargar el aula ID: $idAula - " . $e->getMessage());
+                Log::warning("No se pudo cargar el aula ID: $idAula - " . $e->getMessage());
             }
         }
         
-        // Establecer la fecha de ingreso
+        // Establecer la fecha de ingreso usando Carbon
         $this->fechaIngreso = $fechaIngreso ? Carbon::parse($fechaIngreso) : Carbon::now();
     }
     

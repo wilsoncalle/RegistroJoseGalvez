@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
@@ -39,6 +41,8 @@ class ProfileController extends Controller
         $request->validate($rules);
 
         try {
+            DB::beginTransaction();
+            
             // Actualizar el usuario
             $usuario->nombre = $request->nombre;
             $usuario->email = $request->email;
@@ -48,11 +52,13 @@ class ProfileController extends Controller
                 $usuario->password = Hash::make($request->password);
             }
             
-            $usuario->save();
+            $usuario->update();
 
+            DB::commit();
             return redirect()->route('profile.show')
                 ->with('success', 'Perfil actualizado correctamente.');
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->withInput()->with('error', 'Error al actualizar perfil: ' . $e->getMessage());
         }
     }
